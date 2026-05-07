@@ -1,13 +1,13 @@
 {
   "id": "js-plugin-session-telemetry-off",
-  "description": "Stub `pOK()` \u2014 the function that emits `tengu_plugin_enabled_for_session` for every plugin on every session, including plugin name, marketplace, path counts, and capability flags.",
+  "description": "Stub um9() — the function that emits tengu_plugin_enabled_for_session telemetry for every plugin on every session (v2.1.132).",
   "type": "js_replace",
   "validate_js": true,
   "patches": [
     {
-      "search_regex": "=String\\([A-Za-z_$][\\w$]*\\.getDate\\(\\)\\)\\.padStart\\(2,\"0\"\\);return`\\$\\{\\$\\}\\-\\$\\{[A-Za-z_$][\\w$]*\\}\\-\\$\\{[A-Za-z_$][\\w$]*\\}`\\}function\\ [A-Za-z_$][\\w$]*\\(\\)\\{return\\ [A-Za-z_$][\\w$]*\\ Date\\(\\)\\.toLocaleString\\(\"[A-Za-z_$][\\w$]*\\-[A-Za-z_$][\\w$]*\",\\{month:\"long\",[A-Za-z_$][\\w$]*",
-      "replace": "function pOK(H,$,q){return;for(let K of H){",
-      "applied_marker": "function pOK(H,$,q){return;for(let K of H)",
+      "search_regex": "function um9\\(H,_,q\\)\\{for\\(let K of H\\)\\{",
+      "replace": "function um9(H,_,q){return;for(let K of H){",
+      "applied_marker": "function um9(H,_,q){return;",
       "description": "Per-session plugin inventory telemetry is detailed; suppress independently of generic metrics patch.",
       "required": false,
       "count": 0
@@ -15,6 +15,6 @@
   ],
   "scan_signatures": true,
   "anchor_strings": [
-    "function pOK"
+    "tengu_plugin_enabled_for_session"
   ]
 }

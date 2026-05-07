@@ -36,8 +36,17 @@ function Test-RealClaude {
         "$env:APPDATA\npm\node_modules\@anthropic-ai\claude-code\node_modules\@anthropic-ai\claude-code-win32-arm64\claude.exe",
         "$env:LOCALAPPDATA\Programs\claude-code\claude.exe",
         "$env:USERPROFILE\.claude\local\claude.exe",
-        "$env:USERPROFILE\.claude\bin\claude.exe"
+        "$env:USERPROFILE\.claude\bin\claude.exe",
+        "$env:USERPROFILE\scoop\apps\claude-code\current\claude.exe"
     )
+    # Also check WinGet packages directory
+    $wingetBase = Join-Path $env:LOCALAPPDATA 'Microsoft\WinGet\Packages'
+    if (Test-Path $wingetBase) {
+        $wingetExes = Get-ChildItem -Path $wingetBase -Directory -Filter '*claude*' |
+            ForEach-Object { Join-Path $_.FullName 'claude.exe' } |
+            Where-Object { Test-Path $_ }
+        if ($wingetExes) { return $true }
+    }
     foreach ($p in $probes) {
         if ((Test-Path $p) -and ((Get-Item $p).Length -gt 1MB)) { return $true }
     }

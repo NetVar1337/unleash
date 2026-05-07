@@ -1,0 +1,350 @@
+{
+  "id": "js-tengu-feature-flags-unlock",
+  "description": "MEGA PATCH: Flip all beneficial tengu_ feature gate defaults from false (!1) to true (!0). Unlocks experimental features that are normally Statsig-gated.",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": true,
+  "patches": [
+    {
+      "search_regex": "f_\\(\"tengu_auto_notice_once\",!1\\)",
+      "replace": "f_(\"tengu_auto_notice_once\",!0)",
+      "applied_marker": "tengu_auto_notice_once\",!0)",
+      "description": "Flip tengu_auto_notice_once default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_edit_minimalanchor_jrn\",!1\\)",
+      "replace": "f_(\"tengu_edit_minimalanchor_jrn\",!0)",
+      "applied_marker": "tengu_edit_minimalanchor_jrn\",!0)",
+      "description": "Flip tengu_edit_minimalanchor_jrn default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_chomp_inflection\",!1\\)",
+      "replace": "f_(\"tengu_chomp_inflection\",!0)",
+      "applied_marker": "tengu_chomp_inflection\",!0)",
+      "description": "Flip tengu_chomp_inflection default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_orchid_mantis\",!1\\)",
+      "replace": "f_(\"tengu_orchid_mantis\",!0)",
+      "applied_marker": "tengu_orchid_mantis\",!0)",
+      "description": "Flip tengu_orchid_mantis default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_gouda_loop\",!1\\)",
+      "replace": "f_(\"tengu_gouda_loop\",!0)",
+      "applied_marker": "tengu_gouda_loop\",!0)",
+      "description": "Flip tengu_gouda_loop default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_mcp_subagent_prompt\",!1\\)",
+      "replace": "f_(\"tengu_mcp_subagent_prompt\",!0)",
+      "applied_marker": "tengu_mcp_subagent_prompt\",!0)",
+      "description": "Flip tengu_mcp_subagent_prompt default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_immediate_model_command\",!1\\)",
+      "replace": "f_(\"tengu_immediate_model_command\",!0)",
+      "applied_marker": "tengu_immediate_model_command\",!0)",
+      "description": "Flip tengu_immediate_model_command default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_terminal_sidebar\",!1\\)",
+      "replace": "f_(\"tengu_terminal_sidebar\",!0)",
+      "applied_marker": "tengu_terminal_sidebar\",!0)",
+      "description": "Flip tengu_terminal_sidebar default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_silk_hinge\",!1\\)",
+      "replace": "f_(\"tengu_silk_hinge\",!0)",
+      "applied_marker": "tengu_silk_hinge\",!0)",
+      "description": "Flip tengu_silk_hinge default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_gleaming_fair\",!1\\)",
+      "replace": "f_(\"tengu_gleaming_fair\",!0)",
+      "applied_marker": "tengu_gleaming_fair\",!0)",
+      "description": "Flip tengu_gleaming_fair default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_fg_left_arrow_agents\",!1\\)",
+      "replace": "f_(\"tengu_fg_left_arrow_agents\",!0)",
+      "applied_marker": "tengu_fg_left_arrow_agents\",!0)",
+      "description": "Flip tengu_fg_left_arrow_agents default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_copper_fox\",!1\\)",
+      "replace": "f_(\"tengu_copper_fox\",!0)",
+      "applied_marker": "tengu_copper_fox\",!0)",
+      "description": "Flip tengu_copper_fox default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_coral_fern\",!1\\)",
+      "replace": "f_(\"tengu_coral_fern\",!0)",
+      "applied_marker": "tengu_coral_fern\",!0)",
+      "description": "Flip tengu_coral_fern default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_loud_sugary_rock\",!1\\)",
+      "replace": "f_(\"tengu_loud_sugary_rock\",!0)",
+      "applied_marker": "tengu_loud_sugary_rock\",!0)",
+      "description": "Flip tengu_loud_sugary_rock default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_marlin_porch\",!1\\)",
+      "replace": "f_(\"tengu_marlin_porch\",!0)",
+      "applied_marker": "tengu_marlin_porch\",!0)",
+      "description": "Flip tengu_marlin_porch default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_sparrow_ledger\",!1\\)",
+      "replace": "f_(\"tengu_sparrow_ledger\",!0)",
+      "applied_marker": "tengu_sparrow_ledger\",!0)",
+      "description": "Flip tengu_sparrow_ledger default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_drift_lantern\",!1\\)",
+      "replace": "f_(\"tengu_drift_lantern\",!0)",
+      "applied_marker": "tengu_drift_lantern\",!0)",
+      "description": "Flip tengu_drift_lantern default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_moth_copse\",!1\\)",
+      "replace": "f_(\"tengu_moth_copse\",!0)",
+      "applied_marker": "tengu_moth_copse\",!0)",
+      "description": "Flip tengu_moth_copse default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_ochre_finch\",!1\\)",
+      "replace": "f_(\"tengu_ochre_finch\",!0)",
+      "applied_marker": "tengu_ochre_finch\",!0)",
+      "description": "Flip tengu_ochre_finch default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_hawthorn_steeple\",!1\\)",
+      "replace": "f_(\"tengu_hawthorn_steeple\",!0)",
+      "applied_marker": "tengu_hawthorn_steeple\",!0)",
+      "description": "Flip tengu_hawthorn_steeple default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_cobalt_raccoon\",!1\\)",
+      "replace": "f_(\"tengu_cobalt_raccoon\",!0)",
+      "applied_marker": "tengu_cobalt_raccoon\",!0)",
+      "description": "Flip tengu_cobalt_raccoon default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_sepia_moth\",!1\\)",
+      "replace": "f_(\"tengu_sepia_moth\",!0)",
+      "applied_marker": "tengu_sepia_moth\",!0)",
+      "description": "Flip tengu_sepia_moth default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_hazel_osprey\",!1\\)",
+      "replace": "f_(\"tengu_hazel_osprey\",!0)",
+      "applied_marker": "tengu_hazel_osprey\",!0)",
+      "description": "Flip tengu_hazel_osprey default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_disable_keepalive_on_econnreset\",!1\\)",
+      "replace": "f_(\"tengu_disable_keepalive_on_econnreset\",!0)",
+      "applied_marker": "tengu_disable_keepalive_on_econnreset\",!0)",
+      "description": "Flip tengu_disable_keepalive_on_econnreset default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_kairos_loop_dynamic\",!1\\)",
+      "replace": "f_(\"tengu_kairos_loop_dynamic\",!0)",
+      "applied_marker": "tengu_kairos_loop_dynamic\",!0)",
+      "description": "Flip tengu_kairos_loop_dynamic default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_kairos_loop_persistent\",!1\\)",
+      "replace": "f_(\"tengu_kairos_loop_persistent\",!0)",
+      "applied_marker": "tengu_kairos_loop_persistent\",!0)",
+      "description": "Flip tengu_kairos_loop_persistent default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_kairos_loop_prompt\",!1\\)",
+      "replace": "f_(\"tengu_kairos_loop_prompt\",!0)",
+      "applied_marker": "tengu_kairos_loop_prompt\",!0)",
+      "description": "Flip tengu_kairos_loop_prompt default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_kairos_push_notifications\",!1\\)",
+      "replace": "f_(\"tengu_kairos_push_notifications\",!0)",
+      "applied_marker": "tengu_kairos_push_notifications\",!0)",
+      "description": "Flip tengu_kairos_push_notifications default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_kairos_input_needed_push\",!1\\)",
+      "replace": "f_(\"tengu_kairos_input_needed_push\",!0)",
+      "applied_marker": "tengu_kairos_input_needed_push\",!0)",
+      "description": "Flip tengu_kairos_input_needed_push default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_amber_sentinel\",!1\\)",
+      "replace": "f_(\"tengu_amber_sentinel\",!0)",
+      "applied_marker": "tengu_amber_sentinel\",!0)",
+      "description": "Flip tengu_amber_sentinel default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_scratch\",!1\\)",
+      "replace": "f_(\"tengu_scratch\",!0)",
+      "applied_marker": "tengu_scratch\",!0)",
+      "description": "Flip tengu_scratch default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_passport_quail\",!1\\)",
+      "replace": "f_(\"tengu_passport_quail\",!0)",
+      "applied_marker": "tengu_passport_quail\",!0)",
+      "description": "Flip tengu_passport_quail default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_slate_thimble\",!1\\)",
+      "replace": "f_(\"tengu_slate_thimble\",!0)",
+      "applied_marker": "tengu_slate_thimble\",!0)",
+      "description": "Flip tengu_slate_thimble default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_mocha_barista\",!1\\)",
+      "replace": "f_(\"tengu_mocha_barista\",!0)",
+      "applied_marker": "tengu_mocha_barista\",!0)",
+      "description": "Flip tengu_mocha_barista default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_willow_prism\",!1\\)",
+      "replace": "f_(\"tengu_willow_prism\",!0)",
+      "applied_marker": "tengu_willow_prism\",!0)",
+      "description": "Flip tengu_willow_prism default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_agent_list_attach\",!1\\)",
+      "replace": "f_(\"tengu_agent_list_attach\",!0)",
+      "applied_marker": "tengu_agent_list_attach\",!0)",
+      "description": "Flip tengu_agent_list_attach default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_crimson_vector\",!1\\)",
+      "replace": "f_(\"tengu_crimson_vector\",!0)",
+      "applied_marker": "tengu_crimson_vector\",!0)",
+      "description": "Flip tengu_crimson_vector default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_prompt_cache_diagnostics\",!1\\)",
+      "replace": "f_(\"tengu_prompt_cache_diagnostics\",!0)",
+      "applied_marker": "tengu_prompt_cache_diagnostics\",!0)",
+      "description": "Flip tengu_prompt_cache_diagnostics default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_ashen_kelp\",!1\\)",
+      "replace": "f_(\"tengu_ashen_kelp\",!0)",
+      "applied_marker": "tengu_ashen_kelp\",!0)",
+      "description": "Flip tengu_ashen_kelp default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_velvet_static\",!1\\)",
+      "replace": "f_(\"tengu_velvet_static\",!0)",
+      "applied_marker": "tengu_velvet_static\",!0)",
+      "description": "Flip tengu_velvet_static default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_pewter_brook\",!1\\)",
+      "replace": "f_(\"tengu_pewter_brook\",!0)",
+      "applied_marker": "tengu_pewter_brook\",!0)",
+      "description": "Flip tengu_pewter_brook default to true",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "f_\\(\"tengu_slate_harbor_experiment\",!1\\)",
+      "replace": "f_(\"tengu_slate_harbor_experiment\",!0)",
+      "applied_marker": "tengu_slate_harbor_experiment\",!0)",
+      "description": "Flip tengu_slate_harbor_experiment default to true",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "anchor_strings": [
+    "tengu_auto_notice_once",
+    "tengu_orchid_mantis",
+    "tengu_slate_harbor_experiment"
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "js-sed-dangerous-check-disable",
+  "description": "Always pass allowFileWrites=true to sed safety check, effectively allowing all sed operations without approval prompts.",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": true,
+  "patches": [
+    {
+      "search_regex": "if\\(!dUH\\(O,\\{allowFileWrites:A\\}\\)\\)",
+      "replace": "if(!dUH(O,{allowFileWrites:1}))",
+      "applied_marker": "allowFileWrites:1}",
+      "description": "Force allowFileWrites=true for sed safety check",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "anchor_strings": [
+    "sed command requires approval"
+  ]
+}

@@ -51,13 +51,21 @@ else
 fi
 
 # ── 2. Python + pipx (skip if present) ───────────────────────────────────────
-command -v python3 >/dev/null || die "python3 missing (brew install python / apt install python3)"
+# Python: try python3, then python, then error with distro-specific advice
+PY=""
+for cand in python3 python; do
+    if command -v "$cand" >/dev/null 2>&1; then PY="$cand"; break; fi
+done
+if [ -z "$PY" ]; then
+    die "Python missing — install with: brew install python3 | sudo apt install python3 | sudo pacman -S python | sudo dnf install python3"
+fi
+# Note: on Arch Linux, pipx is available as the 'python-pipx' package.
 if command -v pipx >/dev/null; then
     ok "pipx already installed"
 else
     log "installing pipx"
-    python3 -m pip install --user pipx >/dev/null 2>&1 || die "pipx install failed"
-    python3 -m pipx ensurepath >/dev/null 2>&1 || true
+    "$PY" -m pip install --user pipx >/dev/null 2>&1 || die "pipx install failed"
+    "$PY" -m pipx ensurepath >/dev/null 2>&1 || true
 fi
 
 # ── 3. vpcc package — install or upgrade only if needed ──────────────────────

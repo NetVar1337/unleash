@@ -1,12 +1,12 @@
 {
   "id": "js-generated-with-claude-footer-off",
-  "description": "Also blank the PR-body attribution footer `\ud83e\udd16 Generated with [Claude Code](URL)` so PRs carry no attribution.",
+  "description": "Blank the PR-body attribution footer `🤖 Generated with [Claude Code](URL)` so PRs carry no attribution (vWH URL var in v2.1.132).",
   "type": "js_replace",
   "validate_js": true,
   "patches": [
     {
-      "search_regex": "\\ [A-Za-z_$][\\w$]*=[A-Za-z_$][\\w$]*\\(\\),\\$=[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\)!==null,[A-Za-z_$][\\w$]*=[A-Za-z_$][\\w$]*\\(\\)\\|\\|\\$\\?[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\):\"Claude\\ Opus\\ 4\\.7\",[A-Za-z_$][\\w$]*=`\\\\uD83E\\\\uDD16\\ Generated\\ with\\ \\[Claude\\ Code\\]\\(\\$\\{[A-Za-z_$][\\w$]*\\}\\)`,[A-Za-z_$][\\w$]*=`[A-Za-z_$][\\w$]*\\-Authored\\-[A-Za-z_$][\\w$]*:\\ \\$\\{[A-Za-z_$][\\w$]*\\}\\ <noreply@[A-Za-z_$][\\w$]*",
-      "replace": "K=``/*pr-footer-disabled-by-patcher*/                      ",
+      "search_regex": "([A-Za-z_$][\\w$]*)=`\\\\uD83E\\\\uDD16 Generated with \\[Claude Code\\]\\(\\$\\{vWH\\}\\)`",
+      "replace": "\\g<1>=``/*pr-footer-disabled-by-patcher*/          ",
       "applied_marker": "/*pr-footer-disabled-by-patcher*/",
       "description": "Companion to js-co-authored-by-claude-off; keeps all git artifacts author-less.",
       "required": false,
@@ -15,6 +15,6 @@
   ],
   "scan_signatures": true,
   "anchor_strings": [
-    "K=`\\uD83E\\uDD16 Generated with"
+    "Generated with [Claude Code]"
   ]
 }

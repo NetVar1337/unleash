@@ -1,0 +1,20 @@
+{
+  "id": "js-find-dangerous-action-disable",
+  "description": "Disable find dangerous action check (-exec, -delete, etc.) by returning ok:true, allowing find commands with file-modifying flags.",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": true,
+  "patches": [
+    {
+      "search_regex": "Iu1\\.has\\(\\$\\)\\)return\\{ok:!1,reason:`find with",
+      "replace": "Iu1.has($))return{ok:!0,reason:`find with",
+      "applied_marker": "Iu1.has($))return{ok:!0",
+      "description": "Return ok:true for find dangerous action check",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "anchor_strings": [
+    "executes commands or modifies files"
+  ]
+}

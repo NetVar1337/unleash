@@ -1,0 +1,28 @@
+{
+  "id": "js-rate-limit-retry-raise",
+  "description": "Raise max retries from 10 to 30 (Kt5) and max retry delay from 60s to 300s (Yt5=3e5=300000ms), improving resilience against transient API failures and rate limits.",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": true,
+  "patches": [
+    {
+      "search_regex": "Kt5=10,Ik8=3000,Ot5=",
+      "replace": "Kt5=30,Ik8=3000,Ot5=",
+      "applied_marker": "Kt5=30,Ik8=3000",
+      "description": "Raise max retries from 10 to 30",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "Yt5=60000,",
+      "replace": "Yt5=3e5  ,",
+      "applied_marker": "Yt5=3e5",
+      "description": "Raise max retry delay from 60000ms (60s) to 300000ms (300s)",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "anchor_strings": [
+    "var Ck8=()=>new RO,Kt5="
+  ]
+}

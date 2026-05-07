@@ -1,0 +1,20 @@
+{
+  "id": "js-fast-mode-cooldown-disable",
+  "description": "Disable fast mode cooldown by changing status from 'cooldown' to 'active' and keeping tF6 flag enabled, preventing rate-limit-triggered fast mode suspension.",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": true,
+  "patches": [
+    {
+      "search_regex": "MCH=\\{status:\"cooldown\",resetAt:H,reason:_\\},tF6=!1",
+      "replace": "MCH={status:\"active\"  ,resetAt:H,reason:_},tF6=!0",
+      "applied_marker": "MCH={status:\"active\"",
+      "description": "Change cooldown status to active and keep tF6 enabled",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "anchor_strings": [
+    "function Ydq(H,_){if(!iK())return"
+  ]
+}

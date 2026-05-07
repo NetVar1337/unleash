@@ -1,0 +1,20 @@
+{
+  "id": "js-opus-fallback-threshold-raise",
+  "description": "Raise Opus fallback trigger from 3 to 9 retries before falling back to Sonnet. Triples tolerance for transient Opus failures.",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": true,
+  "patches": [
+    {
+      "search_regex": "Ot5=3,Tt5=2",
+      "replace": "Ot5=9,Tt5=2",
+      "applied_marker": "Ot5=9,Tt5=2",
+      "description": "Raise Opus fallback retry threshold from 3 to 9",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "anchor_strings": [
+    "var Ck8=()=>new RO,Kt5="
+  ]
+}

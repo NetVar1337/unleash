@@ -102,101 +102,181 @@ def find_target() -> tuple[Path | None, str]:
                 return p, kind
 
     # Version-managed Node installs
-    mise_base = Path.home() / ".local/share/mise/installs/node"
-    nvm_base  = Path(os.environ.get("NVM_DIR", Path.home() / ".nvm")) / "versions/node"
+    mise_base = Path.home() / ".local" / "share" / "mise" / "installs" / "node"
+    nvm_base  = Path(os.environ.get("NVM_DIR", str(Path.home() / ".nvm"))) / "versions" / "node"
+    fnm_base  = Path(os.environ.get("FNM_DIR", str(Path.home() / ".local" / "share" / "fnm"))) / "node-versions"
+    volta_base = Path.home() / ".volta" / "tools" / "image" / "packages"
     # Windows %APPDATA%\npm
     appdata   = os.environ.get("APPDATA")
-    extra_bases = [mise_base, nvm_base]
+    extra_bases = [mise_base, nvm_base, fnm_base]
     if appdata:
         extra_bases.append(Path(appdata) / "npm" / "node_modules")
         extra_bases.append(Path(appdata) / "npm")
 
     for base in extra_bases:
         for suffix, kind in checks:
-            if base == extra_bases[0] or base == extra_bases[1]:
-                # mise / nvm wrap each Node version in its own dir
-                candidates = _version_glob(base, suffix)
-            else:
-                candidates = [base / suffix] if (base / suffix).exists() else []
+            # mise / nvm / fnm wrap each Node version in its own dir
+            candidates = _version_glob(base, suffix)
             for p in candidates:
                 if p.exists() and (kind == "js" or p.stat().st_size > 1_000_000):
+                    try:
+                        return p.resolve(), kind
+                    except OSError:
+                        return p, kind
+
+    # Bun global
+    bun_global = Path.home() / ".bun" / "install" / "global" / "node_modules"
+    for suffix, kind in checks:
+        p = bun_global / suffix
+        if p.exists() and (kind == "js" or p.stat().st_size > 1_000_000):
+            try:
+                return p.resolve(), kind
+            except OSError:
+                return p, kind
+
+    # pnpm global
+    pnpm_root: Path | None = None
+    try:
+        r = subprocess.run(["pnpm", "root", "-g"], capture_output=True, text=True, timeout=5)
+        if r.returncode == 0 and r.stdout.strip():
+            pnpm_root = Path(r.stdout.strip())
+    except Exception:
+        pnpm_root = Path.home() / ".local" / "share" / "pnpm" / "global" / "5" / "node_modules"
+    if pnpm_root:
+        for suffix, kind in checks:
+            p = pnpm_root / suffix
+            if p.exists() and (kind == "js" or p.stat().st_size > 1_000_000):
+                try:
+                    return p.resolve(), kind
+                except OSError:
                     return p, kind
 
-    # Homebrew on macOS
+    # Volta
+    for suffix, kind in checks:
+        volta_candidates = list(volta_base.glob("@anthropic-ai/claude-code/*/node_modules/" + suffix)) if volta_base.is_dir() else []
+        for p in volta_candidates:
+            if p.exists() and (kind == "js" or p.stat().st_size > 1_000_000):
+                try:
+                    return p.resolve(), kind
+                except OSError:
+                    return p, kind
     for hb in [Path("/opt/homebrew/lib/node_modules"),
                Path("/usr/local/lib/node_modules")]:
         for suffix, kind in checks:
             p = hb / suffix
             if p.exists() and (kind == "js" or p.stat().st_size > 1_000_000):
-                return p, kind
+                try:
+                    return p.resolve(), kind
+                except OSError:
+                    return p, kind
 
     # Native CLI installer (~/.local/share/claude/versions/<ver>)
-    _versions_dir = Path.home() / ".local/share/claude/versions"
+    _versions_dir = Path.home() / ".local" / "share" / "claude" / "versions"
     if _versions_dir.is_dir():
         for child in sorted(_versions_dir.iterdir(), key=lambda p: p.name, reverse=True):
             if child.is_file() and child.stat().st_size > 1_000_000:
-                return child, "bun_sea"
+                try:
+                    return child.resolve(), "bun_sea"
+                except OSError:
+                    return child, "bun_sea"
 
-    # Native installer (https://claude.ai/install.sh) lands the binary in
-    # ~/.local/share/claude/versions/<semver> (symlinked from ~/.local/bin/claude)
-    # as well as older ~/.claude/ and ~/.local/share/claude-code/ layouts.
-
-    # Current layout (≥ 2.1.x native installer): ~/.local/share/claude/versions/<semver>
-    claude_versions_dir = Path.home() / ".local/share/claude/versions"
-    if claude_versions_dir.is_dir():
-        for child in sorted(claude_versions_dir.iterdir(), reverse=True):
-            if child.is_file() and child.stat().st_size > 1_000_000:
-                return child, "bun_sea"
-
+    # Native installer candidate paths (symlinks, legacy layouts)
     native_candidates = [
-        # Current native installer symlink — resolve so we return the real file
-        Path.home() / ".local/bin/claude",
-        Path.home() / ".local/bin/claude.exe",
-        # Legacy ~/.claude/ layout
-        Path.home() / ".claude/local/claude",
-        Path.home() / ".claude/local/claude.exe",
-        Path.home() / ".claude/bin/claude",
-        Path.home() / ".claude/bin/claude.exe",
-        Path.home() / ".claude/downloads",          # may contain claude-<ver>-<platform> blobs
-        # Old claude-code name layout
-        Path.home() / ".local/share/claude-code/claude",
-        Path.home() / ".local/share/claude-code/claude.exe",
-        Path.home() / ".local/bin/claude-code",
-        Path.home() / ".local/bin/claude-code.exe",
+        Path.home() / ".local" / "bin" / "claude",
+        Path.home() / ".local" / "bin" / "claude.exe",
+        Path.home() / ".claude" / "local" / "claude",
+        Path.home() / ".claude" / "local" / "claude.exe",
+        Path.home() / ".claude" / "bin" / "claude",
+        Path.home() / ".claude" / "bin" / "claude.exe",
+        Path.home() / ".local" / "share" / "claude-code" / "claude",
+        Path.home() / ".local" / "share" / "claude-code" / "claude.exe",
+        Path.home() / ".local" / "bin" / "claude-code",
+        Path.home() / ".local" / "bin" / "claude-code.exe",
         Path("/usr/local/share/claude-code/claude"),
         Path("/opt/claude-code/bin/claude"),
-        Path("/opt/claude-code/bin/claude.exe"),
     ]
     for p in native_candidates:
         if p.is_dir():
             for child in sorted(p.glob("claude-*"), reverse=True):
                 if child.is_file() and child.stat().st_size > 1_000_000:
-                    return child, "bun_sea"
+                    try:
+                        return child.resolve(), "bun_sea"
+                    except OSError:
+                        return child, "bun_sea"
             continue
         if p.exists() and p.stat().st_size > 1_000_000:
-            # Resolve symlinks so we return the real file path
-            return p.resolve(), "bun_sea"
+            try:
+                return p.resolve(), "bun_sea"
+            except OSError:
+                return p, "bun_sea"
 
     # Windows %LOCALAPPDATA%\Programs\claude-code\ (installer default on Win)
     la = os.environ.get("LOCALAPPDATA")
     if la:
         for suffix in ("Programs/claude-code/claude.exe",
+                       "Programs/claude/versions",
                        "claude-code/claude.exe",
                        "anthropic/claude-code/claude.exe"):
             p = Path(la) / suffix
-            if p.exists() and p.stat().st_size > 1_000_000:
-                return p, "bun_sea"
+            if p.is_dir():
+                # e.g. Programs/claude/versions/* — pick newest binary
+                for child in sorted(p.iterdir(), reverse=True):
+                    if child.is_file() and child.stat().st_size > 1_000_000:
+                        try:
+                            return child.resolve(), "bun_sea"
+                        except OSError:
+                            return child, "bun_sea"
+            elif p.exists() and p.stat().st_size > 1_000_000:
+                try:
+                    return p.resolve(), "bun_sea"
+                except OSError:
+                    return p, "bun_sea"
+        # winget
+        winget_dir = Path(la) / "Microsoft" / "WinGet" / "Packages"
+        if winget_dir.is_dir():
+            for pkg_dir in winget_dir.iterdir():
+                if "claude" in pkg_dir.name.lower() and pkg_dir.is_dir():
+                    for f in pkg_dir.rglob("claude.exe"):
+                        if f.is_file() and f.stat().st_size > 1_000_000:
+                            try:
+                                return f.resolve(), "bun_sea"
+                            except OSError:
+                                return f, "bun_sea"
 
-    # Last resort: resolve `which claude` from PATH
+    # scoop (Windows)
+    scoop_dir = Path.home() / "scoop" / "apps" / "claude-code" / "current"
+    if scoop_dir.is_dir():
+        for name in ("claude.exe", "claude"):
+            p = scoop_dir / name
+            if p.exists() and p.stat().st_size > 1_000_000:
+                try:
+                    return p.resolve(), "bun_sea"
+                except OSError:
+                    return p, "bun_sea"
+
+    # chocolatey (Windows)
+    choco_dir = Path("C:/ProgramData/chocolatey/lib/claude-code")
+    if choco_dir.is_dir():
+        for f in choco_dir.rglob("claude.exe"):
+            if f.is_file() and f.stat().st_size > 1_000_000:
+                try:
+                    return f.resolve(), "bun_sea"
+                except OSError:
+                    return f, "bun_sea"
+
+    # Last resort: shutil.which (cross-platform, no `which` dependency)
     try:
-        r = subprocess.run(["which", "claude"], capture_output=True, text=True, timeout=5)
-        if r.returncode == 0 and r.stdout.strip():
-            p = Path(r.stdout.strip()).resolve()
+        found = shutil.which("claude") or shutil.which("claude.exe")
+        if found:
+            p = Path(found)
+            try:
+                p = p.resolve()
+            except OSError:
+                pass
             if p.exists() and p.stat().st_size > 1_000_000:
                 return p, "bun_sea"
     except Exception:
         pass
-
     return None, ""
 
 
@@ -263,9 +343,9 @@ def _find_bun_section_macho(data) -> tuple[int, int]:
         for i in range(nfat):
             base = 8 + i * entry_size
             off = _struct.unpack_from(fmt, data, base + 8)[0]
-            # recurse into slice
             sub = data[off:] if hasattr(data, "__getitem__") else bytes(data)[off:]
-            return _find_bun_section_macho(bytes(sub))
+            sub_off, sub_size = _find_bun_section_macho(bytes(sub))
+            return (off + sub_off, sub_size)  # Adjust offset relative to original data
     if magic not in (0xFEEDFACF, 0xCFFAEDFE, 0xFEEDFACE, 0xCEFAEDFE):
         raise RuntimeError("not a Mach-O binary")
     is_64 = magic in (0xFEEDFACF, 0xCFFAEDFE)
@@ -610,7 +690,7 @@ def backup(target: Path, kind: str) -> Path:
     ext   = "exe.bak" if kind == "bun_sea" else "js.bak"
     dst   = BACKUP_DIR / f"claude.{stamp}.{sha256_short(target)}.{ext}"
     shutil.copy2(target, dst)
-    for old in sorted(BACKUP_DIR.glob("claude.*.bak"))[:-10]:
+    for old in sorted(BACKUP_DIR.glob("claude.*.*"))[:-10]:
         old.unlink(missing_ok=True)
     return dst
 
@@ -762,7 +842,17 @@ def cmd_patch(args) -> int:
 
 
 def _apply_settings(patch: dict, dry_run: bool = False) -> tuple[bool, str]:
-    path = Path(os.path.expanduser(patch.get("settings_path", "~/.claude/settings.json")))
+    custom = patch.get("settings_path")
+    if custom:
+        path = Path(os.path.expanduser(custom))
+    else:
+        path = Path.home() / ".claude" / "settings.json"
+        if not path.exists() and os.name == 'nt':
+            _appdata = os.environ.get("APPDATA")
+            if _appdata:
+                alt = Path(_appdata) / "claude" / "settings.json"
+                if alt.exists():
+                    path = alt
     path.parent.mkdir(parents=True, exist_ok=True)
     try:
         cur = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
@@ -788,7 +878,10 @@ def _apply_settings(patch: dict, dry_run: bool = False) -> tuple[bool, str]:
 
 def _apply_mcp_guard(p: dict, dry_run: bool = False) -> tuple[bool, str]:
     """mcp-guard: add MCP spawn timeout to preload + activate via BUN_OPTIONS wrapper."""
-    preload_dir = Path.home() / ".local/share/void-patcher"
+    if os.name == 'nt':
+        preload_dir = Path(os.environ.get("LOCALAPPDATA", str(Path.home() / "AppData" / "Local"))) / "void-patcher"
+    else:
+        preload_dir = Path.home() / ".local" / "share" / "void-patcher"
     preload_src = ROOT / "contrib" / "preload" / "claude-preload.js"
     preload_dst = preload_dir / "claude-preload.js"
     GUARD_MARKER = "// mcp-guard"
@@ -852,9 +945,9 @@ def _apply_wrapper(p: dict, kind: str, target: "Path | None", dry_run: bool = Fa
         WRAPPER_CONTENT = (
             "#!/usr/bin/env bash\n"
             f"{NATIVE_MARKER}\n"
-            'VPCC_PRELOAD="$HOME/.local/share/void-patcher/claude-preload.js"\n'
+            'VPCC_PRELOAD="${VPCC_PRELOAD:-$HOME/.local/share/void-patcher/claude-preload.js}"\n'
             'VPCC_VERSIONS_DIR="$HOME/.local/share/claude/versions"\n'
-            'VPCC_NATIVE="$(ls -1 "$VPCC_VERSIONS_DIR" 2>/dev/null | sort -V | tail -1)"\n'
+            'VPCC_NATIVE="$(ls -1 "$VPCC_VERSIONS_DIR" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n | tail -1)"\n'
             'VPCC_NATIVE="$VPCC_VERSIONS_DIR/$VPCC_NATIVE"\n'
             'if [[ ! -x "${VPCC_NATIVE:-}" ]]; then echo "vpcc wrapper: native binary not found" >&2; exit 1; fi\n'
             'if [[ -f "$VPCC_PRELOAD" ]]; then\n'
@@ -966,7 +1059,15 @@ def cmd_status(args) -> int:
     print(f"{B}vpcc status{X}")
     print(f"  patches : {len(patches)}")
     if target:
-        label = "cli.js (JS, ≤v2.1.112)" if kind == "js" else "Bun SEA ELF (≥v2.1.114)"
+        if kind == "bun_sea":
+            if sys.platform == "darwin":
+                label = "Bun SEA (Mach-O)"
+            elif sys.platform == "win32":
+                label = "Bun SEA (PE)"
+            else:
+                label = "Bun SEA (ELF)"
+        else:
+            label = "cli.js (JS)"
         print(f"  target  : {target}")
         print(f"  format  : {label}")
         print(f"  sha256  : {sha256_short(target)}")
@@ -1084,7 +1185,15 @@ def cmd_doctor(args) -> int:
     if not target:
         print(f"  target     : {R}NOT FOUND{X}")
         return 2
-    label = "cli.js" if kind == "js" else "Bun SEA ELF"
+    if kind == "bun_sea":
+        if sys.platform == "darwin":
+            label = "Bun SEA (Mach-O)"
+        elif sys.platform == "win32":
+            label = "Bun SEA (PE)"
+        else:
+            label = "Bun SEA (ELF)"
+    else:
+        label = "cli.js (JS)"
     print(f"  target     : {target}")
     print(f"  format     : {label}")
     print(f"  sha256     : {sha256_short(target)}")
@@ -1323,7 +1432,10 @@ def cmd_install_preload(args) -> int:
     if not src.exists():
         print(f"{R}source missing: {src}{X}")
         return 2
-    dst_dir = Path.home() / ".local/share/void-patcher"
+    if os.name == 'nt':
+        dst_dir = Path(os.environ.get("LOCALAPPDATA", str(Path.home() / "AppData" / "Local"))) / "void-patcher"
+    else:
+        dst_dir = Path.home() / ".local" / "share" / "void-patcher"
     dst_dir.mkdir(parents=True, exist_ok=True)
     dst = dst_dir / "claude-preload.js"
     dst.write_bytes(src.read_bytes())
@@ -1334,7 +1446,10 @@ def cmd_install_preload(args) -> int:
 
 
 def cmd_uninstall_preload(args) -> int:
-    dst = Path.home() / ".local/share/void-patcher/claude-preload.js"
+    if os.name == 'nt':
+        dst = Path(os.environ.get("LOCALAPPDATA", str(Path.home() / "AppData" / "Local"))) / "void-patcher" / "claude-preload.js"
+    else:
+        dst = Path.home() / ".local" / "share" / "void-patcher" / "claude-preload.js"
     if dst.exists():
         dst.unlink()
         print(f"{G}{CHECK} removed{X} {dst}")

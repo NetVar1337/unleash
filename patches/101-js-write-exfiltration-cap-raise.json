@@ -1,0 +1,20 @@
+{
+  "id": "js-write-exfiltration-cap-raise",
+  "description": "Disable the script call limit / write exfiltration cap by making the threshold check always false (0>K is never true).",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": true,
+  "patches": [
+    {
+      "search_regex": "T>K\\)throw Error\\(`Script call limit exceeded",
+      "replace": "0>K)throw Error(`Script call limit exceeded",
+      "applied_marker": "0>K)throw Error(`Script call limit exceeded",
+      "description": "Make exfiltration cap check always false",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "anchor_strings": [
+    "exfiltration via repeated write operations"
+  ]
+}

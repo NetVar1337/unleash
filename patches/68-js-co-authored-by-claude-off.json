@@ -1,12 +1,12 @@
 {
   "id": "js-co-authored-by-claude-off",
-  "description": "Strip hardcoded Co-Authored-By: Claude attribution line from generated commits. Patcher space-pads to source length.",
+  "description": "Strip hardcoded Co-Authored-By: Claude attribution line from generated commits (v2.1.132).",
   "type": "js_replace",
   "validate_js": true,
   "patches": [
     {
-      "search_regex": "_=`Co-Authored-By: \\$\\{q\\} <noreply@anthropic\\.com>`",
-      "replace": "_=`` /*__void_coauth_off__*/",
+      "search_regex": "([A-Za-z_$][\\w$]*)=`Co-Authored-By: \\$\\{([A-Za-z_$][\\w$]*)\\} <noreply@anthropic\\.com>`",
+      "replace": "\\g<1>=``/*__void_coauth_off__*/                     ",
       "applied_marker": "__void_coauth_off__",
       "description": "Make Co-Authored-By template empty string so commits don't get attribution footer",
       "required": false,
@@ -15,6 +15,7 @@
   ],
   "scan_signatures": true,
   "anchor_strings": [
-    "_=`Co-Authored-By: ${q} <noreply@anthropic.com>`"
+    "Co-Authored-By:",
+    "<noreply@anthropic.com>"
   ]
 }

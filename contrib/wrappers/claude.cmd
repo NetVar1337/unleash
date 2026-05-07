@@ -17,6 +17,40 @@ if exist "%VPCC_PRELOAD%" (
 )
 
 set "CLAUDE_EXE="
+
+rem --- Native installer: versioned directory (newest first) ---
+if exist "%USERPROFILE%\.local\share\claude\versions\" (
+    for /f "tokens=*" %%V in ('dir /b /o-n "%USERPROFILE%\.local\share\claude\versions\" 2^>nul') do (
+        if exist "%USERPROFILE%\.local\share\claude\versions\%%V\claude.exe" (
+            set "CLAUDE_EXE=%USERPROFILE%\.local\share\claude\versions\%%V\claude.exe"
+            goto :found
+        )
+    )
+)
+
+rem --- Native installer: LOCALAPPDATA Programs versioned ---
+if exist "%LOCALAPPDATA%\Programs\claude\versions\" (
+    for /f "tokens=*" %%V in ('dir /b /o-n "%LOCALAPPDATA%\Programs\claude\versions\" 2^>nul') do (
+        if exist "%LOCALAPPDATA%\Programs\claude\versions\%%V\claude.exe" (
+            set "CLAUDE_EXE=%LOCALAPPDATA%\Programs\claude\versions\%%V\claude.exe"
+            goto :found
+        )
+    )
+)
+
+rem --- Native installer: LOCALAPPDATA Programs flat ---
+if exist "%LOCALAPPDATA%\Programs\claude-code\claude.exe" (
+    set "CLAUDE_EXE=%LOCALAPPDATA%\Programs\claude-code\claude.exe"
+    goto :found
+)
+
+rem --- Scoop ---
+if exist "%USERPROFILE%\scoop\apps\claude-code\current\claude.exe" (
+    set "CLAUDE_EXE=%USERPROFILE%\scoop\apps\claude-code\current\claude.exe"
+    goto :found
+)
+
+rem --- npm global (fallback) ---
 for %%I in (
     "%APPDATA%\npm\node_modules\@anthropic-ai\claude-code\node_modules\@anthropic-ai\claude-code-win32-x64\claude.exe"
     "%APPDATA%\npm\node_modules\@anthropic-ai\claude-code\node_modules\@anthropic-ai\claude-code-win32-arm64\claude.exe"
@@ -28,7 +62,7 @@ for %%I in (
 
 :found
 if "%CLAUDE_EXE%"=="" (
-    echo vpcc wrapper: no Claude Code SEA binary found under %%APPDATA%%\npm 1>&2
+    echo vpcc wrapper: no Claude Code binary found — checked native installer, scoop, and npm paths 1>&2
     exit /b 1
 )
 "%CLAUDE_EXE%" %*

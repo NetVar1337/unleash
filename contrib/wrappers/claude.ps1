@@ -14,15 +14,55 @@ if (Test-Path $preload) {
     }
 }
 
-$candidates = @(
-    "$env:APPDATA\npm\node_modules\@anthropic-ai\claude-code\node_modules\@anthropic-ai\claude-code-win32-x64\claude.exe"
-    "$env:APPDATA\npm\node_modules\@anthropic-ai\claude-code\node_modules\@anthropic-ai\claude-code-win32-arm64\claude.exe"
-    "$env:APPDATA\npm\node_modules\@anthropic-ai\claude-code\bin\claude.exe"
-)
+# --- Build candidate list: native installer (newest version first), scoop, winget, npm ---
+$candidates = [System.Collections.Generic.List[string]]::new()
+
+# Native installer: versioned directories under ~/.local/share/claude/versions/
+$nativeVersionsDir = Join-Path $env:USERPROFILE '.local\share\claude\versions'
+if (Test-Path $nativeVersionsDir) {
+    Get-ChildItem -Path $nativeVersionsDir -Directory |
+        Sort-Object Name -Descending |
+        ForEach-Object {
+            $exe = Join-Path $_.FullName 'claude.exe'
+            if (Test-Path $exe) { $candidates.Add($exe) }
+        }
+}
+
+# Native installer: versioned directories under LOCALAPPDATA\Programs\claude\versions\
+$localVersionsDir = Join-Path $env:LOCALAPPDATA 'Programs\claude\versions'
+if (Test-Path $localVersionsDir) {
+    Get-ChildItem -Path $localVersionsDir -Directory |
+        Sort-Object Name -Descending |
+        ForEach-Object {
+            $exe = Join-Path $_.FullName 'claude.exe'
+            if (Test-Path $exe) { $candidates.Add($exe) }
+        }
+}
+
+# Native installer: flat LOCALAPPDATA path
+$candidates.Add((Join-Path $env:LOCALAPPDATA 'Programs\claude-code\claude.exe'))
+
+# Scoop
+$candidates.Add((Join-Path $env:USERPROFILE 'scoop\apps\claude-code\current\claude.exe'))
+
+# WinGet
+$wingetBase = Join-Path $env:LOCALAPPDATA 'Microsoft\WinGet\Packages'
+if (Test-Path $wingetBase) {
+    Get-ChildItem -Path $wingetBase -Directory -Filter '*claude*' |
+        ForEach-Object {
+            $exe = Join-Path $_.FullName 'claude.exe'
+            if (Test-Path $exe) { $candidates.Add($exe) }
+        }
+}
+
+# npm global (fallback)
+$candidates.Add("$env:APPDATA\npm\node_modules\@anthropic-ai\claude-code\node_modules\@anthropic-ai\claude-code-win32-x64\claude.exe")
+$candidates.Add("$env:APPDATA\npm\node_modules\@anthropic-ai\claude-code\node_modules\@anthropic-ai\claude-code-win32-arm64\claude.exe")
+$candidates.Add("$env:APPDATA\npm\node_modules\@anthropic-ai\claude-code\bin\claude.exe")
 
 $exe = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
 if (-not $exe) {
-    Write-Error "vpcc wrapper: no Claude Code SEA binary found under $env:APPDATA\npm"
+    Write-Error "vpcc wrapper: no Claude Code binary found — checked native installer, scoop, winget, and npm paths"
     exit 1
 }
 & $exe @args

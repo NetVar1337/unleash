@@ -1,10 +1,10 @@
 {
   "id": "js-session-memory-on",
   "disabled": true,
-  "description": "DISABLED — session-memory recap injected '※ recap:' at every session start, which is noisy and redundant with lorekeeper. Default false kept.",
+  "description": "DISABLED — tengu_session_memory gate removed from v2.1.132 binary; no longer patchable",
   "type": "js_replace",
   "validate_js": true,
-  "scan_signatures": true,
+  "scan_signatures": false,
   "patches": [
     {
       "search_regex": "k\\$\\(\"tengu_session_memory\",!1\\)",

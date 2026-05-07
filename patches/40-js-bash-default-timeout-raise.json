@@ -5,17 +5,16 @@
   "validate_js": true,
   "patches": [
     {
-      "search_regex": "(BASH_DEFAULT_TIMEOUT_MS;if\\(\\$\\)\\{let q=parseInt\\(\\$,10\\);if\\(!isNaN\\(q\\)&&q>0\\)return q\\}return )120000",
+      "search_regex": "(BASH_DEFAULT_TIMEOUT_MS;if\\(_\\)\\{let q=parseInt\\(_,10\\);if\\(!isNaN\\(q\\)&&q>0\\)return q\\}return )120000",
       "replace": "\\g<1>3600000",
-      "applied_marker": "return 3600000}function To$",
-      "description": "Bash tool calls are killed at 120 s by default; many legitimate long-running scans, builds, compiles, test suites, or RE",
+      "applied_marker": "return 3600000}",
+      "description": "Bash tool calls are killed at 120 s by default; raise to 3600 s for long-running tasks",
       "required": false,
       "count": 0
     }
   ],
   "scan_signatures": true,
   "anchor_strings": [
-    "&&q>0)return q}return )120000",
-    "{let q=parseInt"
+    "BASH_DEFAULT_TIMEOUT_MS;if(_){let q=parseInt(_,10);if(!isNaN(q)&&q>0)return q}return 120000"
   ]
 }
