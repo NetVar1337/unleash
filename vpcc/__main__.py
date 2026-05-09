@@ -571,8 +571,14 @@ def patch_bun_sea_inplace(binary: Path, patches: list) -> dict:
         tmp_bin.write_bytes(bytes(data))
         tmp_bin.chmod(mode)
 
+        # macOS: re-sign with ad-hoc signature after patching (code signature
+        # invalidated by byte changes; unsigned Mach-O gets SIGKILL on arm64).
+        if sys.platform == "darwin":
+            subprocess.run(["codesign", "--force", "--sign", "-", str(tmp_bin)],
+                           capture_output=True, timeout=30)
+
         r = subprocess.run([str(tmp_bin), "--version"],
-                           capture_output=True, text=True, timeout=20)
+                           capture_output=True, text=True, timeout=60)
         out = (r.stdout or "") + (r.stderr or "")
         if r.returncode != 0 or "Claude Code" not in out:
             tmp_bin.unlink(missing_ok=True)

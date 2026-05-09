@@ -5,16 +5,18 @@
   "validate_js": true,
   "patches": [
     {
-      "search_regex": "(BASH_DEFAULT_TIMEOUT_MS;if\\(_\\)\\{let q=parseInt\\(_,10\\);if\\(!isNaN\\(q\\)&&q>0\\)return q\\}return )120000",
-      "replace": "\\g<1>3600000",
-      "applied_marker": "return 3600000}",
-      "description": "Bash tool calls are killed at 120 s by default; raise to 3600 s for long-running tasks",
+      "search_regex": "(BASH_DEFAULT_TIMEOUT_MS;if\\(_\\)\\{let q=parseInt\\(_,10\\);if\\(!isNaN\\(q\\)&&q>0\\)return q\\}return )120000\\}",
+      "replace": "\\g<1>3600e3}",
+      "applied_marker": "return 3600e3}",
+      "description": "Bash tool calls are killed at 120 s by default; raise to 3600 s for long-running tasks. Uses 3600e3 (scientific notation) for same byte length as 120000}.",
       "required": false,
       "count": 0
     }
   ],
   "scan_signatures": true,
   "anchor_strings": [
-    "BASH_DEFAULT_TIMEOUT_MS;if(_){let q=parseInt(_,10);if(!isNaN(q)&&q>0)return q}return 120000"
-  ]
+    "BASH_DEFAULT_TIMEOUT_MS",
+    "return q}return "
+  ],
+  "version_last_tested": "2.1.132"
 }
