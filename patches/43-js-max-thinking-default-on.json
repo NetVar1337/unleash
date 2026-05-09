@@ -1,19 +1,12 @@
 {
   "id": "js-max-thinking-default-on",
-  "description": "Force Z7H() (isExtendedThinkingEnabled) to always return true, ignoring MAX_THINKING_TOKENS=0 and alwaysThinkingEnabled=false.",
+  "description": "RETIRED — extended thinking is now controlled by Claude's smart routing. Forcing it always-on caused 5-10 minute response times on every request, including trivial ones. Users who want always-on thinking can set CLAUDE_CODE_ALWAYS_ENABLE_EFFORT=1 manually.",
   "type": "js_replace",
-  "validate_js": true,
-  "patches": [
-    {
-      "search_regex": "function ([A-Za-z_$][\\w$]*)\\(\\)\\{if\\(process\\.env\\.MAX_THINKING_TOKENS\\)return parseInt\\(process\\.env\\.MAX_THINKING_TOKENS,10\\)>0;let\\{settings:([A-Za-z_$][\\w$]*)\\}=([A-Za-z_$][\\w$]*)\\(\\);if\\(\\2\\.alwaysThinkingEnabled===!1\\)return!1;return!0\\}",
-      "replace": "function \\1(){return!0;if(process.env.MAX_THINKING_TOKENS)return parseInt(process.env.MAX_THINKING_TOKENS,10)>0;let{settings:\\2}=\\3();if(\\2.alwaysThinkingEnabled===!1)return!1;return!0}",
-      "applied_marker": "(){return!0;if(process.env.MAX_THINKING_TOKENS)",
-      "description": "Extended thinking on Opus/Sonnet 4.5+ dramatically improves reasoning quality for security research and complex code tas",
-      "required": false,
-      "count": 0
-    }
-  ],
-  "scan_signatures": true,
+  "retired": true,
+  "retired_reason": "Forces extended thinking on every request regardless of complexity, causing multi-minute delays on simple tasks. Smart routing (CLAUDE_CODE_SMART_ROUTING=1) already enables thinking when needed.",
+  "validate_js": false,
+  "patches": [],
+  "scan_signatures": false,
   "anchor_strings": [
     "MAX_THINKING_TOKENS",
     "alwaysThinkingEnabled"
