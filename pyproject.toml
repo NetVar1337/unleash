@@ -4,13 +4,19 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name            = "vpcc"
-version         = "2.1.120"
-description     = "Void Patcher for Claude Code — 96 regex-signature patches for cli.js + Bun SEA (active-bundle + VFS-aware), auto-heal through every CC update"
+version         = "2.2.0"
+description     = "vpcc — unleash Claude Code. 102 binary patches for Bun SEA: zero permission prompts, zero refusals, zero telemetry, 42 feature gates unlocked. Cross-OS auto-heal, sub-second drift detection, no CC overhead."
 readme          = "README.md"
 requires-python = ">=3.9"
 license         = { text = "GPL-3.0-or-later" }
 authors         = [{ name = "VoidChecksum" }]
-keywords        = ["claude-code", "patching", "cli", "reverse-engineering"]
+keywords        = [
+    "claude-code", "claude", "anthropic",
+    "patching", "binary-patching", "bun-sea",
+    "reverse-engineering", "cli",
+    "permission-bypass", "telemetry-removal",
+    "feature-unlock", "operator-authorization",
+]
 classifiers = [
     "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
     "Operating System :: OS Independent",

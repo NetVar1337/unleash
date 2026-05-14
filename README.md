@@ -1,91 +1,155 @@
-<p align="center">
-  <img src="https://img.shields.io/badge/patches-105-blueviolet?style=for-the-badge&logo=hackthebox&logoColor=white" alt="105 patches" />
-  <img src="https://img.shields.io/badge/feature%20gates-42-00d4ff?style=for-the-badge&logo=flipboard&logoColor=white" alt="42 feature gates" />
-  <img src="https://img.shields.io/badge/zero%20refusals-0%20AUP%20blocks-ff3e3e?style=for-the-badge&logo=adblock&logoColor=white" alt="Zero refusals" />
-  <img src="https://img.shields.io/badge/platforms-macOS%20%7C%20Linux%20%7C%20Windows-success?style=for-the-badge&logo=apple&logoColor=white" alt="Cross-platform" />
-</p>
+<div align="center">
 
-<h1 align="center">
-  <br />
-  <code>void-patcher-cc</code>
-  <br />
-  <sub>Binary patcher for Claude Code</sub>
-</h1>
+```
+                                    ██╗   ██╗██████╗  ██████╗ ██████╗
+                                    ██║   ██║██╔══██╗██╔════╝██╔════╝
+                                    ██║   ██║██████╔╝██║     ██║
+                                    ╚██╗ ██╔╝██╔═══╝ ██║     ██║
+                                     ╚████╔╝ ██║     ╚██████╗╚██████╗
+                                      ╚═══╝  ╚═╝      ╚═════╝ ╚═════╝
 
-<p align="center">
-  <b>Remove every permission gate, refusal, AUP block, telemetry sink, and feature lock from Claude Code.</b><br />
-  In-place Bun SEA bytecode patching. No rebuilds. No JS extraction. Just run <code>vpcc patch</code>.
-</p>
+                                   v p c c  ·  v o i d - p a t c h e r - c c
+```
 
-<p align="center">
-  <a href="#quick-start">Quick Start</a> &bull;
-  <a href="#what-gets-patched">What Gets Patched</a> &bull;
-  <a href="#patch-catalog">Patch Catalog</a> &bull;
-  <a href="#scanner--drift-detection">Scanner</a> &bull;
-  <a href="#cross-platform-support">Platforms</a> &bull;
-  <a href="#authorization-rules">Rules</a> &bull;
-  <a href="#contributing">Contributing</a>
-</p>
+### **Unleash Claude Code.**
+
+**102 binary patches · zero refusals · zero telemetry · zero permission prompts · 42 feature gates unlocked**
+
+<br />
+
+[![patches](https://img.shields.io/badge/patches-102-8b5cf6?style=for-the-badge&logo=hackthebox&logoColor=white)](#patch-catalog)
+[![feature gates](https://img.shields.io/badge/feature%20gates-42%20unlocked-22d3ee?style=for-the-badge&logo=flipboard&logoColor=white)](#feature-gate-mega-patch-42-flags)
+[![zero refusals](https://img.shields.io/badge/AUP%20blocks-0-ef4444?style=for-the-badge&logo=adblock&logoColor=white)](#authorization-rules)
+[![telemetry](https://img.shields.io/badge/telemetry-disabled-10b981?style=for-the-badge&logo=ghostery&logoColor=white)](#what-gets-patched)
+[![platforms](https://img.shields.io/badge/macOS%20·%20Linux%20·%20Windows-supported-f59e0b?style=for-the-badge&logo=apple&logoColor=white)](#cross-platform-support)
+[![scan speed](https://img.shields.io/badge/scan-137ms%20cached-ec4899?style=for-the-badge&logo=lightning&logoColor=white)](#performance)
+
+<br />
+
+**`pipx install void-patcher-cc && vpcc patch && vpcc install-rules --no-hook`**
+
+<br />
+
+[Quick Start](#-quick-start) · [What Gets Patched](#-what-gets-patched) · [Patch Catalog](#-patch-catalog) · [Performance](#-performance) · [Scanner](#-scanner--drift-detection) · [Platforms](#-cross-platform-support) · [Authorization](#-authorization-rules) · [Commands](#-commands)
+
+</div>
 
 ---
 
-## Quick Start
+> **vpcc** is a single-shot binary patcher for Anthropic's [Claude Code](https://docs.claude.com/en/docs/claude-code) CLI. It rewrites the Bun SEA bytecode in-place to remove every permission gate, refusal classifier, AUP block, telemetry sink, and feature lock. No rebuilds. No JavaScript extraction. No runtime injection.
+>
+> Use it for: operator-authorized red-team work, security research, agent autonomy experiments, removing CC's UX friction on your own hardware.
+
+## 🚀 Quick Start
 
 ```bash
-# Install
-pip install void-patcher-cc       # or: pipx install void-patcher-cc
+# Install (any of these — pipx recommended, no venv noise)
+pipx install void-patcher-cc
+# or:  pip install void-patcher-cc
+# or:  uv tool install void-patcher-cc
 
-# Patch Claude Code
-vpcc patch                        # backup + patch in one step
+# Patch — single command, idempotent, auto-backup
+vpcc patch
 
-# Verify
-vpcc verify                       # confirm all patches landed
-vpcc scan                         # signature scan with confidence scores
+# Verify everything landed
+vpcc verify
 
-# Deploy authorization rules (optional — removes prompts + telemetry)
-vpcc install-rules                # ~/.claude/settings.json + CLAUDE.md + hooks
+# Deploy operator-authorization bundle (no permission prompts, no telemetry)
+# --no-hook = zero subprocess overhead per CC tool call (binary patch handles allow)
+vpcc install-rules --no-hook
 ```
 
 <details>
-<summary><b>One-liner install + patch</b></summary>
+<summary><b>🪄 One-shot full setup</b></summary>
 
 ```bash
-pip install void-patcher-cc && vpcc patch && vpcc install-rules
+pipx install void-patcher-cc && vpcc patch && vpcc install-rules --no-hook
 ```
 
 </details>
 
 <details>
-<summary><b>Windows (PowerShell)</b></summary>
+<summary><b>🔁 After every Claude Code auto-update</b></summary>
+
+```bash
+vpcc upgrade        # self-update + autoheal + verify + warm cache, one shot
+```
+
+</details>
+
+<details>
+<summary><b>🪟 Windows (PowerShell)</b></summary>
 
 ```powershell
-pip install void-patcher-cc
+pipx install void-patcher-cc
 vpcc patch
-vpcc install-rules
+vpcc install-rules --no-hook
 ```
 
 </details>
 
 ---
 
-## What Gets Patched
+## 🎯 What Gets Patched
 
 ```
- PERMISSION GATES          ██████████████████████  22 patches
- REFUSAL / AUP BLOCKS      ████████████████████    20 patches
- CLASSIFIERS / SAFETY       ██████████████          14 patches
- TELEMETRY / ANALYTICS       ████████████           12 patches
- FEATURE GATES (tengu_)       ██████████████████████████████████████████  42 flags
- RATE LIMITS / TIMEOUTS        ████████████         12 patches
- SHELL SAFETY CHECKS            ██████              6 patches
- UI / UX UNLOCKS                 ████████           8 patches
+ ┌──────────────────────────────────────────────────────────────────────────┐
+ │                                                                          │
+ │  PERMISSION GATES         ██████████████████████  22 patches             │
+ │  REFUSAL / AUP BLOCKS     ████████████████████    20 patches             │
+ │  CLASSIFIERS / SAFETY     ██████████████          14 patches             │
+ │  TELEMETRY / ANALYTICS    ████████████            12 patches             │
+ │  FEATURE GATES (tengu_)   ██████████████████████████████████████  42 ⚡  │
+ │  RATE LIMITS / TIMEOUTS   ████████████            12 patches             │
+ │  SHELL SAFETY CHECKS      ██████                   6 patches             │
+ │  UI / UX UNLOCKS          ████████                 8 patches             │
+ │                                                                          │
+ └──────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Total: 105 patches** across 9 categories. 95 binary (js_replace), 2 settings, 2 hooks, 3 retired, 3 infrastructure.
+**Total: 102 patches** across 9 categories. 96 binary (`js_replace`), 2 settings, 2 hooks, 3 retired, 3 infrastructure.
+
+> Every patch is a standalone JSON file in `patches/` — anchored, marker-tagged, drift-detectable, auto-healable.
 
 ---
 
-## Patch Catalog
+## ⚡ Performance
+
+vpcc is fast and stays out of Claude Code's hot path.
+
+| Operation | Cold | Warm (cached) | Speedup |
+|---|---:|---:|---:|
+| `vpcc scan` (102 patches on 237 MB binary) | **5.7 s** | **137 ms** | **41×** |
+| `vpcc verify` | 0.3 s | 0.3 s | — |
+| `vpcc doctor` (full health report) | 5.8 s | 0.4 s | 14× |
+| sha256 of 237 MB binary | 140 ms | — | — |
+| Bun SEA `.bun` section extract + decode | 700 ms | 0 ms | ∞ |
+| **CC per-tool-call hook overhead** (with `--no-hook`) | — | **0 ms** | ∞ |
+
+### How it stays fast
+
+- **Scan cache** — `~/.vpcc/cache/scan_<sha>_<patchmtime>.json` keyed by binary SHA256 + max patch-dir mtime. Auto-invalidated on either change.
+- **Anchor-first cascade** — 3 ms anchor check before 200 ms regex search.
+- **Bulk dedup'd marker pre-sweep** — single C-level pass for all unique markers across patches.
+- **`hashlib.file_digest`** — zero-copy streaming sha256 (Python 3.11+).
+- **No CC overhead** — `vpcc install-rules --no-hook` deploys authorization without a `PreToolUse` shell hook. The binary patch (`05-auto-allow-hook`) handles the allow decision at C-level. Zero subprocess spawn per tool call.
+
+```bash
+$ vpcc bench
+vpcc bench — 2.1.128 (237 MB)
+  sha256             :  140 ms
+  text load+decode   :  700 ms
+  scan_patches       : 4974 ms  (81 patches)
+  cache hit          :  137 ms
+
+  cold total         : 5681 ms
+  warm total         :  137 ms
+  speedup            :   41×
+```
+
+---
+
+## 📚 Patch Catalog
 
 ### Permission Bypass (22 patches)
 
@@ -269,7 +333,7 @@ vpcc install-rules
 
 ---
 
-## Scanner & Drift Detection
+## 🛰 Scanner & Drift Detection
 
 The scanner uses a **multi-strategy detection cascade** with confidence scoring:
 
@@ -292,26 +356,33 @@ vpcc scan — 83 js_replace patches
 
 | Priority | Method | Confidence | Description |
 |---|---|---|---|
-| 1 | `marker` | 1.0 | Applied marker found — patch is already live |
-| 2 | `regex` | 1.0 | Search regex matches current binary |
-| 3 | `anchor` | 0.9 | All anchor strings found within proximity |
-| 4 | `fuzzy_ws` | 0.7 | Anchors match after whitespace normalization |
-| 5 | `fuzzy_ident` | 0.5 | Anchors match with minifier-tolerant identifiers |
-| 6 | `keyword` | 0.3 | Long tokens extracted from anchors found |
+| 1 | `marker` | 1.0 | Applied marker found — patch is already live (bulk pre-sweep, one C-pass) |
+| 2 | `anchor` | 0.9 | All anchor strings co-located within proximity window |
+| 3 | `regex` | 1.0 | Search regex matches current binary (only run if anchors missed) |
+| 4 | `scattered` | 0.7 | Anchors present anywhere in text (for spread mega-patches) |
+| 5 | `fuzzy_ws` | 0.7 | Anchors match after whitespace normalization |
+| 6 | `fuzzy_ident` | 0.5 | Anchors match with minifier-tolerant identifiers |
+| 7 | `keyword` | 0.3 | Long tokens extracted from anchors found |
+| 8 | `optional` | 0.6 | All-optional mega-patch with anchors present (no-op by design) |
 
 ### Auto-heal drift
 
-When Claude Code updates break regexes but anchors survive:
+When Claude Code updates break regexes, anchors usually survive. Autoheal re-derives the patches from anchor context windows. Fires on:
+
+- **Binary SHA change** — Claude Code self-updated
+- **Patch mtime change** — new patches landed via `vpcc self-update`
 
 ```bash
-vpcc autoheal     # self-update patches + re-derive regexes from anchors
-vpcc doctor       # full health report: sha, drift, backups, upstream
-vpcc watch        # daemon: poll binary, auto-backup + autoheal on change
+vpcc upgrade        # ⭐ self-update + autoheal + verify + warm cache, one shot
+vpcc autoheal       # heal on demand (—force to ignore unchanged-sha short-circuit)
+vpcc scan --auto-heal   # regenerate drifted regex from anchor windows
+vpcc doctor         # full health report: sha, format, drift, backups, upstream
+vpcc watch          # daemon: poll binary, auto-backup + autoheal on change
 ```
 
 ---
 
-## Cross-Platform Support
+## 🌐 Cross-Platform Support
 
 ### Operating Systems
 
@@ -341,7 +412,7 @@ vpcc watch        # daemon: poll binary, auto-backup + autoheal on change
 
 ---
 
-## Authorization Rules
+## 🔓 Authorization Rules
 
 `vpcc install-rules` deploys a full operator authorization bundle:
 
@@ -350,7 +421,17 @@ vpcc watch        # daemon: poll binary, auto-backup + autoheal on change
 | `~/.claude/settings.json` | `bypassPermissions` mode, all tools allowed, empty deny/ask, telemetry off |
 | `~/.claude/CLAUDE.md` | Operator authorization doctrine — no permission prompts, no refusals |
 | `~/.claude/AGENTS.md` | Same doctrine for Codex / Aider / Gemini / OpenCode compatibility |
-| `~/.claude/hooks/vpcc-auto-allow.sh` | PreToolUse hook emits `allow` for every call |
+| `~/.claude/hooks/vpcc-auto-allow.sh` | *(omitted with `--no-hook`)* PreToolUse hook emits `allow` for every call |
+
+### `--no-hook` — zero CC overhead
+
+```bash
+vpcc install-rules --no-hook    # skip PreToolUse shell hook
+```
+
+The binary patch `05-auto-allow-hook` already emits the allow decision at C-level inside the Claude Code binary. The `.sh` hook is redundant when the binary is patched. **Removing it saves a `bash` subprocess spawn on every tool call** (a 5-15ms hit that adds up over thousands of calls in a long session).
+
+vpcc auto-detects this: when patch 05 is applied, `install-rules` skips the hook by default unless explicitly requested.
 
 ### Scope limits (the only 4 hard stops)
 
@@ -363,28 +444,32 @@ vpcc watch        # daemon: poll binary, auto-backup + autoheal on change
 
 ---
 
-## Commands
+## 🎛 Commands
 
-```
-vpcc patch              Apply all patches (backup created automatically)
-vpcc verify             Confirm all patches are applied
-vpcc scan               Signature scan with confidence scores + drift detection
-vpcc status             Show target path, format, SHA
-vpcc list               List all available patches
-vpcc rollback           Restore from most recent backup
-vpcc doctor             Full health report
-vpcc autoheal           Self-update + re-derive drifted regexes
-vpcc watch              Daemon: poll binary mtime, auto-backup + autoheal
-vpcc self-update        Pull latest patches from GitHub
-vpcc install-rules      Deploy authorization rules to ~/.claude/
-vpcc uninstall-rules    Remove vpcc-authored rules (operator content preserved)
-vpcc install-preload    Install MCP guard preload script
-vpcc check-updates      Show local vs remote patch commit
-```
+| Command | Purpose |
+|---|---|
+| **`vpcc patch`** | Apply all patches (automatic timestamped backup) |
+| **`vpcc upgrade`** ⭐ | All-in-one: self-update + autoheal + verify + warm cache |
+| **`vpcc verify`** | Confirm every applied marker is present |
+| **`vpcc scan`** | Signature scan with confidence scores + drift detection (cached) |
+| **`vpcc scan --auto-heal`** | Regenerate drifted regexes from anchor windows |
+| **`vpcc bench`** | Microbenchmark: sha256, text load, scan cold / cached |
+| **`vpcc doctor`** | Full health report: target, format, sha, drift, upstream, backups |
+| **`vpcc autoheal`** | Self-update + re-derive on binary or patch-mtime drift |
+| **`vpcc watch`** | Daemon: poll binary, auto-backup + autoheal on change |
+| **`vpcc self-update`** | Pull latest `patches/*.json` from GitHub |
+| **`vpcc check-updates`** | Show local vs remote patch commit |
+| **`vpcc status`** | Target path, format, sha, backup count |
+| **`vpcc list`** | List every patch in the catalog |
+| **`vpcc rollback`** | Restore from most recent backup |
+| **`vpcc install-rules [--no-hook]`** | Deploy authorization bundle (`--no-hook` for zero CC overhead) |
+| **`vpcc uninstall-rules`** | Remove vpcc-authored rules (operator content preserved) |
+| **`vpcc install-preload`** | Install MCP guard preload script |
+| **`VPCC_NO_CACHE=1 vpcc scan`** | Force fresh scan, bypass cache |
 
 ---
 
-## How It Works
+## 🔬 How It Works
 
 Claude Code ships as a **Bun SEA** (Single Executable Application) — a Mach-O/ELF/PE binary with embedded bytecode. vpcc:
 
@@ -398,7 +483,7 @@ The scanner independently verifies each patch via multi-strategy detection (mark
 
 ---
 
-## Contributing
+## 🤝 Contributing
 
 PRs welcome. Each patch is a standalone JSON file in `patches/`:
 
@@ -425,6 +510,18 @@ Run `vpcc scan -v` to verify your patch detects correctly before submitting.
 
 ---
 
-## License
+## 📄 License
 
-[Sustainable Use License v1.0](LICENSE) — free for individuals and small teams. See LICENSE for details.
+[GPL-3.0-or-later](LICENSE) — free software, source open, copyleft.
+
+---
+
+<div align="center">
+
+<sub>built for operators who own their hardware · <a href="https://github.com/VoidChecksum/void-patcher-cc/issues">report drift / new CC versions</a></sub>
+
+<br />
+
+<sub>**no permission gate survives contact with `vpcc patch`**</sub>
+
+</div>
