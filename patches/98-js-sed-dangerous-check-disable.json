@@ -6,7 +6,7 @@
   "scan_signatures": true,
   "patches": [
     {
-      "search_regex": "if\\(!dUH\\(O,\\{allowFileWrites:A\\}\\)\\)",
+      "search_regex": "[A-Za-z_$][\\w$]*===\"acceptEdits\";[A-Za-z_$][\\w$]*\\(![A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*,\\{allowFileWrites:[A-Za-z_$][\\w$]*\\}\\)\\)return\\{behavior:\"[A-Za-z_$][\\w$]*\",message:\"[A-Za-z_$][\\w$]*\\ command\\ requires\\ approval\\ \\(contains\\ potentially\\ dangerous\\ operations\\)\",decisionReason:\\{type:\"other\",reason:\"[A-Za-z_$][\\w$]*\\ command\\ contains\\ operations\\ that\\ [A-Za-z_$][\\w$]*",
       "replace": "if(!dUH(O,{allowFileWrites:1}))",
       "applied_marker": "allowFileWrites:1}",
       "description": "Force allowFileWrites=true for sed safety check",

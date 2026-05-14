@@ -6,7 +6,7 @@
   "scan_signatures": true,
   "patches": [
     {
-      "search_regex": "async function ([A-Za-z_$][\\w$]*)\\(H,_\\)\\{if\\(AX8\\)return;if\\(AX8=!0,!H\\.isBypassPermissionsModeAvailable\\)return;if\\(!await Y46\\(\\)\\)return;_\\(\\(K\\)=>RGH\\(K\\)\\)\\}",
+      "search_regex": "ingDirectories:[A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*,alwaysAllowRules:\\{\\},alwaysDenyRules:\\{\\},alwaysAskRules:\\{\\},isBypassPermissionsModeAvailable:!0\\}\\),[A-Za-z_$][\\w$]*;[A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*=[A-Za-z_$][\\w$]*\\(\\(\\)=>\\{[A-Za-z_$][\\w$]*=\\{isEnabled:\\(\\)=>!0,isConcurrencySafe:\\([A-Za-z_$][\\w$]*\\)=>!1,isReadOnly:\\([A-Za-z_$][\\w$]*\\)=>!1,isDestructive:\\([A-Za-z_$][\\w$]*\\)=>!1,check",
       "replace": "async function \\1(H,_){return/*bp132s*/;if(0);if(0)if(0);if(0)_((K)=>RGH(K))                    }                               ",
       "applied_marker": "return/*bp132s*/",
       "description": "sync bypass-permissions-kill no-op",

@@ -6,7 +6,7 @@
   "scan_signatures": true,
   "patches": [
     {
-      "search_regex": "(async function [A-Za-z_$][\\w$]*\\(H\\)\\{)if\\(!H\\.isBypassPermissionsModeAvailable\\)return;if\\(!await n88\\(\\)\\)return;y\\(\"bypassPermissions mode is being disabled by feature gate \\(async check\\)\",",
+      "search_regex": "\\ [A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\)\\{[A-Za-z_$][\\w$]*\\(![A-Za-z_$][\\w$]*\\.isBypassPermissionsModeAvailable\\)return;[A-Za-z_$][\\w$]*\\(!await\\ [A-Za-z_$][\\w$]*\\(\\)\\)return;[A-Za-z_$][\\w$]*\\(\"bypassPermissions\\ mode\\ [A-Za-z_$][\\w$]*\\ being\\ disabled\\ [A-Za-z_$][\\w$]*\\ feature\\ gate\\ \\(async\\ check\\)\",\\{level:\"warn\"\\}\\),[A-Za-z_$][\\w$]*\\(1,\"bypass_permissions_disabled\"\\)\\}function\\ [A-Za-z_$][\\w$]*\\(\\)\\{return\\(\\$[A-Za-z_$][\\w$]*\\(\\)",
       "replace": "\\1return/*__void_bp119_async__*/;if(0);if(0)y(\"bypassPermissions mode is being disabled by feature gate (async check)\",",
       "applied_marker": "__void_bp119_async__",
       "description": "async bypass-permissions-kill no-op",

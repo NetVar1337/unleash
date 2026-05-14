@@ -5,7 +5,7 @@
   "validate_js": true,
   "patches": [
     {
-      "search_regex": "[A-Za-z_$][\\w$]*\\ function\\ [A-Za-z_$][\\w$]*\\(\\)\\{[A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*=[A-Za-z_$][\\w$]*\\(\\);[A-Za-z_$][\\w$]*\\(![A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\)\\)return\\ null;[A-Za-z_$][\\w$]*\\(![A-Za-z_$][\\w$]*\\(\\)\\)return\\{[A-Za-z_$][\\w$]*:\"chrome\\-requires\\-subscription\",[A-Za-z_$][\\w$]*:[A-Za-z_$][\\w$]*\\$\\.createElement\\([A-Za-z_$][\\w$]*,\\{color:\"error\"\\},\"Claude\\ [A-Za-z_$][\\w$]*\\ Chrome\\ [A-Za-z_$][\\w$]*",
+      "search_regex": "\"chrome\\-extension\",compute:async\\(\\)=>\\{[A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*=[A-Za-z_$][\\w$]*\\(\\);[A-Za-z_$][\\w$]*\\(!\\$[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\)\\)return\\ null;[A-Za-z_$][\\w$]*\\(![A-Za-z_$][\\w$]*\\(\\)\\)return\\{[A-Za-z_$][\\w$]*:\"chrome\\-requires\\-subscription\",[A-Za-z_$][\\w$]*:[A-Za-z_$][\\w$]*\\.createElement\\([A-Za-z_$][\\w$]*,\\{color:\"error\"\\},\"Claude\\ [A-Za-z_$][\\w$]*\\ Chrome\\ requires\\ [A-Za-z_$][\\w$]*\\ claude\\.[A-Za-z_$][\\w$]*\\ subscription\"\\),priority:\"imme",
       "replace": "if(!1  )return{key:\"chrome-requires-subscription\"",
       "applied_marker": "if(!1  )return{key:\"chrome-requires-subscription\"",
       "description": "`--chrome` mode refuses to start for non-Claude.ai-subscribed logins; operator uses Max plan via alternate auth. Gate re",

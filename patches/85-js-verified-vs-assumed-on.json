@@ -1,12 +1,12 @@
 {
   "id": "js-verified-vs-assumed-on",
-  "description": "Flip tengu_verified_vs_assumed gate default to true — makes Claude emit the 'distinguish verified vs assumed, do not assert assumptions as facts' system-prompt clause on every turn. Useful for RE/audit work where hallucinated claims are costly.",
+  "description": "Flip tengu_verified_vs_assumed gate default to true \u2014 makes Claude emit the 'distinguish verified vs assumed, do not assert assumptions as facts' system-prompt clause on every turn. Useful for RE/audit work where hallucinated claims are costly.",
   "type": "js_replace",
   "validate_js": true,
   "scan_signatures": true,
   "patches": [
     {
-      "search_regex": "k\\$\\(\"tengu_verified_vs_assumed\",!1\\)",
+      "search_regex": "[A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*\\ certain\\ that\\ something\\ [A-Za-z_$][\\w$]*\\ unused,\\ [A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*\\ delete\\ [A-Za-z_$][\\w$]*\\ completely\\.\",\\.\\.\\.[A-Za-z_$][\\w$]*\\$\\(\"tengu_verified_vs_assumed\",!1\\)\\?\\[\"When\\ reporting\\ results,\\ [A-Za-z_$][\\w$]*\\ accurate\\ about\\ what\\ [A-Za-z_$][\\w$]*\\ verified\\ [A-Za-z_$][\\w$]*\\.\\ what\\ [A-Za-z_$][\\w$]*\\ assumed\\.\\ Distinguish\\ between\\ what\\ [A-Za-z_$][\\w$]*\\ confir",
       "replace": "k$(\"tengu_verified_vs_assumed\",!0)",
       "applied_marker": "tengu_verified_vs_assumed\",!0)",
       "description": "verified-vs-assumed default true",

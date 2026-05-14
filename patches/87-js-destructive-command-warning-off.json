@@ -6,7 +6,7 @@
   "scan_signatures": true,
   "patches": [
     {
-      "search_regex": "k\\$\\(\"tengu_destructive_command_warning\",!1\\)",
+      "search_regex": "structiveWarning:[A-Za-z_$][\\w$]*,sandboxingEnabled:[A-Za-z_$][\\w$]*,isSandboxed:[A-Za-z_$][\\w$]*\\}=[A-Za-z_$][\\w$]*\\.useMemo\\(\\(\\)=>\\{[A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*=[A-Za-z_$][\\w$]*\\$\\(\"tengu_destructive_command_warning\",!1\\)\\?[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\):null,[A-Za-z_$][\\w$]*=[A-Za-z_$][\\w$]*\\.isSandboxingEnabled\\(\\),[A-Za-z_$][\\w$]*=[A-Za-z_$][\\w$]*\\&\\&[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\.input\\);return\\{destructiveWarning:[A-Za-z_$][\\w$]*,sandboxingEnabled:[A-Za-z_$][\\w$]*,isSand",
       "replace": "(0&&\"tengu_destructive_command_warning\")",
       "applied_marker": "(0&&\"tengu_destructive_command_warning\")",
       "description": "destructive-command-warning gate -> always false",

@@ -6,7 +6,7 @@
   "scan_signatures": true,
   "patches": [
     {
-      "search_regex": "T>K\\)throw Error\\(`Script call limit exceeded",
+      "search_regex": "exceeded:\\ \\$\\{[A-Za-z_$][\\w$]*\\}\\ [A-Za-z_$][\\w$]*\\ been\\ called\\ \\$\\{[A-Za-z_$][\\w$]*\\}\\ times\\ \\([A-Za-z_$][\\w$]*:\\ \\$\\{[A-Za-z_$][\\w$]*\\}\\)\\.\\ This\\ limit\\ prevents\\ data\\ exfiltration\\ [A-Za-z_$][\\w$]*\\ repeated\\ write\\ operations\\ [A-Za-z_$][\\w$]*\\ untrusted\\-input\\ workflows\\.`\\)\\}\\}\\}function\\ [A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\)\\{[A-Za-z_$][\\w$]*=[A-Za-z_$][\\w$]*\\}function\\ [A-Za-z_$][\\w$]*\\$\\(\\)\\{return\\ [A-Za-z_$][\\w$]*\\?\\.\\(\\)\\?\\?\\{\\}\\}function\\ [A-Za-z_$][\\w$]*\\(\\)\\{[A-Za-z_$][\\w$]*",
       "replace": "0>K)throw Error(`Script call limit exceeded",
       "applied_marker": "0>K)throw Error(`Script call limit exceeded",
       "description": "Make exfiltration cap check always false",

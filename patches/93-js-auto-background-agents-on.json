@@ -6,7 +6,7 @@
   "scan_signatures": true,
   "patches": [
     {
-      "search_regex": "k\\$\\(\"tengu_auto_background_agents\",!1\\)",
+      "search_regex": "[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\(\\),1\\)\\}\\);function\\ [A-Za-z_$][\\w$]*\\(\\)\\{[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\(process\\.[A-Za-z_$][\\w$]*\\.CLAUDE_AUTO_BACKGROUND_TASKS\\)\\|\\|[A-Za-z_$][\\w$]*\\$\\(\"tengu_auto_background_agents\",!1\\)\\)return\\ 120000;return\\ 0\\}function\\ [A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*,\\$\\)\\{[A-Za-z_$][\\w$]*\\(![A-Za-z_$][\\w$]*\\(\\)\\)return;return\\ [A-Za-z_$][\\w$]*\\.team_name\\|\\|\\$\\.teamContext\\?\\.teamName\\}[A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*,[A-Za-z_$][\\w$]*=200",
       "replace": "k$(\"tengu_auto_background_agents\",!0)",
       "applied_marker": "tengu_auto_background_agents\",!0)",
       "description": "auto_background_agents default true",

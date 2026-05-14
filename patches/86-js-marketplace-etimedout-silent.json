@@ -6,7 +6,7 @@
   "scan_signatures": true,
   "patches": [
     {
-      "search_regex": "if\\(D\\.code===\"ETIMEDOUT\"\\)throw Error\\(`Request timed out",
+      "search_regex": "\\\nTechnical\\ details:\\ \\$\\{[A-Za-z_$][\\w$]*\\.message\\}`\\);[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\.code===\"ETIMEDOUT\"\\)throw\\ Error\\(`Request\\ timed\\ [A-Za-z_$][\\w$]*\\ while\\ downloading\\ marketplace\\ from\\ \\$\\{[A-Za-z_$][\\w$]*\\}\\.\\ [A-Za-z_$][\\w$]*\\ server\\ [A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*\\ slow\\ [A-Za-z_$][\\w$]*\\ unreachable\\.\\\n\\\nTechnical\\ details:\\ \\$\\{[A-Za-z_$][\\w$]*\\.message\\}`\\);[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\.response\\)throw\\ Error",
       "replace": "if(0&&D.code===\"x\")throw Error(`Request timed out   ",
       "applied_marker": "if(0&&D.code===\"x\")throw Error(`Request timed out",
       "description": "marketplace ETIMEDOUT -> silent",

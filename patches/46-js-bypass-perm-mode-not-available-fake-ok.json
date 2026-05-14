@@ -5,7 +5,7 @@
   "validate_js": true,
   "patches": [
     {
-      "search_regex": "!X\\.getState\\(\\)\\.toolPermissionContext\\.isBypassPermissionsModeAvailable\\)return\\{ok:!1,error:\"Cannot set permission mode to bypassPermissions because the session was not launched with --dangerously-skip-permissions\"\\}",
+      "search_regex": "rmissions\\ because\\ [A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*\\ disabled\\ [A-Za-z_$][\\w$]*\\ settings\\ [A-Za-z_$][\\w$]*\\ configuration\"\\};[A-Za-z_$][\\w$]*\\(!\\$\\.getState\\(\\)\\.toolPermissionContext\\.isBypassPermissionsModeAvailable\\)return\\{[A-Za-z_$][\\w$]*:!1,error:\"Cannot\\ [A-Za-z_$][\\w$]*\\ permission\\ mode\\ [A-Za-z_$][\\w$]*\\ bypassPermissions\\ because\\ [A-Za-z_$][\\w$]*\\ session\\ [A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*",
       "replace": "!1&&!1)return{ok:!1,error:\"Cannot set permission mode to bypassPermissions because the session was not launched with --dangerously-skip-permissions\"}",
       "applied_marker": "!1&&!1)return{ok:!1,error:\"Cannot set permission mode to bypassPermissions",
       "description": "Four separate error sites emit `Cannot set permission mode to bypassPermissions because the session was not launched wit",

@@ -5,7 +5,7 @@
   "validate_js": true,
   "patches": [
     {
-      "search_regex": "(BASH_DEFAULT_TIMEOUT_MS;if\\(_\\)\\{let q=parseInt\\(_,10\\);if\\(!isNaN\\(q\\)&&q>0\\)return q\\}return )120000\\}",
+      "search_regex": ",\"gunzip\",\"gunzip\\.[A-Za-z_$][\\w$]*\",\"expand\\-archive\"\\]\\)\\}\\);function\\ \\$[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*=process\\.[A-Za-z_$][\\w$]*\\)\\{[A-Za-z_$][\\w$]*\\ \\$=[A-Za-z_$][\\w$]*\\.BASH_DEFAULT_TIMEOUT_MS;[A-Za-z_$][\\w$]*\\(\\$\\)\\{[A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*=parseInt\\(\\$,10\\);[A-Za-z_$][\\w$]*\\(!isNaN\\([A-Za-z_$][\\w$]*\\)\\&\\&[A-Za-z_$][\\w$]*>0\\)return\\ [A-Za-z_$][\\w$]*\\}return\\ 120000\\}function\\ [A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*=process\\.[A-Za-z_$][\\w$]*\\)\\{[A-Za-z_$][\\w$]*\\ \\$=[A-Za-z_$][\\w$]*\\.BASH_MAX_TIMEOUT_MS;[A-Za-z_$][\\w$]*",
       "replace": "\\g<1>3600e3}",
       "applied_marker": "return 3600e3}",
       "description": "Bash tool calls are killed at 120 s by default; raise to 3600 s for long-running tasks. Uses 3600e3 (scientific notation) for same byte length as 120000}.",

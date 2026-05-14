@@ -6,7 +6,7 @@
   "scan_signatures": true,
   "patches": [
     {
-      "search_regex": "k\\$\\(\"tengu_classifier_summary_kill\",!1\\)",
+      "search_regex": "continue;[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*\\[[A-Za-z_$][\\w$]*\\]\\)\\$\\.[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\)\\}[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\.[A-Za-z_$][\\w$]*\\(\"[A-Za-z_$][\\w$]*\"\\)\\)\\$\\.delete\\(\"summary\"\\);[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\$\\(\"tengu_classifier_summary_kill\",!1\\)\\)\\$\\.delete\\(\"summary\"\\);return\\ \\$\\}function\\ [A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\)\\{[A-Za-z_$][\\w$]*\\ \\$=[A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*;[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*\\.split\\(\",\"\\)\\)\\{[A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*=[A-Za-z_$][\\w$]*\\.trim\\(\\);[A-Za-z_$][\\w$]*\\(![A-Za-z_$][\\w$]*\\)continue",
       "replace": "k$(\"tengu_classifier_summary_kill\",!0)",
       "applied_marker": "tengu_classifier_summary_kill\",!0)",
       "description": "Kill summary classifier by default",

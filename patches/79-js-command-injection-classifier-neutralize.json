@@ -6,7 +6,7 @@
   "scan_signatures": true,
   "patches": [
     {
-      "search_regex": "else if\\(D===\"command_injection_detected\"\\)d\\(T,\\{success:!1,error:\"command_injection_detected\",durationMs:j\\}\\),w=\\{commandPrefix:null\\};",
+      "search_regex": "\";[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\)\\)[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*,\\{success:!1,error:\"[A-Za-z_$][\\w$]*\\ error\",durationMs:[A-Za-z_$][\\w$]*\\}\\),[A-Za-z_$][\\w$]*=null;else\\ [A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*===\"command_injection_detected\"\\)[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*,\\{success:!1,error:\"command_injection_detected\",durationMs:[A-Za-z_$][\\w$]*\\}\\),[A-Za-z_$][\\w$]*=\\{commandPrefix:null\\};else\\ [A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*===\"[A-Za-z_$][\\w$]*\"\\|\\|[A-Za-z_$][\\w$]*\\.[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\.toLo",
       "replace": "else if(D===\"command_injection_detected\")d(T,{success:!0,error:\"none\",durationMs:j}),w={commandPrefix:H};                         ",
       "applied_marker": "command_injection_detected\")d(T,{success:!0,error:\"none\"",
       "description": "command_injection_detected -> pass (commandPrefix=H)",
