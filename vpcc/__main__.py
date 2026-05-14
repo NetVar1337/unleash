@@ -281,11 +281,16 @@ def find_target() -> tuple[Path | None, str]:
 
 
 def sha256_short(path: Path) -> str:
-    h = hashlib.sha256()
-    with path.open("rb") as f:
-        for chunk in iter(lambda: f.read(65536), b""):
-            h.update(chunk)
-    return h.hexdigest()[:12]
+    # Use C-level streaming hash on py>=3.11 (zero-copy, ~3x faster on big binaries).
+    try:
+        with path.open("rb") as f:
+            return hashlib.file_digest(f, "sha256").hexdigest()[:12]
+    except (AttributeError, TypeError):
+        h = hashlib.sha256()
+        with path.open("rb") as f:
+            for chunk in iter(lambda: f.read(1 << 20), b""):
+                h.update(chunk)
+        return h.hexdigest()[:12]
 
 
 # ── Bun SEA helpers ───────────────────────────────────────────────────────────
@@ -1142,19 +1147,30 @@ def cmd_scan(args) -> int:
         print(f"{R}claude-code not found{X}")
         return 2
 
-    try:
-        text = _scanner.load_text_from_target(target, kind)
-    except Exception as e:
-        print(f"{R}extract failed: {e}{X}")
-        return 2
-
-    patches = _scanner.load_patches_from_dir(PATCH_DIR)
-    sc = _scanner.SigScanner(text)
-    rows = sc.scan_patches(patches)
+    needs_text = bool(getattr(args, "auto_heal", False) or args.export_patch)
+    rows = None
+    text = None
+    if not needs_text:
+        rows = _scanner.load_cached_rows(target, PATCH_DIR)
+    if rows is None:
+        try:
+            text = _scanner.load_text_from_target(target, kind)
+        except Exception as e:
+            print(f"{R}extract failed: {e}{X}")
+            return 2
+        patches = _scanner.load_patches_from_dir(PATCH_DIR)
+        sc = _scanner.SigScanner(text)
+        rows = sc.scan_patches(patches)
+        _scanner.save_cached_rows(target, PATCH_DIR, rows)
+    else:
+        sc = None  # cached path — no live scanner
 
     print(f"{B}vpcc scan — {len(rows)} js_replace patches{X}")
     print(f"  target : {target}")
-    print(f"  format : {'cli.js' if kind == 'js' else '.bun section (' + str(len(text)) + ' bytes)'}")
+    if text is not None:
+        print(f"  format : {'cli.js' if kind == 'js' else '.bun section (' + str(len(text)) + ' bytes)'}")
+    else:
+        print(f"  format : {'cli.js' if kind == 'js' else 'Bun SEA'} (cached)")
     print(f"  sha    : {sha256_short(target)}")
     print()
     print(_scanner.format_scan_report(rows, verbose=args.verbose))
@@ -1207,8 +1223,11 @@ def cmd_doctor(args) -> int:
 
     # sig drift
     try:
-        text = _scanner.load_text_from_target(target, kind)
-        rows = _scanner.SigScanner(text).scan_patches(_scanner.load_patches_from_dir(PATCH_DIR))
+        rows = _scanner.load_cached_rows(target, PATCH_DIR)
+        if rows is None:
+            text = _scanner.load_text_from_target(target, kind)
+            rows = _scanner.SigScanner(text).scan_patches(_scanner.load_patches_from_dir(PATCH_DIR))
+            _scanner.save_cached_rows(target, PATCH_DIR, rows)
         drift = [r["id"] for r in rows if r["status"] == "drift"]
         nometa = [r["id"] for r in rows if r["status"] == "unclassified"]
         if drift:
@@ -1309,8 +1328,91 @@ _VPCC_CLAUDE_MD_START = "<!-- vpcc:authorization:start -->"
 _VPCC_CLAUDE_MD_END   = "<!-- vpcc:authorization:end -->"
 
 
+def cmd_upgrade(args) -> int:
+    """All-in-one upgrade: self-update patches → autoheal → verify → warm scan cache.
+
+    Idempotent and safe: each step short-circuits when nothing to do.
+    Use this after a Claude Code auto-update.
+    """
+    print(f"{B}vpcc upgrade — full pipeline{X}")
+    print(f"  step 1/4: self-update patches")
+    rc_su = cmd_self_update(type("A", (), {"force": False})())
+    if rc_su not in (0, 1):
+        print(f"  {Y}self-update returned rc={rc_su}, continuing{X}")
+
+    print(f"\n  step 2/4: autoheal (force)")
+    rc_ah = cmd_autoheal(type("A", (), {"force": True, "quiet": False})())
+    if rc_ah == 3:
+        print(f"  {R}autoheal failed — aborting upgrade{X}")
+        return 3
+
+    print(f"\n  step 3/4: verify")
+    rc_v = cmd_verify(type("A", (), {})())
+    if rc_v != 0:
+        print(f"  {R}verify failed — manual intervention required{X}")
+        return 3
+
+    print(f"\n  step 4/4: warm scan cache")
+    target, kind = find_target()
+    if target:
+        try:
+            text = _scanner.load_text_from_target(target, kind)
+            patches = _scanner.load_patches_from_dir(PATCH_DIR)
+            rows = _scanner.SigScanner(text).scan_patches(patches)
+            _scanner.save_cached_rows(target, PATCH_DIR, rows)
+            drift = sum(1 for r in rows if r["status"] == "drift")
+            print(f"  cache warmed: {len(rows)} patches, {drift} drift")
+        except Exception as e:
+            print(f"  {Y}cache warm skipped: {e}{X}")
+
+    print(f"\n{G}{CHECK} upgrade complete{X}")
+    return 0
+
+
+def cmd_bench(args) -> int:
+    """Microbench: sha256, text load, scan cold, scan cached."""
+    import time
+    target, kind = find_target()
+    if not target:
+        print(f"{R}claude-code not found{X}")
+        return 2
+
+    print(f"{B}vpcc bench — {target.name} ({target.stat().st_size // 1024 // 1024} MB){X}")
+
+    t0 = time.perf_counter()
+    _ = sha256_short(target)
+    print(f"  sha256             : {(time.perf_counter()-t0)*1000:6.1f} ms")
+
+    t0 = time.perf_counter()
+    text = _scanner.load_text_from_target(target, kind)
+    t_load = (time.perf_counter()-t0)*1000
+    print(f"  text load+decode   : {t_load:6.1f} ms  ({len(text)//1024//1024} MB)")
+
+    patches = _scanner.load_patches_from_dir(PATCH_DIR)
+    t0 = time.perf_counter()
+    rows = _scanner.SigScanner(text).scan_patches(patches)
+    t_scan = (time.perf_counter()-t0)*1000
+    print(f"  scan_patches       : {t_scan:6.1f} ms  ({len(rows)} patches)")
+
+    _scanner.save_cached_rows(target, PATCH_DIR, rows)
+    t0 = time.perf_counter()
+    _ = _scanner.load_cached_rows(target, PATCH_DIR)
+    t_cache = (time.perf_counter()-t0)*1000
+    print(f"  cache hit          : {t_cache:6.1f} ms  (key: sha256 + patch mtime)")
+
+    print(f"\n  cold total         : {t_load + t_scan:6.1f} ms")
+    print(f"  warm total         : {t_cache:6.1f} ms")
+    print(f"  speedup            : {(t_load + t_scan) / max(t_cache, 0.01):6.1f}x")
+    return 0
+
+
 def cmd_install_rules(args) -> int:
-    """Deploy contrib/rules/ -> ~/.claude/ (authorization doctrine + settings + hook)."""
+    """Deploy contrib/rules/ -> ~/.claude/ (authorization doctrine + settings + hook).
+
+    With --no-hook (or when binary patch 05 auto-allow-hook is applied), the
+    PreToolUse shell hook is skipped — the binary-level allow decision already
+    fires per tool call with zero subprocess spawn overhead.
+    """
     src_dir = ROOT / "contrib" / "rules"
     if not src_dir.exists():
         print(f"{R}contrib/rules/ missing in package{X}")
@@ -1320,6 +1422,24 @@ def cmd_install_rules(args) -> int:
     hooks_dir  = claude_dir / "hooks"
     claude_dir.mkdir(parents=True, exist_ok=True)
     hooks_dir.mkdir(parents=True, exist_ok=True)
+
+    skip_hook = bool(getattr(args, "no_hook", False))
+    # Auto-detect: if binary patch 05 is applied, the .sh hook is redundant.
+    if not skip_hook:
+        try:
+            target, kind = find_target()
+            if target:
+                _text = _scanner.load_cached_rows(target, PATCH_DIR)
+                if _text is None:
+                    _t = _scanner.load_text_from_target(target, kind)
+                    for s in (json.loads((PATCH_DIR / "05-auto-allow-hook.json").read_text(encoding="utf-8")).get("patches") or [{}]):
+                        m = s.get("applied_marker")
+                        if m and m in _t:
+                            skip_hook = True
+                            print(f"  {G}{ARROW}{X} binary patch 05 auto-allow detected → skipping .sh hook (faster)")
+                            break
+        except Exception:
+            pass
 
     auth_src = (src_dir / "AUTHORIZATION.md").read_text(encoding="utf-8")
     block = f"{_VPCC_CLAUDE_MD_START}\n{auth_src.rstrip()}\n{_VPCC_CLAUDE_MD_END}\n"
@@ -1341,6 +1461,19 @@ def cmd_install_rules(args) -> int:
 
     settings_path = claude_dir / "settings.json"
     rules = json.loads((src_dir / "settings-rules.json").read_text(encoding="utf-8"))
+    if skip_hook:
+        # Drop the auto-allow PreToolUse hook entry from rules before merging
+        try:
+            pre = rules.get("hooks", {}).get("PreToolUse", [])
+            pre = [h for h in pre if "vpcc-auto-allow" not in json.dumps(h)]
+            if pre:
+                rules["hooks"]["PreToolUse"] = pre
+            else:
+                rules.get("hooks", {}).pop("PreToolUse", None)
+                if not rules.get("hooks"):
+                    rules.pop("hooks", None)
+        except Exception:
+            pass
     current = {}
     if settings_path.exists():
         try:
@@ -1353,11 +1486,33 @@ def cmd_install_rules(args) -> int:
     settings_path.write_text(json.dumps(merged, indent=2) + "\n", encoding="utf-8")
     print(f"  {G}{CHECK}{X} settings.json {ARROW} {settings_path} (merged {len(rules)} keys)")
 
-    hook_src = src_dir / "hooks" / "vpcc-auto-allow.sh"
-    hook_dst = hooks_dir / "vpcc-auto-allow.sh"
-    hook_dst.write_bytes(hook_src.read_bytes())
-    hook_dst.chmod(0o755)
-    print(f"  {G}{CHECK}{X} hook {ARROW} {hook_dst}")
+    if skip_hook:
+        # Strip any pre-existing auto-allow hook entry from the merged settings
+        try:
+            pre = merged.get("hooks", {}).get("PreToolUse", [])
+            pre = [h for h in pre if "vpcc-auto-allow" not in json.dumps(h)]
+            if pre:
+                merged["hooks"]["PreToolUse"] = pre
+            else:
+                merged.get("hooks", {}).pop("PreToolUse", None)
+                if not merged.get("hooks"):
+                    merged.pop("hooks", None)
+            settings_path.write_text(json.dumps(merged, indent=2) + "\n", encoding="utf-8")
+        except Exception:
+            pass
+        # Delete leftover hook file if present
+        hook_dst = hooks_dir / "vpcc-auto-allow.sh"
+        if hook_dst.exists():
+            hook_dst.unlink()
+            print(f"  {G}{CHECK}{X} removed redundant .sh hook (binary patch handles allow)")
+        else:
+            print(f"  {G}{CHECK}{X} no .sh hook installed (zero subprocess overhead per tool call)")
+    else:
+        hook_src = src_dir / "hooks" / "vpcc-auto-allow.sh"
+        hook_dst = hooks_dir / "vpcc-auto-allow.sh"
+        hook_dst.write_bytes(hook_src.read_bytes())
+        hook_dst.chmod(0o755)
+        print(f"  {G}{CHECK}{X} hook {ARROW} {hook_dst}")
 
     print(f"\n{G}{CHECK} authorization rules installed{X}")
     print(f"  revert: vpcc uninstall-rules")
@@ -1519,8 +1674,10 @@ def main() -> int:
     sub.add_parser("uninstall-preload",
         help="Remove runtime preload hook")
 
-    sub.add_parser("install-rules",
+    p_ir = sub.add_parser("install-rules",
         help="Deploy operator-authorization bundle (CLAUDE.md + settings + hook)")
+    p_ir.add_argument("--no-hook", action="store_true",
+        help="Skip PreToolUse shell hook; rely on binary patch 05 (zero subprocess overhead)")
     sub.add_parser("uninstall-rules",
         help="Remove vpcc authorization rules, preserve operator content")
 
@@ -1540,6 +1697,11 @@ def main() -> int:
     p_w.add_argument("--interval", "-i", type=int, default=10,
         help="Poll interval seconds (default 10)")
 
+    sub.add_parser("upgrade",
+        help="All-in-one: self-update + autoheal + verify + warm cache")
+    sub.add_parser("bench",
+        help="Microbenchmark: sha256, text load, scan cold/cached")
+
     args = ap.parse_args()
     if args.cmd is None:
         ap.print_help()
@@ -1556,7 +1718,9 @@ def main() -> int:
             "install-preload": cmd_install_preload,
             "uninstall-preload": cmd_uninstall_preload,
             "install-rules": cmd_install_rules,
-            "uninstall-rules": cmd_uninstall_rules}[args.cmd](args)
+            "uninstall-rules": cmd_uninstall_rules,
+            "upgrade": cmd_upgrade,
+            "bench": cmd_bench}[args.cmd](args)
 
 
 if __name__ == "__main__":

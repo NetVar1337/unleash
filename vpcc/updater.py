@@ -188,20 +188,38 @@ def autoheal(
     cur_sha = sha256_short(target)
     state = load_state()
     last_sha = state.get("last_cc_sha")
-    drifted = cur_sha != last_sha
+    last_pmt = state.get("last_patch_mtime", 0)
 
-    if not drifted and not force:
-        log(f"vpcc autoheal: CC unchanged ({cur_sha}) — skip")
+    # Largest mtime across patch dir — bumps when a patch json is edited or
+    # added. Catches the case where binary is unchanged but new patches landed
+    # via self-update (older autoheal short-circuited and missed them).
+    cur_pmt = 0
+    for f in patch_dir.glob("*.json"):
+        try:
+            mt = int(f.stat().st_mtime)
+            if mt > cur_pmt:
+                cur_pmt = mt
+        except OSError:
+            continue
+
+    bin_drifted = cur_sha != last_sha
+    patch_drifted = cur_pmt != last_pmt
+
+    if not bin_drifted and not patch_drifted and not force:
+        log(f"vpcc autoheal: CC unchanged ({cur_sha}), patches unchanged — skip")
         return 0
 
-    log(f"vpcc autoheal: CC drift detected ({last_sha} → {cur_sha})")
+    if bin_drifted:
+        log(f"vpcc autoheal: CC drift detected ({last_sha} → {cur_sha})")
+    elif patch_drifted:
+        log(f"vpcc autoheal: patch updates detected (mtime {last_pmt} → {cur_pmt})")
 
     # Step 1 — verify current patches against new binary
     class _A: pass
     rc = cmd_verify_fn(_A())
     if rc == 0:
         log("vpcc autoheal: patches still valid, updating state")
-        save_state(last_cc_sha=cur_sha, last_cc_kind=kind)
+        save_state(last_cc_sha=cur_sha, last_cc_kind=kind, last_patch_mtime=cur_pmt)
         return 2
 
     # Step 2 — patches broken, pull latest from GitHub
@@ -239,7 +257,20 @@ def autoheal(
         return 3
 
     target2, _ = find_target()
-    save_state(last_cc_sha=sha256_short(target2) if target2 else cur_sha, last_cc_kind=kind)
+    # Recompute patch mtime — sync_patches may have just rewritten patch files
+    final_pmt = 0
+    for f in patch_dir.glob("*.json"):
+        try:
+            mt = int(f.stat().st_mtime)
+            if mt > final_pmt:
+                final_pmt = mt
+        except OSError:
+            continue
+    save_state(
+        last_cc_sha=sha256_short(target2) if target2 else cur_sha,
+        last_cc_kind=kind,
+        last_patch_mtime=final_pmt,
+    )
     log("vpcc autoheal: healed")
     return 1
 

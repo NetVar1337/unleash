@@ -208,19 +208,61 @@ class SigScanner:
 
     # ---- patch-file driver (multi-strategy) -----------------------------
 
+    def _bulk_marker_hits(self, patches: list[dict[str, Any]]) -> dict[int, bool]:
+        """Bulk marker existence check across all patches.
+
+        Dedupes markers across patches (many share strings within a mega-patch
+        family), runs one C-level `str.find` per unique marker, then maps hits
+        back to patch indices. Avoids the N×O(len(text)) cost of per-patch
+        any() and the alternation-regex overhead of finditer on huge text.
+        """
+        marker_to_idx: dict[str, list[int]] = {}
+        for i, p in enumerate(patches):
+            for sub in p.get("patches", []):
+                m = sub.get("applied_marker")
+                if m:
+                    marker_to_idx.setdefault(m, []).append(i)
+        if not marker_to_idx:
+            return {}
+        hits: dict[int, bool] = {}
+        seen_patches: set[int] = set()
+        # Iterate in order; once a patch has any marker, we can skip its other markers
+        for marker, idxs in marker_to_idx.items():
+            # Skip if all patches that own this marker already have a hit
+            if all(i in seen_patches for i in idxs):
+                continue
+            if marker in self.text:
+                for i in idxs:
+                    hits[i] = True
+                    seen_patches.add(i)
+        return hits
+
     def scan_patches(self, patches: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        # Pre-sweep markers once across whole binary — turns N×O(len(text))
+        # individual substring scans into one C-level regex sweep.
+        bulk_marker = self._bulk_marker_hits(patches)
         out = []
-        for p in patches:
+        for idx, p in enumerate(patches):
             pid = p.get("id", "?")
             anchors = p.get("anchor_strings") or []
             sig_regex = None
             markers: list[str] = []
-            for sub in p.get("patches", []):
+            subs = p.get("patches", [])
+            for sub in subs:
                 if not sig_regex:
                     sig_regex = sub.get("search_regex") or sub.get("search")
                 m = sub.get("applied_marker")
                 if m:
                     markers.append(m)
+
+            # All-optional mega-patch: every sub is required=false AND count==0.
+            # These intentionally no-op when target flags are absent. Treat as
+            # "applied-optional" when at least one anchor is present in text —
+            # the patch is structurally valid for this binary.
+            all_optional = bool(subs) and all(
+                (not s.get("required", True)) and s.get("count", 1) == 0
+                for s in subs
+            )
 
             # --- cascade ---
             status = "drift"
@@ -229,7 +271,8 @@ class SigScanner:
             anchor_off: int | None = None
 
             # 1. applied_marker — highest priority, patch already landed
-            marker_hit = any(m in self.text for m in markers)
+            # Use bulk pre-sweep result when available, else fall back to per-marker scan.
+            marker_hit = bulk_marker.get(idx, False) if bulk_marker else any(m in self.text for m in markers)
             if marker_hit:
                 status = "applied"
                 confidence = 1.0
@@ -237,9 +280,19 @@ class SigScanner:
                 # still try to locate offset for reporting
                 anchor_off = self.find_anchor(anchors) if anchors else None
 
-            # 2. search_regex
+            # 2. exact anchor_strings (co-located within max_dist) — cheap,
+            # try before the expensive regex search.
             regex_hit = False
-            if sig_regex and status != "applied":
+            if status not in ("applied", "ok") and anchors:
+                anchor_off = self.find_anchor(anchors)
+                if anchor_off is not None:
+                    status = "ok"
+                    confidence = 0.9
+                    method = "anchor"
+
+            # 3. search_regex — only run if anchors didn't already prove "ok".
+            # Regex matching on 130MB text is ~200ms/call; anchors are ~3ms.
+            if status not in ("applied", "ok") and sig_regex:
                 try:
                     regex_hit = re.search(sig_regex, self.text, re.DOTALL) is not None
                 except re.error:
@@ -250,13 +303,15 @@ class SigScanner:
                     method = "regex"
                     anchor_off = self.find_anchor(anchors) if anchors else None
 
-            # 3. exact anchor_strings
+            # 3b. anchors-present (scattered): all anchors exist anywhere in text.
+            # Used for mega-patches whose anchors are spread across the binary
+            # (e.g. feature-flag bundles). Lower confidence than co-located.
             if status not in ("applied", "ok") and anchors:
-                anchor_off = self.find_anchor(anchors)
-                if anchor_off is not None:
+                if all(a in self.text for a in anchors):
+                    anchor_off = self.text.find(anchors[0])
                     status = "ok"
-                    confidence = 0.9
-                    method = "anchor"
+                    confidence = 0.7
+                    method = "scattered"
 
             # 4. fuzzy anchor
             if status not in ("applied", "ok") and anchors:
@@ -276,6 +331,15 @@ class SigScanner:
                     confidence = kconf
                     method = "keyword"
 
+            # All-optional escape hatch: still drift but anchors are present →
+            # downgrade to applied-optional. Avoids spurious drift reports on
+            # mega-patches where the target flags simply don't exist in this
+            # build (vpcc patch reports no-op as expected).
+            if status == "drift" and all_optional and anchors and any(a in self.text for a in anchors):
+                status = "applied"
+                confidence = 0.6
+                method = "optional"
+
             # 6. no anchors and no regex → unclassified (legacy)
             if status == "drift" and not anchors and not regex_hit:
                 status = "unclassified"
@@ -289,6 +353,7 @@ class SigScanner:
                 "status": status,
                 "confidence": confidence,
                 "method": method,
+                "all_optional": all_optional,
             })
         return out
 
@@ -601,3 +666,78 @@ def suggest_anchors(text: str, regex_or_context: str, n: int = 3) -> list[str]:
 
     scored.sort(key=lambda x: x[0])
     return [c for _, c in scored[:n]]
+
+
+# ---------------------------------------------------------------------------
+# Scan cache — skip 237MB text load + decode when target + patches unchanged.
+# Cache key: target_sha256 + max(patches/*.json mtime). Stored as JSON in
+# ~/.vpcc/cache/scan_<sha>_<mtime_int>.json. Invalidated on any binary or
+# patch change. Cheap to compute (single hash + dir stat), saves ~1.5s/scan.
+# ---------------------------------------------------------------------------
+
+import os
+import hashlib
+
+
+def _cache_dir() -> Path:
+    d = Path.home() / ".vpcc" / "cache"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def _scan_cache_key(target: Path, patch_dir: Path) -> tuple[str, int]:
+    """Return (target_sha256_short, max_patch_mtime_int)."""
+    try:
+        with open(target, "rb") as f:
+            target_sha = hashlib.file_digest(f, "sha256").hexdigest()[:12]
+    except (AttributeError, TypeError):
+        h = hashlib.sha256()
+        with open(target, "rb") as f:
+            while chunk := f.read(1 << 20):
+                h.update(chunk)
+        target_sha = h.hexdigest()[:12]
+    max_mt = 0
+    for p in patch_dir.glob("*.json"):
+        try:
+            mt = int(p.stat().st_mtime)
+            if mt > max_mt:
+                max_mt = mt
+        except OSError:
+            continue
+    return target_sha, max_mt
+
+
+def load_cached_rows(target: Path, patch_dir: Path) -> list[dict[str, Any]] | None:
+    """Return cached scan rows if (target sha, patch mtime) matches. Else None."""
+    if os.environ.get("VPCC_NO_CACHE"):
+        return None
+    try:
+        sha, mt = _scan_cache_key(target, patch_dir)
+    except OSError:
+        return None
+    cache_file = _cache_dir() / f"scan_{sha}_{mt}.json"
+    if not cache_file.is_file():
+        return None
+    try:
+        return json.loads(cache_file.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
+def save_cached_rows(target: Path, patch_dir: Path, rows: list[dict[str, Any]]) -> None:
+    """Persist scan rows. Best-effort — failures silently ignored."""
+    if os.environ.get("VPCC_NO_CACHE"):
+        return
+    try:
+        sha, mt = _scan_cache_key(target, patch_dir)
+        cache_file = _cache_dir() / f"scan_{sha}_{mt}.json"
+        # prune old cache files for this binary (keep current only)
+        for old in _cache_dir().glob(f"scan_{sha}_*.json"):
+            if old != cache_file:
+                try:
+                    old.unlink()
+                except OSError:
+                    pass
+        cache_file.write_text(json.dumps(rows), encoding="utf-8")
+    except OSError:
+        pass
