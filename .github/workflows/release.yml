@@ -1,0 +1,94 @@
+name: release
+
+# Fires on every push to main. Reads the version from pyproject.toml and
+# creates a GitHub release (+ git tag) only when that version tag does not
+# yet exist. Changing the version number is the only trigger needed.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write   # needed to create tags and releases
+
+jobs:
+  release:
+    name: Create release if version changed
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0   # full history for auto-generated release notes
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Read version from pyproject.toml
+        id: ver
+        run: |
+          ver=$(python -c "
+          import re, pathlib
+          m = re.search(r'^version\s*=\s*\"([^\"]+)\"', pathlib.Path('pyproject.toml').read_text(), re.M)
+          print(m.group(1))
+          ")
+          echo "version=$ver" >> "$GITHUB_OUTPUT"
+          echo "tag=v$ver"    >> "$GITHUB_OUTPUT"
+
+      - name: Check whether the tag already exists
+        id: check
+        run: |
+          TAG="${{ steps.ver.outputs.tag }}"
+          if git ls-remote --exit-code --tags origin "$TAG" > /dev/null 2>&1; then
+            echo "exists=true"  >> "$GITHUB_OUTPUT"
+            echo "Tag $TAG already exists — skipping release."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Tag $TAG not found — will create release."
+          fi
+
+      - name: Build sdist + wheel
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          python -m pip install --quiet build
+          python -m build
+          echo "Built artifacts:"
+          ls -lh dist/
+
+      - name: Create GitHub release and upload artifacts
+        if: steps.check.outputs.exists == 'false'
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const fs   = require('fs');
+            const path = require('path');
+
+            // Create release (also creates the tag at HEAD)
+            const { data: release } = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              tag_name:              '${{ steps.ver.outputs.tag }}',
+              name:                  '${{ steps.ver.outputs.tag }}',
+              generate_release_notes: true,
+              make_latest:           'true',
+            });
+            console.log(`Release created: ${release.html_url}`);
+
+            // Upload every file in dist/
+            const distFiles = fs.readdirSync('dist');
+            for (const file of distFiles) {
+              const filePath = path.join('dist', file);
+              const data     = fs.readFileSync(filePath);
+              const mime     = file.endsWith('.whl')
+                ? 'application/zip'
+                : 'application/gzip';
+              await github.rest.repos.uploadReleaseAsset({
+                owner:      context.repo.owner,
+                repo:       context.repo.repo,
+                release_id: release.id,
+                name:       file,
+                data,
+                headers:    { 'content-type': mime },
+              });
+              console.log(`  Uploaded: ${file}`);
+            }
