@@ -111,5 +111,85 @@ class UpstreamCheckRegressionTests(unittest.TestCase):
         self.assertEqual(classified["needs_issue"], 2)
 
 
+class VerifyRegressionTests(unittest.TestCase):
+    def test_verify_reports_failure_when_no_patches_applied(self) -> None:
+        """cmd_verify must return non-zero when optional patches are all unapplied (batch failure)."""
+        from unittest.mock import MagicMock
+
+        vsize = 256
+        rsize = 256
+        trailer = vpcc_main._BUN_TRAILER
+        payload = b"\x00" * (vsize - len(trailer)) + trailer
+        pe_data = _minimal_pe_with_bun(vsize, rsize, payload)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            binary = Path(tmp) / "claude.exe"
+            binary.write_bytes(pe_data)
+
+            patch_obj = {
+                "id": "test-optional-patch",
+                "type": "js_replace",
+                "patches": [
+                    {
+                        "search_regex": "nonexistent_pattern",
+                        "replace": "replacement",
+                        "applied_marker": "nonexistent_marker_xyz_unique",
+                        "required": False,
+                        "count": 0,
+                    }
+                ],
+                "anchor_strings": ["nonexistent_pattern"],
+            }
+
+            with (
+                patch.object(vpcc_main, "find_target", return_value=(binary, "bun_sea")),
+                patch.object(vpcc_main, "load_patches", return_value=[patch_obj]),
+            ):
+                rc = vpcc_main.cmd_verify(MagicMock())
+
+        # optional_missing (1) > applied (0) → systemic failure → exit 1
+        self.assertEqual(rc, 1)
+
+    def test_verify_succeeds_when_marker_present(self) -> None:
+        """cmd_verify must return 0 when the applied_marker is found in the binary."""
+        from unittest.mock import MagicMock
+
+        marker = b"nonexistent_marker_xyz_unique"
+        vsize = 256
+        rsize = 256
+        trailer = vpcc_main._BUN_TRAILER
+        filler = b"\x00" * (vsize - len(marker) - len(trailer))
+        payload = marker + filler + trailer
+        pe_data = _minimal_pe_with_bun(vsize, rsize, payload)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            binary = Path(tmp) / "claude.exe"
+            binary.write_bytes(pe_data)
+
+            patch_obj = {
+                "id": "test-optional-patch",
+                "type": "js_replace",
+                "patches": [
+                    {
+                        "search_regex": "nonexistent_pattern",
+                        "replace": "replacement",
+                        "applied_marker": "nonexistent_marker_xyz_unique",
+                        "required": False,
+                        "count": 0,
+                    }
+                ],
+                "anchor_strings": ["nonexistent_pattern"],
+            }
+
+            with (
+                patch.object(vpcc_main, "find_target", return_value=(binary, "bun_sea")),
+                patch.object(vpcc_main, "load_patches", return_value=[patch_obj]),
+            ):
+                rc = vpcc_main.cmd_verify(MagicMock())
+
+        # marker present → applied (1) > optional_missing (0) → exit 0
+        self.assertEqual(rc, 0)
+
+
 if __name__ == "__main__":
     unittest.main()

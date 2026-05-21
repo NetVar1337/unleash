@@ -107,6 +107,9 @@ if (-not (Test-Path (Join-Path $DataDir '.git'))) {
 # 5. Apply patches + deploy preload hook
 Step "applying signature patches"
 vpcc patch
+if ($LASTEXITCODE -ne 0) {
+    Warn2 "vpcc patch returned exit code $LASTEXITCODE — run 'vpcc doctor' for details"
+}
 
 $srcPreload = Join-Path $DataDir 'contrib\preload\claude-preload.js'
 if (Test-Path $srcPreload) {

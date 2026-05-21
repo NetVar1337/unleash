@@ -511,6 +511,7 @@ def patch_bun_sea_inplace(binary: Path, patches: list) -> dict:
     for p in patches:
         applied_n = 0
         skipped_n = 0
+        max_padding = 0
         for sub in p.get("patches", []):
             search_regex = sub.get("search_regex")
             search = sub.get("search")
@@ -538,7 +539,10 @@ def patch_bun_sea_inplace(binary: Path, patches: list) -> dict:
                         skipped_n += 1
                         continue
                     if len(rb) < len(mb):
-                        rb = rb + b" " * (len(mb) - len(rb))
+                        padding = len(mb) - len(rb)
+                        rb = rb + b" " * padding
+                        if padding > max_padding:
+                            max_padding = padding
                     abs_start = eff_lo + m.start()
                     data[abs_start:abs_start + len(mb)] = rb
                     applied_n += 1
@@ -549,7 +553,10 @@ def patch_bun_sea_inplace(binary: Path, patches: list) -> dict:
                     skipped_n += 1
                     continue
                 if len(r_b) < len(s_b):
-                    r_b = r_b + b" " * (len(s_b) - len(r_b))
+                    padding = len(s_b) - len(r_b)
+                    r_b = r_b + b" " * padding
+                    if padding > max_padding:
+                        max_padding = padding
                 pos = eff_lo
                 while True:
                     j = data.find(s_b, pos, eff_hi)
@@ -559,7 +566,7 @@ def patch_bun_sea_inplace(binary: Path, patches: list) -> dict:
                     applied_n += 1
                     pos = j + len(s_b)
 
-        per_patch.append({"id": p["id"], "applied": applied_n, "skipped": skipped_n})
+        per_patch.append({"id": p["id"], "applied": applied_n, "skipped": skipped_n, "max_padding": max_padding})
         applied_total += applied_n
         skipped_total += skipped_n
 
@@ -771,6 +778,17 @@ def cmd_patch(args) -> int:
             if not result["ok"]:
                 print(f"  {R}fail{X}  [bun-inplace]  {result.get('err','unknown')}")
                 fail += len(js_patches)
+                # Patches that needed the most padding are the most likely corruption source.
+                heavy = sorted(
+                    [pr for pr in result.get("per_patch", []) if pr.get("max_padding", 0) > 64],
+                    key=lambda x: -x["max_padding"],
+                )
+                if heavy:
+                    print(f"  {Y}hint: {len(heavy)} patch(es) needed >64 bytes padding — "
+                          f"likely corruption source:{X}")
+                    for pr in heavy[:5]:
+                        print(f"    {pr['id']}: {pr['max_padding']} bytes padding needed")
+                    print(f"  {Y}run 'vpcc scan' for signature analysis or 'vpcc rollback' to revert{X}")
             else:
                 for pr in result.get("per_patch", []):
                     n = pr["applied"]
@@ -1026,23 +1044,47 @@ def cmd_verify(args) -> int:
     else:
         text = target.read_text(encoding="utf-8")
 
-    missing = 0
+    required_missing = 0
+    optional_missing = 0
+    applied = 0
+
     for p in load_patches():
         if p.get("type") != "js_replace":
             continue
-        for sub in p.get("patches", []):
-            if not sub.get("required", True):
-                continue
-            marker = sub.get("applied_marker")
-            if marker and marker not in text:
-                print(f"{R}{CROSS}{X} {p['id']}")
-                missing += 1
-                break
+        checkable = [s for s in p.get("patches", []) if s.get("applied_marker")]
+        if not checkable:
+            continue
 
-    if missing:
-        print(f"\n{R}{missing} patches missing{X}")
+        patch_applied = any(s["applied_marker"] in text for s in checkable)
+
+        if patch_applied:
+            applied += 1
+            continue
+
+        is_required = any(s.get("required", False) for s in checkable)
+        if is_required:
+            print(f"{R}{CROSS}{X} {p['id']}")
+            required_missing += 1
+        else:
+            optional_missing += 1
+
+    # Systemic failure: more patches unapplied than applied — batch verification probably failed.
+    systemic = optional_missing > applied
+
+    if required_missing:
+        print(f"\n{R}{required_missing} required patch(es) not applied{X}")
         return 1
-    print(f"{G}{CHECK} all patches verified{X}")
+
+    if systemic:
+        print(f"{R}{CROSS} {optional_missing} patch(es) not applied, {applied} applied{X}"
+              f"  — run {B}vpcc patch{X} to apply")
+        return 1
+
+    if optional_missing:
+        print(f"{G}{CHECK} {applied} patch(es) verified{X}  "
+              f"{Y}({optional_missing} optional not applied — run 'vpcc patch' if unexpected){X}")
+    else:
+        print(f"{G}{CHECK} all patches verified{X}")
     return 0
 
 
