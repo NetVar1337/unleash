@@ -439,42 +439,60 @@ def _find_active_bundle_bounds(data, bun_lo: int, bun_hi: int) -> tuple[int, int
     Bun SEA ≥ 2.1.119 embeds the main entry bundle PLUS a virtual-filesystem
     (VFS) copy of the same source at a second location.  The layout is:
 
-        [header][active-entry-blob (JS source, ~13 MB)][bytecode-for-deps (~102 MB)]
+        [header?][active-entry-blob (JS source, ~13 MB)][bytecode-for-deps (~102 MB)]
         [lookup-key\x00][vfs-path\x00][vfs-copy-of-cli.js][other-vfs-files][trailer]
 
     Patching any byte in the VFS copy corrupts the module Bun re-parses at
-    startup, causing the "entry.instantiate" crash even though the active
-    bundle itself is fine.
+    startup, causing the "entry.instantiate" / CommonJS-wrapper crash even
+    though the active bundle itself is fine.
 
-    Detection: the active bundle always starts with "// @bun @bytecode" and its
-    byte-length is encoded as a little-endian u32 at (data_start - 4).
+    Primary detection: the active bundle always starts with "// @bun @bytecode"
+    and its byte-length is encoded as a little-endian u32 at (data_start - 4).
     We read that field and return [abs_start, abs_end) so callers only scan the
     active bundle region.
 
-    Falls back to the full [bun_lo, bun_hi) range if the marker or size look
-    implausible (e.g., old single-bundle builds).
+    Fallback when size field is unavailable (Bun 2.1.150+ appears to place the
+    marker at offset 0 of the section leaving no room for the preceding u32):
+    search for a SECOND occurrence of "// @bun @bytecode" — that is the VFS
+    copy's header — and use it as the exclusive upper bound.  This keeps every
+    patch inside [first_marker, second_marker) which spans the active JS blob
+    and the binary bytecode-for-deps region but never reaches the VFS copy.
+    JS text patterns are extremely unlikely to match inside the binary bytecode
+    blob, so this is safe in practice.
+
+    Last resort: return the full [bun_lo, bun_hi) range only when the section
+    contains a single marker and the size field is also unavailable.  In that
+    case the build is likely an old single-bundle format without a VFS copy.
     """
     BUN_BYTECODE_MARKER = b"// @bun @bytecode"
+    marker_len = len(BUN_BYTECODE_MARKER)
     section_start = bun_lo
-    # Search for the marker within the section
+
+    # ── Primary: find first marker (active bundle start) ────────────────────
     abs_marker = data.find(BUN_BYTECODE_MARKER, section_start, bun_hi)
     if abs_marker < 0:
-        return bun_lo, bun_hi  # fallback: no marker found
+        return bun_lo, bun_hi  # no marker at all — full-range fallback
 
-    data_start = abs_marker  # absolute offset in `data`
+    data_start = abs_marker
+
+    # ── Try the u32 size field at (data_start - 4) ──────────────────────────
     size_field_off = data_start - 4
-    if size_field_off < section_start:
-        return bun_lo, bun_hi  # no room for size field
+    if size_field_off >= section_start:
+        import struct as _s
+        blob_size = _s.unpack_from("<I", data, size_field_off)[0]
+        active_end = data_start + blob_size
+        if 1024 <= blob_size and active_end <= bun_hi:
+            return data_start, active_end   # ← happy path (pre-2.1.150)
 
-    import struct as _s
-    blob_size = _s.unpack_from("<I", data, size_field_off)[0]
-    active_end = data_start + blob_size
+    # ── Fallback: size field absent/implausible — find the VFS copy ─────────
+    # The VFS copy's bytecode also starts with the same marker.  Use its
+    # offset as the exclusive upper bound so no patch ever touches the VFS.
+    abs_marker2 = data.find(BUN_BYTECODE_MARKER, abs_marker + marker_len, bun_hi)
+    if abs_marker2 > abs_marker:
+        return abs_marker, abs_marker2      # ← 2.1.150+ path
 
-    # Sanity: blob_size must be positive and fit inside the section
-    if blob_size < 1024 or active_end > bun_hi:
-        return bun_lo, bun_hi  # implausible — fall back
-
-    return data_start, active_end
+    # ── Last resort: single-bundle build (no VFS), use full section ─────────
+    return bun_lo, bun_hi
 
 
 def patch_bun_sea_inplace(binary: Path, patches: list) -> dict:
@@ -626,6 +644,8 @@ def patch_bun_sea_inplace(binary: Path, patches: list) -> dict:
     # ── Auto-retry: drop patches that needed >64 bytes of space-padding ─────
     # Large padding overwrites adjacent JS bytes that the regex captured but
     # the replacement did not reproduce, breaking the Bun module wrapper.
+    # NOTE: if _find_active_bundle_bounds fixed the VFS-copy issue this retry
+    # may be a no-op, but it stays in as a second safety net.
     heavy_ids = {
         pr["id"] for pr in result.get("per_patch", [])
         if pr.get("max_padding", 0) > 64
@@ -633,10 +653,13 @@ def patch_bun_sea_inplace(binary: Path, patches: list) -> dict:
     if "verify failed" in result.get("err", "") and heavy_ids:
         reduced = [p for p in patches if p.get("id") not in heavy_ids]
         if reduced:
+            result["_retry_attempted"] = True
             retry = _attempt(reduced)
             if retry["ok"]:
                 retry["skipped_heavy"] = sorted(heavy_ids)
                 return retry
+            # Carry the retry error so the caller can surface both
+            result["_retry_err"] = retry.get("err", "unknown")
 
     return result
 
@@ -811,6 +834,8 @@ def cmd_patch(args) -> int:
             result = patch_bun_sea_inplace(target, js_patches)
             if not result["ok"]:
                 print(f"  {R}fail{X}  [bun-inplace]  {result.get('err','unknown')}")
+                if result.get("_retry_attempted"):
+                    print(f"  {R}fail{X}  [bun-inplace retry]  {result.get('_retry_err','unknown')}")
                 fail += len(js_patches)
                 # Patches that needed the most padding are the most likely corruption source.
                 heavy = sorted(
