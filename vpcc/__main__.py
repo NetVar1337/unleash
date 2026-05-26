@@ -628,8 +628,9 @@ def patch_bun_sea_inplace(binary: Path, patches: list) -> dict:
             out = (r.stdout or "") + (r.stderr or "")
             if r.returncode != 0 or "Claude Code" not in out:
                 tmp_bin.unlink(missing_ok=True)
-                return {"ok": False, "err": f"verify failed: {out[:120]!r} rc={r.returncode}",
-                        "applied": applied_total, "skipped": skipped_total, "per_patch": per_patch}
+                return {"ok": False, "err": f"verify failed: {out[:500]!r} rc={r.returncode}",
+                        "applied": applied_total, "skipped": skipped_total, "per_patch": per_patch,
+                        "_bounds": (bun_lo, bun_hi, eff_lo, eff_hi)}
 
             binary.unlink()
             tmp_bin.rename(binary)
@@ -645,25 +646,37 @@ def patch_bun_sea_inplace(binary: Path, patches: list) -> dict:
     if result["ok"]:
         return result
 
-    # ── Auto-retry: drop patches that needed >64 bytes of space-padding ─────
-    # Large padding overwrites adjacent JS bytes that the regex captured but
-    # the replacement did not reproduce, breaking the Bun module wrapper.
-    # NOTE: if _find_active_bundle_bounds fixed the VFS-copy issue this retry
-    # may be a no-op, but it stays in as a second safety net.
-    heavy_ids = {
-        pr["id"] for pr in result.get("per_patch", [])
-        if pr.get("max_padding", 0) > 64
-    }
-    if "verify failed" in result.get("err", "") and heavy_ids:
-        reduced = [p for p in patches if p.get("id") not in heavy_ids]
-        if reduced:
+    if "verify failed" not in result.get("err", ""):
+        return result
+
+    per_patch_0 = result.get("per_patch", [])
+
+    # ── Retry 1: drop patches that needed >64 bytes of padding ──────────────
+    heavy_ids = {pr["id"] for pr in per_patch_0 if pr.get("max_padding", 0) > 64}
+    if heavy_ids:
+        reduced1 = [p for p in patches if p.get("id") not in heavy_ids]
+        if reduced1:
             result["_retry_attempted"] = True
-            retry = _attempt(reduced)
-            if retry["ok"]:
-                retry["skipped_heavy"] = sorted(heavy_ids)
-                return retry
-            # Carry the retry error so the caller can surface both
-            result["_retry_err"] = retry.get("err", "unknown")
+            r1 = _attempt(reduced1)
+            if r1["ok"]:
+                r1["skipped_heavy"] = sorted(heavy_ids)
+                return r1
+            result["_retry_err"] = r1.get("err", "unknown")
+
+    # ── Retry 2: drop ALL patches that needed any padding (>0 bytes) ─────────
+    # Some patches with small padding (1-64 B) also corrupt the active bundle
+    # when the greedy regex consumed bytes the replacement didn't reproduce.
+    any_pad_ids = {pr["id"] for pr in per_patch_0 if pr.get("max_padding", 0) > 0}
+    extra_ids = any_pad_ids - heavy_ids   # new IDs not already dropped in r1
+    if extra_ids:
+        reduced2 = [p for p in patches if p.get("id") not in any_pad_ids]
+        if reduced2:
+            result["_retry2_attempted"] = True
+            r2 = _attempt(reduced2)
+            if r2["ok"]:
+                r2["skipped_heavy"] = sorted(any_pad_ids)
+                return r2
+            result["_retry2_err"] = r2.get("err", "unknown")
 
     return result
 
@@ -840,7 +853,15 @@ def cmd_patch(args) -> int:
                 print(f"  {R}fail{X}  [bun-inplace]  {result.get('err','unknown')}")
                 if result.get("_retry_attempted"):
                     print(f"  {R}fail{X}  [bun-inplace retry]  {result.get('_retry_err','unknown')}")
+                if result.get("_retry2_attempted"):
+                    print(f"  {R}fail{X}  [bun-inplace retry-2]  {result.get('_retry2_err','unknown')}")
                 fail += len(js_patches)
+                # Bounds diagnostic — helps confirm whether VFS-copy isolation worked.
+                bounds = result.get("_bounds")
+                if bounds:
+                    blo, bhi, elo, ehi = bounds
+                    print(f"  {Y}diag{X}  bun=[{hex(blo)},{hex(bhi)}) eff=[{hex(elo)},{hex(ehi)})"
+                          f"  section={bhi-blo} eff={ehi-elo}")
                 # Patches that needed the most padding are the most likely corruption source.
                 heavy = sorted(
                     [pr for pr in result.get("per_patch", []) if pr.get("max_padding", 0) > 64],
@@ -859,7 +880,7 @@ def cmd_patch(args) -> int:
                     print(f"  {G}ok{X}    {pr['id']:40s}  {msg}")
                     ok += 1
                 for pid in result.get("skipped_heavy", []):
-                    print(f"  {Y}skip{X}  {pid:40s}  skipped — >64 B padding caused verify failure; retry succeeded without")
+                    print(f"  {Y}skip{X}  {pid:40s}  skipped — padding caused verify failure; retry succeeded without")
                     skip += 1
                 if result.get("noop"):
                     pass  # all already applied
