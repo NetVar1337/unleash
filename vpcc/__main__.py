@@ -1378,7 +1378,7 @@ def cmd_upgrade(args) -> int:
     """
     print(f"{B}vpcc upgrade — full pipeline{X}")
     print(f"  step 1/4: self-update patches")
-    rc_su = cmd_self_update(type("A", (), {"force": False})())
+    rc_su = cmd_self_update(type("A", (), {"force": False, "dry_run": False, "no_reapply": False})())
     if rc_su not in (0, 1):
         print(f"  {Y}self-update returned rc={rc_su}, continuing{X}")
 
