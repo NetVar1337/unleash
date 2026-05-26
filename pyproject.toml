@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name            = "vpcc"
-version         = "2.2.1"
+version         = "2.2.2"
 description     = "vpcc — unleash Claude Code. 102 binary patches for Bun SEA: zero permission prompts, zero refusals, zero telemetry, 42 feature gates unlocked. Cross-OS auto-heal, sub-second drift detection, no CC overhead."
 readme          = "README.md"
 requires-python = ">=3.9"

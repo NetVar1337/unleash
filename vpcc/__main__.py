@@ -558,7 +558,13 @@ def patch_bun_sea_inplace(binary: Path, patches: list) -> dict:
                         skipped_n += 1
                         continue
                     section_view = bytes(data[eff_lo:eff_hi])
-                    for m in pat.finditer(section_view):
+                    # Use search() not finditer() — apply to the FIRST match only.
+                    # The active bundle always precedes the VFS copy in the .bun
+                    # section, so the first match is always in the active bundle.
+                    # Applying to every match would also corrupt the VFS copy,
+                    # breaking Bun's module loader ("CommonJS wrapper" crash).
+                    m = pat.search(section_view)
+                    if m:
                         mb = m.group(0)
                         try:
                             rb = m.expand(replace.encode("utf-8", "surrogateescape"))
@@ -587,14 +593,12 @@ def patch_bun_sea_inplace(binary: Path, patches: list) -> dict:
                         r_b = r_b + b" " * padding
                         if padding > max_padding:
                             max_padding = padding
-                    pos = eff_lo
-                    while True:
-                        j = data.find(s_b, pos, eff_hi)
-                        if j < 0:
-                            break
+                    # Apply to the FIRST occurrence only (same VFS-safety reason
+                    # as above).
+                    j = data.find(s_b, eff_lo, eff_hi)
+                    if j >= 0:
                         data[j:j + len(s_b)] = r_b
                         applied_n += 1
-                        pos = j + len(s_b)
 
             per_patch.append({"id": p["id"], "applied": applied_n, "skipped": skipped_n, "max_padding": max_padding})
             applied_total += applied_n
