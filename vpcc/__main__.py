@@ -489,122 +489,156 @@ def patch_bun_sea_inplace(binary: Path, patches: list) -> dict:
     2.1.119 change: the .bun section now contains a second VFS copy of the
     main cli.js source.  Patching that copy corrupts Bun's module-loader.
     _find_active_bundle_bounds() restricts writes to the active-entry blob only.
+
+    Auto-retry: if the verify step fails and some patches needed >64 bytes of
+    space-padding (replacement shorter than match), those patches are omitted
+    and the binary is re-patched.  Large padding can overwrite adjacent JS that
+    was captured by a greedy regex but not reproduced in the replacement (e.g.
+    a regex ending with `}func` consumes the start of the next `function`
+    keyword, leaving `tion nextFunc()` after padding — invalid JS).  The retry
+    result carries `skipped_heavy` so callers can report which patches were
+    dropped.
     """
     mode = binary.stat().st_mode & 0o7777
     original_size = binary.stat().st_size
-    data = bytearray(binary.read_bytes())
+    source_bytes = binary.read_bytes()   # immutable; reused across attempts
 
-    bun_off, bun_size = _find_bun_section(data)
-    bun_lo, bun_hi = bun_off, bun_off + bun_size
+    def _attempt(attempt_patches: list) -> dict:
+        data = bytearray(source_bytes)
 
-    if not _bun_section_has_valid_trailer(data, bun_lo, bun_hi):
-        return {"ok": False, "err": "Bun trailer invalid — format change", "applied": 0, "skipped": 0}
+        bun_off, bun_size = _find_bun_section(data)
+        bun_lo, bun_hi = bun_off, bun_off + bun_size
 
-    # Narrow the writable region to the active entry bundle only, so we never
-    # accidentally corrupt the VFS copy or the bundled-module bytecode blobs.
-    eff_lo, eff_hi = _find_active_bundle_bounds(data, bun_lo, bun_hi)
+        if not _bun_section_has_valid_trailer(data, bun_lo, bun_hi):
+            return {"ok": False, "err": "Bun trailer invalid — format change", "applied": 0, "skipped": 0}
 
-    applied_total = 0
-    skipped_total = 0
-    per_patch = []
+        # Narrow the writable region to the active entry bundle only, so we never
+        # accidentally corrupt the VFS copy or the bundled-module bytecode blobs.
+        eff_lo, eff_hi = _find_active_bundle_bounds(data, bun_lo, bun_hi)
 
-    for p in patches:
-        applied_n = 0
-        skipped_n = 0
-        max_padding = 0
-        for sub in p.get("patches", []):
-            search_regex = sub.get("search_regex")
-            search = sub.get("search")
-            replace = sub.get("replace", "")
-            marker = sub.get("applied_marker")
+        applied_total = 0
+        skipped_total = 0
+        per_patch = []
 
-            if marker and data.find(marker.encode("utf-8", "surrogateescape"), eff_lo, eff_hi) >= 0:
-                continue
+        for p in attempt_patches:
+            applied_n = 0
+            skipped_n = 0
+            max_padding = 0
+            for sub in p.get("patches", []):
+                search_regex = sub.get("search_regex")
+                search = sub.get("search")
+                replace = sub.get("replace", "")
+                marker = sub.get("applied_marker")
 
-            if search_regex:
-                try:
-                    pat = re.compile(search_regex.encode("utf-8", "surrogateescape"), re.DOTALL)
-                except re.error:
-                    skipped_n += 1
+                if marker and data.find(marker.encode("utf-8", "surrogateescape"), eff_lo, eff_hi) >= 0:
                     continue
-                section_view = bytes(data[eff_lo:eff_hi])
-                for m in pat.finditer(section_view):
-                    mb = m.group(0)
+
+                if search_regex:
                     try:
-                        rb = m.expand(replace.encode("utf-8", "surrogateescape"))
-                    except Exception:
+                        pat = re.compile(search_regex.encode("utf-8", "surrogateescape"), re.DOTALL)
+                    except re.error:
                         skipped_n += 1
                         continue
-                    if len(rb) > len(mb):
+                    section_view = bytes(data[eff_lo:eff_hi])
+                    for m in pat.finditer(section_view):
+                        mb = m.group(0)
+                        try:
+                            rb = m.expand(replace.encode("utf-8", "surrogateescape"))
+                        except Exception:
+                            skipped_n += 1
+                            continue
+                        if len(rb) > len(mb):
+                            skipped_n += 1
+                            continue
+                        if len(rb) < len(mb):
+                            padding = len(mb) - len(rb)
+                            rb = rb + b" " * padding
+                            if padding > max_padding:
+                                max_padding = padding
+                        abs_start = eff_lo + m.start()
+                        data[abs_start:abs_start + len(mb)] = rb
+                        applied_n += 1
+                elif search:
+                    s_b = search.encode("utf-8", "surrogateescape")
+                    r_b = replace.encode("utf-8", "surrogateescape")
+                    if len(r_b) > len(s_b):
                         skipped_n += 1
                         continue
-                    if len(rb) < len(mb):
-                        padding = len(mb) - len(rb)
-                        rb = rb + b" " * padding
+                    if len(r_b) < len(s_b):
+                        padding = len(s_b) - len(r_b)
+                        r_b = r_b + b" " * padding
                         if padding > max_padding:
                             max_padding = padding
-                    abs_start = eff_lo + m.start()
-                    data[abs_start:abs_start + len(mb)] = rb
-                    applied_n += 1
-            elif search:
-                s_b = search.encode("utf-8", "surrogateescape")
-                r_b = replace.encode("utf-8", "surrogateescape")
-                if len(r_b) > len(s_b):
-                    skipped_n += 1
-                    continue
-                if len(r_b) < len(s_b):
-                    padding = len(s_b) - len(r_b)
-                    r_b = r_b + b" " * padding
-                    if padding > max_padding:
-                        max_padding = padding
-                pos = eff_lo
-                while True:
-                    j = data.find(s_b, pos, eff_hi)
-                    if j < 0:
-                        break
-                    data[j:j + len(s_b)] = r_b
-                    applied_n += 1
-                    pos = j + len(s_b)
+                    pos = eff_lo
+                    while True:
+                        j = data.find(s_b, pos, eff_hi)
+                        if j < 0:
+                            break
+                        data[j:j + len(s_b)] = r_b
+                        applied_n += 1
+                        pos = j + len(s_b)
 
-        per_patch.append({"id": p["id"], "applied": applied_n, "skipped": skipped_n, "max_padding": max_padding})
-        applied_total += applied_n
-        skipped_total += skipped_n
+            per_patch.append({"id": p["id"], "applied": applied_n, "skipped": skipped_n, "max_padding": max_padding})
+            applied_total += applied_n
+            skipped_total += skipped_n
 
-    if len(data) != original_size:
-        return {"ok": False, "err": f"size drift {len(data)} vs {original_size}",
-                "applied": 0, "skipped": skipped_total, "per_patch": per_patch}
+        if len(data) != original_size:
+            return {"ok": False, "err": f"size drift {len(data)} vs {original_size}",
+                    "applied": 0, "skipped": skipped_total, "per_patch": per_patch}
 
-    if applied_total == 0:
-        return {"ok": True, "noop": True, "applied": 0, "skipped": skipped_total, "per_patch": per_patch}
+        if applied_total == 0:
+            return {"ok": True, "noop": True, "applied": 0, "skipped": skipped_total, "per_patch": per_patch}
 
-    # Write to temp same-dir file, verify by running, then atomic swap.
-    tmp_bin = binary.parent / f".{binary.name}.vpcctmp-{os.getpid()}"
-    try:
-        tmp_bin.write_bytes(bytes(data))
-        tmp_bin.chmod(mode)
+        # Write to temp same-dir file, verify by running, then atomic swap.
+        tmp_bin = binary.parent / f".{binary.name}.vpcctmp-{os.getpid()}"
+        try:
+            tmp_bin.write_bytes(bytes(data))
+            tmp_bin.chmod(mode)
 
-        # macOS: re-sign with ad-hoc signature after patching (code signature
-        # invalidated by byte changes; unsigned Mach-O gets SIGKILL on arm64).
-        if sys.platform == "darwin":
-            subprocess.run(["codesign", "--force", "--sign", "-", str(tmp_bin)],
-                           capture_output=True, timeout=30)
+            # macOS: re-sign with ad-hoc signature after patching (code signature
+            # invalidated by byte changes; unsigned Mach-O gets SIGKILL on arm64).
+            if sys.platform == "darwin":
+                subprocess.run(["codesign", "--force", "--sign", "-", str(tmp_bin)],
+                               capture_output=True, timeout=30)
 
-        r = subprocess.run([str(tmp_bin), "--version"],
-                           capture_output=True, text=True, timeout=60)
-        out = (r.stdout or "") + (r.stderr or "")
-        if r.returncode != 0 or "Claude Code" not in out:
+            r = subprocess.run([str(tmp_bin), "--version"],
+                               capture_output=True, text=True, timeout=60)
+            out = (r.stdout or "") + (r.stderr or "")
+            if r.returncode != 0 or "Claude Code" not in out:
+                tmp_bin.unlink(missing_ok=True)
+                return {"ok": False, "err": f"verify failed: {out[:120]!r} rc={r.returncode}",
+                        "applied": applied_total, "skipped": skipped_total, "per_patch": per_patch}
+
+            binary.unlink()
+            tmp_bin.rename(binary)
+            binary.chmod(mode)
+        except Exception as e:
             tmp_bin.unlink(missing_ok=True)
-            return {"ok": False, "err": f"verify failed: {out[:120]!r} rc={r.returncode}",
-                    "applied": applied_total, "skipped": skipped_total, "per_patch": per_patch}
+            return {"ok": False, "err": f"write failed: {e}", "applied": 0, "skipped": skipped_total}
 
-        binary.unlink()
-        tmp_bin.rename(binary)
-        binary.chmod(mode)
-    except Exception as e:
-        tmp_bin.unlink(missing_ok=True)
-        return {"ok": False, "err": f"write failed: {e}", "applied": 0, "skipped": skipped_total}
+        return {"ok": True, "applied": applied_total, "skipped": skipped_total, "per_patch": per_patch}
 
-    return {"ok": True, "applied": applied_total, "skipped": skipped_total, "per_patch": per_patch}
+    # ── First attempt: all patches ──────────────────────────────────────────
+    result = _attempt(patches)
+    if result["ok"]:
+        return result
+
+    # ── Auto-retry: drop patches that needed >64 bytes of space-padding ─────
+    # Large padding overwrites adjacent JS bytes that the regex captured but
+    # the replacement did not reproduce, breaking the Bun module wrapper.
+    heavy_ids = {
+        pr["id"] for pr in result.get("per_patch", [])
+        if pr.get("max_padding", 0) > 64
+    }
+    if "verify failed" in result.get("err", "") and heavy_ids:
+        reduced = [p for p in patches if p.get("id") not in heavy_ids]
+        if reduced:
+            retry = _attempt(reduced)
+            if retry["ok"]:
+                retry["skipped_heavy"] = sorted(heavy_ids)
+                return retry
+
+    return result
 
 
 def read_bun_js(binary: Path) -> tuple[str | None, str]:
@@ -795,6 +829,9 @@ def cmd_patch(args) -> int:
                     msg = "no-op (already applied)" if n == 0 else f"{n} in-place replacement(s)"
                     print(f"  {G}ok{X}    {pr['id']:40s}  {msg}")
                     ok += 1
+                for pid in result.get("skipped_heavy", []):
+                    print(f"  {Y}skip{X}  {pid:40s}  skipped — >64 B padding caused verify failure; retry succeeded without")
+                    skip += 1
                 if result.get("noop"):
                     pass  # all already applied
                 else:
