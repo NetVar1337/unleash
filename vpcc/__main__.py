@@ -437,61 +437,64 @@ def _find_bun_section(data) -> tuple[int, int]:
 def _find_active_bundle_bounds(data, bun_lo: int, bun_hi: int) -> tuple[int, int]:
     """
     Bun SEA ≥ 2.1.119 embeds the main entry bundle PLUS a virtual-filesystem
-    (VFS) copy of the same source at a second location.  The layout is:
+    (VFS) copy of the same source at a second location.  Patching the VFS copy
+    corrupts Bun's module-loader ("CommonJS wrapper" crash).
 
-        [header?][active-entry-blob (JS source, ~13 MB)][bytecode-for-deps (~102 MB)]
-        [lookup-key\x00][vfs-path\x00][vfs-copy-of-cli.js][other-vfs-files][trailer]
+    Two distinct .bun section layouts have been observed:
 
-    Patching any byte in the VFS copy corrupts the module Bun re-parses at
-    startup, causing the "entry.instantiate" / CommonJS-wrapper crash even
-    though the active bundle itself is fine.
+    Layout A — pre-2.1.150 (marker close to section start):
+        [u32 size?][// @bun @bytecode][active-source-blob][bytecode-deps][VFS]
+        The first '// @bun @bytecode' is the active bundle header.  A u32 size
+        field may precede it.  We read the size field to get [marker, marker+size)
+        or fall back to using the second marker as the upper bound.
 
-    Primary detection: the active bundle always starts with "// @bun @bytecode"
-    and its byte-length is encoded as a little-endian u32 at (data_start - 4).
-    We read that field and return [abs_start, abs_end) so callers only scan the
-    active bundle region.
+    Layout B — 2.1.150 Windows PE (marker far from section start, ≥4 KB in):
+        [raw-JS-source][binary-bytecode-deps ... // @bun @bytecode ...][VFS...]
+        The active bundle is raw JS source with NO '// @bun @bytecode' header.
+        The first marker we find is the START of a compiled dependency blob.
+        The correct patch window is [bun_lo, abs_marker) — the raw source that
+        precedes any compiled bytecode.
 
-    Fallback when size field is unavailable (Bun 2.1.150+ appears to place the
-    marker at offset 0 of the section leaving no room for the preceding u32):
-    search for a SECOND occurrence of "// @bun @bytecode" — that is the VFS
-    copy's header — and use it as the exclusive upper bound.  This keeps every
-    patch inside [first_marker, second_marker) which spans the active JS blob
-    and the binary bytecode-for-deps region but never reaches the VFS copy.
-    JS text patterns are extremely unlikely to match inside the binary bytecode
-    blob, so this is safe in practice.
-
-    Last resort: return the full [bun_lo, bun_hi) range only when the section
-    contains a single marker and the size field is also unavailable.  In that
-    case the build is likely an old single-bundle format without a VFS copy.
+    Strategy:
+     1. Find the first '// @bun @bytecode' marker.
+     2. If it is > 4 KB from the section start → Layout B: return [bun_lo, marker).
+     3. Else try the u32 size field at (marker-4).  If valid → return [marker, end).
+     4. Else search for a second marker (VFS boundary) → return [marker, marker2).
+     5. Last resort → return full section [bun_lo, bun_hi).
     """
     BUN_BYTECODE_MARKER = b"// @bun @bytecode"
     marker_len = len(BUN_BYTECODE_MARKER)
     section_start = bun_lo
 
-    # ── Primary: find first marker (active bundle start) ────────────────────
+    # ── Step 1: find first marker ────────────────────────────────────────────
     abs_marker = data.find(BUN_BYTECODE_MARKER, section_start, bun_hi)
     if abs_marker < 0:
-        return bun_lo, bun_hi  # no marker at all — full-range fallback
+        return bun_lo, bun_hi  # no bytecode at all — patch whole section
 
-    data_start = abs_marker
+    gap = abs_marker - section_start
 
-    # ── Try the u32 size field at (data_start - 4) ──────────────────────────
-    size_field_off = data_start - 4
+    # ── Step 2: Layout B — marker far into section ───────────────────────────
+    # Everything before the first bytecode marker is raw JS source.
+    # Bun 2.1.150 Windows PE: gap ≈ 108 MB; the [bun_lo, abs_marker) slice
+    # contains the active JS bundle that must be patched.
+    if gap > 4096:
+        return bun_lo, abs_marker
+
+    # ── Step 3: Layout A — marker close to section start, try size field ─────
+    size_field_off = abs_marker - 4
     if size_field_off >= section_start:
         import struct as _s
         blob_size = _s.unpack_from("<I", data, size_field_off)[0]
-        active_end = data_start + blob_size
-        if 1024 <= blob_size and active_end <= bun_hi:
-            return data_start, active_end   # ← happy path (pre-2.1.150)
+        active_end = abs_marker + blob_size
+        if 1024 <= blob_size <= bun_hi - abs_marker:
+            return abs_marker, active_end   # ← pre-2.1.150 happy path
 
-    # ── Fallback: size field absent/implausible — find the VFS copy ─────────
-    # The VFS copy's bytecode also starts with the same marker.  Use its
-    # offset as the exclusive upper bound so no patch ever touches the VFS.
+    # ── Step 4: size field absent/implausible — find second marker (VFS) ─────
     abs_marker2 = data.find(BUN_BYTECODE_MARKER, abs_marker + marker_len, bun_hi)
     if abs_marker2 > abs_marker:
-        return abs_marker, abs_marker2      # ← 2.1.150+ path
+        return abs_marker, abs_marker2
 
-    # ── Last resort: single-bundle build (no VFS), use full section ─────────
+    # ── Step 5: last resort — full section ───────────────────────────────────
     return bun_lo, bun_hi
 
 
