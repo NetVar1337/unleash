@@ -2323,11 +2323,16 @@ def main() -> int:
         help="Real-time status display (version, SHA, patches, guard, drift)")
     p_dash.add_argument("--interval", "-i", type=int, default=5,
         help="Refresh interval seconds (default 5)")
+    sub.add_parser("tui",
+        help="Interactive terminal UI — full vpcc control panel (curses)")
 
     args = ap.parse_args()
     if args.cmd is None:
         ap.print_help()
         return 0
+    if args.cmd == "tui":
+        from .tui import run_curses_tui
+        return run_curses_tui()
     return {"patch": cmd_patch, "verify": cmd_verify,
             "rollback": cmd_rollback, "status": cmd_status,
             "list": cmd_list,
