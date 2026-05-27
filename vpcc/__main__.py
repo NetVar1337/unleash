@@ -1513,6 +1513,181 @@ def cmd_uninstall_guard(args) -> int:
     stamp.unlink(missing_ok=True)
     return 0
 
+def _detect_install_method() -> str:
+    """Detect how vpcc was installed. Returns one of: pipx, pip, uv, git, unknown."""
+    vpcc_path = Path(__file__).resolve()
+    vpcc_str = str(vpcc_path).lower().replace("\\", "/")
+
+    if "/pipx/" in vpcc_str:
+        return "pipx"
+    if "/uv/" in vpcc_str or "/.local/share/uv/" in vpcc_str:
+        return "uv"
+
+    # Check if we're in a git repo (developer install / editable)
+    git_dir = vpcc_path.parent
+    for _ in range(5):
+        if (git_dir / ".git").exists():
+            return "git"
+        git_dir = git_dir.parent
+
+    # pip (any venv or user install)
+    return "pip"
+
+
+def cmd_update(args) -> int:
+    """OMP-style full self-update: upgrade vpcc itself + patches + re-patch binary.
+
+    Detects install method (pipx/pip/uv/git) and runs the right upgrade command,
+    then syncs patches from GitHub and re-applies them to the CC binary.
+
+    This is the single command users should run after a CC update or periodically.
+    """
+    from vpcc import __version__
+
+    print(f"{B}vpcc update{X}")
+    print(f"  current : v{__version__}")
+    method = _detect_install_method()
+    print(f"  install : {method}")
+
+    REPO_URL = f"git+https://github.com/{_updater.REPO}"
+
+    # ── Step 1: Check if a new version is available ───────────────────────
+    print(f"\n  {B}[1/4] checking for updates...{X}")
+    remote_ver = None
+    try:
+        raw = _updater._req(
+            f"https://raw.githubusercontent.com/{_updater.REPO}/{_updater.BRANCH}/vpcc/__init__.py",
+            accept="text/plain", timeout=10,
+        ).decode("utf-8", errors="replace")
+        for line in raw.splitlines():
+            if line.startswith("__version__"):
+                remote_ver = line.split('"')[1]
+                break
+    except Exception:
+        pass
+
+    if remote_ver:
+        print(f"  remote  : v{remote_ver}")
+        if remote_ver == __version__:
+            print(f"  {G}{CHECK} vpcc is already at the latest version{X}")
+            needs_tool_update = False
+        else:
+            needs_tool_update = True
+    else:
+        print(f"  {Y}{WARN_ICON} could not check remote version — updating anyway{X}")
+        needs_tool_update = True
+
+    # ── Step 2: Update vpcc itself ────────────────────────────────────────
+    if needs_tool_update:
+        print(f"\n  {B}[2/4] updating vpcc ({method})...{X}")
+        rc = _run_tool_update(method, REPO_URL)
+        if rc == 0:
+            print(f"  {G}{CHECK} vpcc updated{X}")
+        else:
+            print(f"  {Y}{WARN_ICON} tool update returned rc={rc} — continuing with patch sync{X}")
+    else:
+        print(f"\n  {B}[2/4] skipping tool update (already current){X}")
+
+    # ── Step 3: Sync patches from GitHub ──────────────────────────────────
+    print(f"\n  {B}[3/4] syncing patches...{X}")
+    remote_sha = _updater.remote_head_sha("patches")
+    if remote_sha:
+        state = _updater.load_state()
+        local_sha = state.get("patches_commit")
+        if local_sha == remote_sha:
+            print(f"  {G}{CHECK} patches already at latest ({remote_sha[:7]}){X}")
+        else:
+            changed, sha_or_err = _updater.sync_patches(PATCH_DIR, remote_sha)
+            if changed >= 0:
+                print(f"  {G}{CHECK} {changed} patch file(s) synced @ {sha_or_err[:7]}{X}")
+            else:
+                print(f"  {R}{CROSS} patch sync failed: {sha_or_err}{X}")
+    else:
+        print(f"  {Y}{WARN_ICON} could not reach GitHub — using local patches{X}")
+
+    # ── Step 4: Re-apply patches to CC binary ─────────────────────────────
+    print(f"\n  {B}[4/4] patching Claude Code binary...{X}")
+    target, kind = find_target()
+    if target:
+        class _P: dry_run = False
+        rc_patch = cmd_patch(_P())
+        if rc_patch == 0:
+            # Stamp guard SHA
+            try:
+                stamp = Path.home() / ".vpcc" / "last_patched_sha"
+                stamp.parent.mkdir(parents=True, exist_ok=True)
+                stamp.write_text(sha256_short(target))
+            except OSError:
+                pass
+    else:
+        print(f"  {Y}{WARN_ICON} Claude Code not found — skipping binary patch{X}")
+        rc_patch = 0
+
+    # ── Summary ───────────────────────────────────────────────────────────
+    print(f"\n{B}{'─' * 40}{X}")
+    if rc_patch == 0:
+        print(f"  {G}{CHECK} vpcc update complete{X}")
+    else:
+        print(f"  {Y}{WARN_ICON} update complete with warnings (rc={rc_patch}){X}")
+
+    # Show new version if we updated
+    if needs_tool_update:
+        try:
+            r = subprocess.run(
+                [sys.executable, "-c", "from vpcc import __version__; print(__version__)"],
+                capture_output=True, text=True, timeout=5)
+            new_ver = r.stdout.strip()
+            if new_ver and new_ver != __version__:
+                print(f"  {G}v{__version__} {ARROW} v{new_ver}{X}")
+        except Exception:
+            pass
+
+    return rc_patch
+
+
+def _run_tool_update(method: str, repo_url: str) -> int:
+    """Run the appropriate package manager command to upgrade vpcc."""
+    cmds: dict[str, list[list[str]]] = {
+        "pipx": [
+            ["pipx", "install", "--force", repo_url],
+        ],
+        "uv": [
+            ["uv", "tool", "install", "--force", repo_url],
+        ],
+        "pip": [
+            [sys.executable, "-m", "pip", "install", "--upgrade", "--force-reinstall", repo_url],
+        ],
+        "git": [
+            # For git installs: pull latest + reinstall in editable mode
+            ["git", "pull", "--ff-only"],
+        ],
+    }
+
+    for cmd in cmds.get(method, cmds["pip"]):
+        try:
+            # For git pull, run in the repo directory
+            cwd = str(ROOT) if method == "git" and cmd[0] == "git" else None
+            r = subprocess.run(cmd, capture_output=True, text=True, timeout=120, cwd=cwd)
+            if r.returncode != 0:
+                err = (r.stderr or r.stdout or "").strip().splitlines()
+                if err:
+                    print(f"  {Y}{err[-1][:100]}{X}")
+                return r.returncode
+        except FileNotFoundError:
+            print(f"  {Y}{WARN_ICON} '{cmd[0]}' not found — trying pip fallback{X}")
+            # Fallback to pip
+            try:
+                r = subprocess.run(
+                    [sys.executable, "-m", "pip", "install", "--upgrade", "--force-reinstall", repo_url],
+                    capture_output=True, text=True, timeout=120)
+                return r.returncode
+            except Exception:
+                return 1
+        except Exception as e:
+            print(f"  {R}{e}{X}")
+            return 1
+    return 0
+
 def cmd_autopilot(args) -> int:
     """Full automatic pipeline: detect drift → auto-heal → patch → commit → push → issue.
 
@@ -2325,6 +2500,8 @@ def main() -> int:
         help="Refresh interval seconds (default 5)")
     sub.add_parser("tui",
         help="Interactive terminal UI — full vpcc control panel (curses)")
+    sub.add_parser("update",
+        help="Full self-update: upgrade vpcc + sync patches + re-patch binary (like omp update)")
 
     args = ap.parse_args()
     if args.cmd is None:
@@ -2352,6 +2529,7 @@ def main() -> int:
             "uninstall-guard": cmd_uninstall_guard,
             "autopilot": cmd_autopilot,
             "dashboard": cmd_dashboard,
+            "update": cmd_update,
             "bench": cmd_bench}[args.cmd](args)
 
 

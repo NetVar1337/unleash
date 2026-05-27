@@ -161,6 +161,7 @@ def _detect_scheduler_short() -> str:
 # ── menu actions ─────────────────────────────────────────────────────────────
 
 MENU_ITEMS = [
+    ("Update vpcc",         "update",         "Full self-update: upgrade vpcc + patches + re-patch (like omp update)"),
     ("Patch binary",        "patch",          "Apply all patches to Claude Code binary"),
     ("Verify patches",      "verify",         "Check all applied markers are present"),
     ("Full autopilot",      "autopilot",      "Scan → heal → patch → commit → push"),
@@ -168,8 +169,7 @@ MENU_ITEMS = [
     ("Doctor health check", "doctor",         "Full health report"),
     ("Install rules",       "install-rules",  "Deploy authorization bundle (--no-hook)"),
     ("Install guard",       "install-guard",  "Set up auto-patch scheduler"),
-    ("Self-update patches", "self-update",    "Pull latest patches from GitHub"),
-    ("Upgrade (all-in-one)","upgrade",        "Self-update + autoheal + verify + cache"),
+    ("Upgrade (all-in-one)","upgrade",        "Self-update patches + autoheal + verify + cache"),
     ("Rollback",            "rollback",       "Restore from most recent backup"),
     ("Scan auto-heal",      "scan-heal",      "Scan + regenerate drifted regexes"),
 ]
@@ -192,7 +192,9 @@ def run_action(cmd: str, state: State) -> int:
         no_reapply = False
 
     try:
-        if cmd == "patch":
+        if cmd == "update":
+            rc = m.cmd_update(Args())
+        elif cmd == "patch":
             rc = m.cmd_patch(Args())
         elif cmd == "verify":
             rc = m.cmd_verify(Args())
@@ -206,8 +208,6 @@ def run_action(cmd: str, state: State) -> int:
             rc = m.cmd_install_rules(Args())
         elif cmd == "install-guard":
             rc = m.cmd_install_guard(Args())
-        elif cmd == "self-update":
-            rc = m.cmd_self_update(Args())
         elif cmd == "upgrade":
             rc = m.cmd_upgrade(Args())
         elif cmd == "rollback":
@@ -408,7 +408,7 @@ def _curses_main(stdscr):
                 stdscr.addnstr(row, menu_x, clean, menu_w, color)
 
         # ── Footer ────────────────────────────────────────────────────────
-        footer = " q:quit  r:refresh  p:patch  a:autopilot  d:doctor "
+        footer = " q:quit  r:refresh  u:update  p:patch  a:autopilot  d:doctor "
         if h > 1:
             stdscr.addstr(h - 1, 0, " " * w, CP_SEL)
             stdscr.addnstr(h - 1, 0, footer, w, CP_SEL)
@@ -477,7 +477,10 @@ def _curses_main(stdscr):
                 mode = "action"
                 _run_action_captured("doctor", state)
                 refresh_state(state)
-
+            elif ch == ord("u"):
+                mode = "action"
+                _run_action_captured("update", state)
+                refresh_state(state)
         elif mode == "action":
             if ch == curses.KEY_UP or ch == ord("k"):
                 action_scroll = min(action_scroll + 1, max(0, len(state.action_log) - 5))
