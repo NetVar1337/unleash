@@ -128,9 +128,18 @@ if ($userPath -notlike "*$BinDir*") {
     Warn2 "$BinDir added to User PATH — reopen your shell"
 }
 
+# 6b. Install auto-guard (background scheduler)
+Step "installing auto-guard scheduler"
+vpcc install-guard 2>$null
+if ($LASTEXITCODE -eq 0) {
+    OK "auto-guard active — CC updates will be patched automatically"
+} else {
+    Warn2 "auto-guard install failed — run 'vpcc install-guard' manually"
+}
+
 # 7. Verify
 Write-Host ""
 vpcc doctor
 Write-Host ""
 OK "install complete"
-OK "usage:  vpcc patch · vpcc scan · vpcc watch · vpcc doctor"
+OK "usage:  vpcc patch · vpcc guard · vpcc doctor · vpcc install-guard"

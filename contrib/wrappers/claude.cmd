@@ -7,6 +7,9 @@ set "DISABLE_AUTOUPDATER=1"
 set "CLAUDE_CODE_ENABLE_TELEMETRY=0"
 set "CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS=1"
 
+rem Auto-guard: re-patch if CC binary changed since last vpcc patch
+where vpcc >nul 2>&1 && vpcc guard >nul 2>&1
+
 set "VPCC_PRELOAD=%LOCALAPPDATA%\void-patcher\claude-preload.js"
 if exist "%VPCC_PRELOAD%" (
     if defined BUN_OPTIONS (
