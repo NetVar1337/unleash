@@ -244,6 +244,22 @@ class SigScanner:
         out = []
         for idx, p in enumerate(patches):
             pid = p.get("id", "?")
+
+            # Retired patches — emit a placeholder row and skip all scanning.
+            if p.get("retired"):
+                out.append({
+                    "id": pid,
+                    "anchors": p.get("anchor_strings") or [],
+                    "anchor_offset": None,
+                    "regex_hit": False,
+                    "marker_hit": False,
+                    "status": "retired",
+                    "confidence": 0.0,
+                    "method": "retired",
+                    "all_optional": False,
+                })
+                continue
+
             anchors = p.get("anchor_strings") or []
             sig_regex = None
             markers: list[str] = []
@@ -378,15 +394,18 @@ def load_text_from_target(target: Path, kind: str) -> str:
 def format_scan_report(rows: list[dict[str, Any]], verbose: bool = False) -> str:
     G, Y, R, X = "\033[32m", "\033[33m", "\033[31m", "\033[0m"
     C = "\033[36m"  # cyan for method
+    D = "\033[90m"  # dim/gray for retired
     lines = []
-    ok = drift = applied = unclassified = 0
+    ok = drift = applied = unclassified = retired = 0
 
     for r in rows:
         status = r["status"]
         confidence = r.get("confidence", -1.0)
         method = r.get("method", "?")
 
-        if status == "applied":
+        if status == "retired":
+            mark = f"{D}retired{X}"; retired += 1
+        elif status == "applied":
             mark = f"{G}applied{X}"; applied += 1
         elif status == "ok":
             mark = f"{G}ok{X}"; ok += 1
@@ -430,6 +449,8 @@ def format_scan_report(rows: list[dict[str, Any]], verbose: bool = False) -> str
         tail += f"  {R}{drift} drift{X}"
     if unclassified:
         tail += f"  {Y}{unclassified} nometa{X} (pre-v2.1.114 patches — anchor_strings not yet backfilled)"
+    if retired:
+        tail += f"  {D}{retired} retired{X}"
     lines.append(tail)
     return "\n".join(lines)
 
@@ -446,6 +467,8 @@ def load_patches_from_dir(patch_dir: Path, respect_scan_flag: bool = True) -> li
         except json.JSONDecodeError:
             continue
         if obj.get("type") != "js_replace":
+            continue
+        if obj.get("retired"):
             continue
         if respect_scan_flag and obj.get("scan_signatures", True) is False:
             continue
@@ -507,16 +530,28 @@ def auto_heal_drift(text: str, patch_dir: Path, verbose: bool = False) -> dict[s
             if foff is not None:
                 anchor_off = foff
                 anchor_method = fmethod
-                # Update anchor_strings to what we actually found in the text
-                # Find the actual text at that offset that resembles the anchor
-                for i, old_a in enumerate(anchors):
-                    # Try to find a nearby exact-matchable substring
-                    window = text[max(0, anchor_off - 100): anchor_off + len(old_a) + 500]
-                    # Extract long tokens from old anchor, find them in window
-                    for tok in _extract_long_tokens(old_a):
-                        if tok in window:
-                            # Found the stable core — use it
+                # Update anchor_strings to actual text found near the fuzzy offset.
+                # For each old anchor, find its longest stable token in a window
+                # around the resolved offset and extract surrounding context.
+                new_anchors = []
+                for old_a in anchors:
+                    tokens = _extract_long_tokens(old_a)
+                    window_start = max(0, anchor_off - 200)
+                    window_end = min(len(text), anchor_off + len(old_a) + 800)
+                    window = text[window_start:window_end]
+                    best_anchor = None
+                    # Try tokens longest-first for best specificity
+                    for tok in sorted(tokens, key=len, reverse=True):
+                        tok_pos = window.find(tok)
+                        if tok_pos >= 0:
+                            # Extract context: 30 chars before token, token, 30 chars after
+                            ctx_start = max(0, tok_pos - 30)
+                            ctx_end = min(len(window), tok_pos + len(tok) + 30)
+                            best_anchor = window[ctx_start:ctx_end].strip()
                             break
+                    new_anchors.append(best_anchor if best_anchor else old_a)
+                p["anchor_strings"] = new_anchors
+                anchors = new_anchors
 
         if anchor_off is None:
             failed += 1
@@ -528,6 +563,24 @@ def auto_heal_drift(text: str, patch_dir: Path, verbose: bool = False) -> dict[s
         if not new_regex:
             failed += 1
             details.append({"id": p["id"], "action": "failed", "reason": "derive_regex returned empty"})
+            continue
+
+        # Validate: derived regex must actually match, and replacement must fit.
+        try:
+            m = re.search(new_regex, text, re.DOTALL)
+        except re.error:
+            m = None
+        if not m:
+            failed += 1
+            details.append({"id": p["id"], "action": "failed", "reason": "derived regex does not match"})
+            continue
+
+        replace_str = sub.get("replace", "")
+        if len(replace_str) > len(m.group(0)):
+            failed += 1
+            if verbose:
+                print(f"  SKIP {p['id']}: replacement ({len(replace_str)}) longer than match ({len(m.group(0))})")
+            details.append({"id": p["id"], "action": "failed", "reason": "replacement longer than match"})
             continue
 
         sub["search_regex"] = new_regex

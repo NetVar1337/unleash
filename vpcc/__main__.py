@@ -661,12 +661,21 @@ def _write_bun_js_DISABLED(binary: Path, text: str) -> tuple[bool, str]:
 
 # ── patch logic ───────────────────────────────────────────────────────────────
 
+def _is_retired_json(f: Path) -> bool:
+    """Quick check: is this patch JSON marked retired?"""
+    try:
+        return bool(json.loads(f.read_text(encoding="utf-8")).get("retired"))
+    except (json.JSONDecodeError, OSError):
+        return False
+
 def load_patches() -> list[dict[str, Any]]:
     patches = []
     for f in sorted(PATCH_DIR.glob("*.json")):
         try:
             p = json.loads(f.read_text(encoding="utf-8"))
             if p.get("disabled"):
+                continue
+            if p.get("retired"):
                 continue
             patches.append(p)
         except json.JSONDecodeError as e:
@@ -1052,8 +1061,9 @@ def cmd_verify(args) -> int:
     required_missing = 0
     optional_missing = 0
     applied = 0
-
     for p in load_patches():
+        if p.get("retired"):
+            continue
         if p.get("type") != "js_replace":
             continue
         checkable = [s for s in p.get("patches", []) if s.get("applied_marker")]
@@ -1248,6 +1258,10 @@ def cmd_doctor(args) -> int:
     """Full health report: sha, patches applied, sig drift, backup count, upstream."""
     target, kind = find_target()
     patches = load_patches()
+    n_retired = sum(
+        1 for f in sorted(PATCH_DIR.glob("*.json"))
+        if _is_retired_json(f)
+    )
     print(f"{B}vpcc doctor{X}")
     print(f"  vpcc ver   : {__import__('vpcc').__version__ if hasattr(__import__('vpcc'), '__version__') else '2.1.114'}")
     print(f"  patches    : {len(patches)}")
@@ -1285,6 +1299,7 @@ def cmd_doctor(args) -> int:
             print(f"  {Y}sig nometa : {len(nometa)} patches (pre-v2.1.114, no anchor_strings yet){X}")
     except Exception as e:
         print(f"  {R}sig scan   : failed — {e}{X}")
+    print(f"  retired    : {n_retired} patches")
 
     # applied markers
     try:
