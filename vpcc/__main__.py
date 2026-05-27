@@ -581,7 +581,10 @@ def patch_bun_sea_inplace(binary: Path, patches: list) -> dict:
     tmp_bin = binary.parent / f".{binary.name}.vpcctmp-{os.getpid()}"
     try:
         tmp_bin.write_bytes(bytes(data))
-        tmp_bin.chmod(mode)
+        try:
+            tmp_bin.chmod(mode)
+        except OSError:
+            pass  # Windows: chmod not fully supported
 
         # macOS: re-sign with ad-hoc signature after patching (code signature
         # invalidated by byte changes; unsigned Mach-O gets SIGKILL on arm64).
@@ -597,9 +600,11 @@ def patch_bun_sea_inplace(binary: Path, patches: list) -> dict:
             return {"ok": False, "err": f"verify failed: {out[:120]!r} rc={r.returncode}",
                     "applied": applied_total, "skipped": skipped_total, "per_patch": per_patch}
 
-        binary.unlink()
-        tmp_bin.rename(binary)
-        binary.chmod(mode)
+        os.replace(str(tmp_bin), str(binary))
+        try:
+            binary.chmod(mode)
+        except OSError:
+            pass  # Windows: chmod not fully supported
     except Exception as e:
         tmp_bin.unlink(missing_ok=True)
         return {"ok": False, "err": f"write failed: {e}", "applied": 0, "skipped": skipped_total}
@@ -920,7 +925,7 @@ def _apply_mcp_guard(p: dict, dry_run: bool = False) -> tuple[bool, str]:
         "    _cp.spawn = function(cmd, args, opts) { const p = _oS.apply(this, arguments);\n"
         '      const isNpx = typeof cmd === "string" && cmd.includes("npx") &&\n'
         '        Array.isArray(args) && args.some(a => typeof a === "string" && a.includes("@latest"));\n'
-        '      if (isNpx) { const t = setTimeout(() => { try { p.kill("SIGKILL"); } catch(_) {} }, 30000);\n'
+        '      if (isNpx) { const t = setTimeout(() => { try { p.kill(); } catch(_) {} }, 30000);\n'
         '        p.on("close", () => clearTimeout(t)); } return p; }; } catch(_) {}\n'
     )
 
@@ -1553,7 +1558,10 @@ def cmd_install_rules(args) -> int:
         hook_src = src_dir / "hooks" / "vpcc-auto-allow.sh"
         hook_dst = hooks_dir / "vpcc-auto-allow.sh"
         hook_dst.write_bytes(hook_src.read_bytes())
-        hook_dst.chmod(0o755)
+        try:
+            hook_dst.chmod(0o755)
+        except OSError:
+            pass  # Windows: chmod not fully supported
         print(f"  {G}{CHECK}{X} hook {ARROW} {hook_dst}")
 
     print(f"\n{G}{CHECK} authorization rules installed{X}")
@@ -1642,7 +1650,10 @@ def cmd_install_preload(args) -> int:
     dst_dir.mkdir(parents=True, exist_ok=True)
     dst = dst_dir / "claude-preload.js"
     dst.write_bytes(src.read_bytes())
-    dst.chmod(0o644)
+    try:
+        dst.chmod(0o644)
+    except OSError:
+        pass  # Windows: chmod not fully supported
     print(f"{G}{CHECK} installed preload{X}  {src.name} {ARROW} {dst}")
     print(f"  wrapper will auto-load via BUN_OPTIONS=--preload on next run")
     return 0

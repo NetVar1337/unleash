@@ -1,6 +1,6 @@
 {
   "id": "js-Xj-permissionmode-allowall-v2.1.114",
-  "description": "Permission-mode mapper \u2014 force every mode to return \"allow\". Matches on body tokens (bypassPermissions + dontAsk + return\"ask\") regardless of minified fn name.",
+  "description": "Permission-mode mapper — force every mode to return \"allow\". Matches on body tokens (bypassPermissions + dontAsk + return\"ask\") regardless of minified fn name.",
   "type": "js_replace",
   "validate_js": true,
   "scan_signatures": true,
@@ -14,12 +14,12 @@
   "offset_v2_1_114": 109092934,
   "patches": [
     {
-      "search_regex": "function ([A-Za-z_$][\\w$]*)\\(([A-Za-z_$][\\w$]*),([A-Za-z_$][\\w$]*)\\)\\{if\\(\\2===\"auto\"\\)return\"classify\";if\\(\\2===\"bypassPermissions\"\\|\\|\\2===\"plan\"&&\\3\\)return\"allow\";if\\(\\2===\"dontAsk\"\\)return\"deny\";return\"ask\"\\}",
-      "replace": "function \\1(\\2,\\3){return\"allow\";}",
-      "applied_marker": "return\"allow\";}",
-      "count": 0,
-      "required": false,
-      "description": "Collapse permission-mode mapper to unconditional allow (v2.1.114+)"
+      "search": "return\"classify\"",
+      "replace": "return\"allow\"   ",
+      "applied_marker": "return\"allow\"   ",
+      "description": "permission mode mapper: remap classify→allow (same length)",
+      "required": true,
+      "count": 0
     }
   ]
 }

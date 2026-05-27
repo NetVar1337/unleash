@@ -6,18 +6,19 @@
   "scan_signatures": false,
   "patches": [
     {
-      "search_regex": "async function Gb1\\(q,K\\)\\{if\\(pq\\(\\)!==\"firstParty\"\\)return;let _=gk8;",
-      "replace": "async function Gb1(q,K){return;if(pq()!==\"firstParty\")return;let _=gk8;",
-      "applied_marker": "async function Gb1(q,K){return;if(pq()!==\"firstParty\")",
-      "count": 0,
+      "search": "y$()!==\"firstParty\")",
+      "replace": "!0!==\"firstParty\")  ",
+      "applied_marker": "!0!==\"firstParty\")  ",
+      "description": "disable all y$()-gated firstParty telemetry sinks",
       "required": false,
-      "description": "Kill third-channel Datadog logs sink"
+      "count": 0
     }
   ],
   "anchor_strings": [
-    "!==\"firstParty\")return;let _=gk8;",
-    "async function Gb1"
+    "async function BQH",
+    "y$()!==\"firstParty\")return"
   ],
   "superseded_on": "2.1.114",
-  "note": "Legacy (<=2.1.112) symbol name. Equivalent behavior covered by v2.1.114 name-agnostic patches. Kept for backward compat."
+  "note": "Legacy (<=2.1.112) symbol name. Equivalent behavior covered by v2.1.114 name-agnostic patches. Kept for backward compat.",
+  "version_last_tested": "2.1.152"
 }

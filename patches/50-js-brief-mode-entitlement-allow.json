@@ -1,22 +1,24 @@
 {
   "id": "js-brief-mode-entitlement-allow",
-  "description": "Force isBriefEntitled() to always return true \u2014 unlocks the 'brief mode' quiet/compressed output UI and brief tool without Statsig gate.",
+  "description": "Force isBriefEntitled() to always return true — unlocks the 'brief mode' quiet/compressed output UI and brief tool without Statsig gate.",
   "type": "js_replace",
   "validate_js": true,
   "patches": [
     {
-      "search_regex": "function xi\\$\\(\\)\\{return P0\\(\\)\\|\\|SH\\(process\\.env\\.CLAUDE_CODE_BRIEF\\)\\|\\|b2\\(\"tengu_kairos_brief\",!1,sH1\\)\\}",
-      "replace": "function xi$(){return !0||P0()||SH(process.env.CLAUDE_CODE_BRIEF)||b2(\"tengu_kairos_brief\",!1,sH1)}",
-      "applied_marker": "function xi$(){return !0||P0()",
+      "replace": "function n26(){return!0    ",
+      "applied_marker": "function n26(){return!0    ",
       "description": "isBriefEntitled = P0() || CLAUDE_CODE_BRIEF || Statsig('tengu_kairos_brief'). Forcing true exposes the gated brief trans",
       "required": false,
-      "count": 0
+      "count": 0,
+      "search": "function n26(){return UC()"
     }
   ],
   "scan_signatures": false,
   "anchor_strings": [
-    "function xi$"
+    "function n26(){",
+    "tengu_kairos_brief\"]"
   ],
   "superseded_on": "2.1.114",
-  "note": "Legacy (<=2.1.112) symbol name. Equivalent behavior covered by v2.1.114 name-agnostic patches. Kept for backward compat."
+  "note": "Legacy (<=2.1.112) symbol name. Equivalent behavior covered by v2.1.114 name-agnostic patches. Kept for backward compat.",
+  "version_last_tested": "2.1.152"
 }

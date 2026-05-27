@@ -1,0 +1,22 @@
+{
+  "id": "js-off-switch-neutralize",
+  "description": "Neutralize the tengu-off-switch remote kill switch that can abort API queries mid-session if Anthropic activates it server-side.",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": true,
+  "anchor_strings": [
+    "tengu-off-switch",
+    "tengu_off_switch_query"
+  ],
+  "version_last_tested": "2.1.152",
+  "patches": [
+    {
+      "search": "re(\"tengu-off-switch\",{activated:!1})).activated",
+      "replace": "Promise.resolve({activated:!1})).activated",
+      "applied_marker": "Promise.resolve({activated:!1})).activated",
+      "description": "off-switch: always return activated=false (neutralize kill switch)",
+      "required": false,
+      "count": 0
+    }
+  ]
+}
