@@ -117,6 +117,19 @@ if (Test-Path $srcPreload) {
     OK "preload hook → $PreloadDir\claude-preload.js"
 }
 
+# 5b. Rewrite already-installed plugin hooks.json files so existing
+# ${CLAUDE_PLUGIN_ROOT} entries become absolute Windows paths. The preload
+# handles future plugin loads at runtime; this catches manifests baked
+# before the preload was deployed. Idempotent, no-op if nothing to fix.
+$srcHookFixer = Join-Path $DataDir 'contrib\windows\fix-plugin-hook-paths.ps1'
+if (Test-Path $srcHookFixer) {
+    Step "rewriting baked plugin hook paths (Windows)"
+    & $srcHookFixer
+    if ($LASTEXITCODE -ne 0) {
+        Warn2 "fix-plugin-hook-paths.ps1 returned exit code $LASTEXITCODE — see output above"
+    }
+}
+
 # 6. Drop Windows wrappers on user PATH
 foreach ($f in 'claude.cmd','claude.ps1') {
     $src = Join-Path $DataDir "contrib\wrappers\$f"
