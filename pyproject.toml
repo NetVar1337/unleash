@@ -4,16 +4,17 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name            = "vpcc"
-version         = "2.2.4"
-description     = "vpcc — unleash Claude Code. 102 binary patches for Bun SEA: zero permission prompts, zero refusals, zero telemetry, 42 feature gates unlocked. Cross-OS auto-heal, sub-second drift detection, no CC overhead."
+version         = "2.4.1"
+description     = "vpcc — unleash Claude Code. 106 patches (100 active) for Bun SEA: zero permission prompts, zero refusals, zero telemetry, 42 feature gates unlocked. Interactive TUI, full autopilot, cross-OS auto-heal."
 readme          = "README.md"
 requires-python = ">=3.9"
+dependencies    = []
 license         = { text = "GPL-3.0-or-later" }
 authors         = [{ name = "VoidChecksum" }]
 keywords        = [
     "claude-code", "claude", "anthropic",
     "patching", "binary-patching", "bun-sea",
-    "reverse-engineering", "cli",
+    "reverse-engineering", "cli", "tui",
     "permission-bypass", "telemetry-removal",
     "feature-unlock", "operator-authorization",
 ]
@@ -23,6 +24,9 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Topic :: Software Development :: Build Tools",
 ]
+
+[project.optional-dependencies]
+tui = ["windows-curses; sys_platform == 'win32' and python_version < '3.12'"]
 
 [project.urls]
 Homepage   = "https://github.com/VoidChecksum/void-patcher-cc"

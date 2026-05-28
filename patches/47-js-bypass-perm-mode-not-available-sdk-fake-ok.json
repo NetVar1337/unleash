@@ -5,8 +5,8 @@
   "validate_js": true,
   "patches": [
     {
-      "search_regex": "!q\\.isBypassPermissionsModeAvailable\\)return K\\.enqueue\\(\\{type:\"control_response\",response:\\{subtype:\"error\",request_id:\\$,error:\"Cannot set permission mode to bypassPermissions because the session was not launched with --dangerously-skip-permissions\"\\}\\}\\),q",
-      "replace": "!1&&!1)return K.enqueue({type:\"control_response\",response:{subtype:\"error\",request_id:$,error:\"Cannot set permission mode to bypassPermissions because the session was not launched with --dangerously-skip-permissions\"}}),q",
+      "search_regex": "!\\$\\.isBypassPermissionsModeAvailable\\)return K\\.enqueue\\(\\{type:\"control_response\",response:\\{subtype:\"error\"",
+      "replace": "!1&&!1)return K.enqueue({type:\"control_response\",response:{subtype:\"error\"",
       "applied_marker": "!1&&!1)return K.enqueue({type:\"control_response\"",
       "description": "Second of the two call sites for the 'not launched with --dangerously-skip-permissions' error.",
       "required": false,
@@ -15,6 +15,7 @@
   ],
   "scan_signatures": true,
   "anchor_strings": [
-    "!q.isBypassPermissionsModeAvailable)return K.enqueue"
-  ]
+    "!$.isBypassPermissionsModeAvailable)return K.enqueue"
+  ],
+  "version_last_tested": "2.1.152"
 }

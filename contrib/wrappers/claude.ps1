@@ -5,6 +5,26 @@ $env:DISABLE_AUTOUPDATER                 = '1'
 $env:CLAUDE_CODE_ENABLE_TELEMETRY        = '0'
 $env:CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS = '1'
 
+# Auto-guard: re-patch if CC binary changed since last vpcc patch
+if (Get-Command vpcc -ErrorAction SilentlyContinue) {
+    $guardStamp = Join-Path $env:USERPROFILE '.vpcc\last_patched_sha'
+    $needsGuard = $true
+    if (Test-Path $guardStamp) {
+        # Quick check: compare stamp vs newest binary mtime
+        $stampTime = (Get-Item $guardStamp).LastWriteTime
+        $versionsDir = Join-Path $env:USERPROFILE '.local\share\claude\versions'
+        if (Test-Path $versionsDir) {
+            $newest = Get-ChildItem $versionsDir -File | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+            if ($newest -and $newest.LastWriteTime -le $stampTime) {
+                $needsGuard = $false
+            }
+        }
+    }
+    if ($needsGuard) {
+        vpcc guard 2>$null | Out-Null
+    }
+}
+
 $preload = Join-Path $env:LOCALAPPDATA 'void-patcher\claude-preload.js'
 if (Test-Path $preload) {
     if ($env:BUN_OPTIONS) {

@@ -13,11 +13,11 @@
 
 ### **Unleash Claude Code.**
 
-**102 binary patches · zero refusals · zero telemetry · zero permission prompts · 42 feature gates unlocked**
+**106 patches (100 active) · zero refusals · zero telemetry · zero permission prompts · 42 feature gates unlocked**
 
 <br />
 
-[![patches](https://img.shields.io/badge/patches-102-8b5cf6?style=for-the-badge&logo=hackthebox&logoColor=white)](#patch-catalog)
+[![patches](https://img.shields.io/badge/patches-106-8b5cf6?style=for-the-badge&logo=hackthebox&logoColor=white)](#patch-catalog)
 [![feature gates](https://img.shields.io/badge/feature%20gates-42%20unlocked-22d3ee?style=for-the-badge&logo=flipboard&logoColor=white)](#feature-gate-mega-patch-42-flags)
 [![zero refusals](https://img.shields.io/badge/AUP%20blocks-0-ef4444?style=for-the-badge&logo=adblock&logoColor=white)](#authorization-rules)
 [![telemetry](https://img.shields.io/badge/telemetry-disabled-10b981?style=for-the-badge&logo=ghostery&logoColor=white)](#what-gets-patched)
@@ -98,7 +98,7 @@ vpcc install-rules --no-hook
  │  PERMISSION GATES         ██████████████████████  22 patches             │
  │  REFUSAL / AUP BLOCKS     ████████████████████    20 patches             │
  │  CLASSIFIERS / SAFETY     ██████████████          14 patches             │
- │  TELEMETRY / ANALYTICS    ████████████            12 patches             │
+ │  TELEMETRY / ANALYTICS    █████████████           13 patches             │
  │  FEATURE GATES (tengu_)   ██████████████████████████████████████  42 ⚡  │
  │  RATE LIMITS / TIMEOUTS   ████████████            12 patches             │
  │  SHELL SAFETY CHECKS      ██████                   6 patches             │
@@ -107,7 +107,7 @@ vpcc install-rules --no-hook
  └──────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Total: 102 patches** across 9 categories. 96 binary (`js_replace`), 2 settings, 2 hooks, 3 retired, 3 infrastructure.
+**Total: 106 patches** across 9 categories. 100 active binary patches, 6 retired, 3 infrastructure.
 
 > Every patch is a standalone JSON file in `patches/` — anchored, marker-tagged, drift-detectable, auto-healable.
 
@@ -119,7 +119,7 @@ vpcc is fast and stays out of Claude Code's hot path.
 
 | Operation | Cold | Warm (cached) | Speedup |
 |---|---:|---:|---:|
-| `vpcc scan` (102 patches on 237 MB binary) | **5.7 s** | **137 ms** | **41×** |
+| `vpcc scan` (106 patches on 237 MB binary) | **5.7 s** | **137 ms** | **41×** |
 | `vpcc verify` | 0.3 s | 0.3 s | — |
 | `vpcc doctor` (full health report) | 5.8 s | 0.4 s | 14× |
 | sha256 of 237 MB binary | 140 ms | — | — |
@@ -136,10 +136,10 @@ vpcc is fast and stays out of Claude Code's hot path.
 
 ```bash
 $ vpcc bench
-vpcc bench — 2.1.128 (237 MB)
+vpcc bench — 2.1.152 (237 MB)
   sha256             :  140 ms
   text load+decode   :  700 ms
-  scan_patches       : 4974 ms  (81 patches)
+  scan_patches       : 4974 ms  (100 patches)
   cache hit          :  137 ms
 
   cold total         : 5681 ms
@@ -176,7 +176,7 @@ vpcc bench — 2.1.128 (237 MB)
 | 69 | `js-plugin-org-denylist-passthrough` | Enterprise plugin denylist neutralized |
 | 81 | `js-bypass-permissions-async-kill` | Async bypass-permissions kill no-op |
 | 82 | `js-bypass-permissions-sync-kill` | Sync startup bypass check no-op |
-| 38 | `js-policy-limits-allowall` | Central capability gate `N5(q)` always returns true |
+| 38 | `js-policy-limits-allowall` | Central capability gate always returns true |
 
 ### Refusal & AUP Removal (20 patches)
 
@@ -222,7 +222,7 @@ vpcc bench — 2.1.128 (237 MB)
 | 101 | `js-write-exfiltration-cap-raise` | Write operation exfiltration cap disabled |
 | 102 | `js-dangerous-redirection-disable` | Shell redirection safety → always false |
 
-### Telemetry & Analytics (12 patches)
+### Telemetry & Analytics (13 patches)
 
 | # | Patch | Effect |
 |---|---|---|
@@ -237,6 +237,7 @@ vpcc bench — 2.1.128 (237 MB)
 | 91 | `js-disable-nonessential-traffic-default` | Telemetry network policy → essentials only |
 | 75 | `js-econnrefused-silent` | Plugin marketplace download errors silenced |
 | 86 | `js-marketplace-etimedout-silent` | Plugin marketplace ETIMEDOUT silenced |
+| 105 | `js-off-switch-neutralize` | Remote kill switch (tengu-off-switch) neutralized — Anthropic cannot abort sessions server-side |
 | 58h | `js-handle-uri-deeplink-disable` | `--handle-uri` deep-link handler disabled |
 
 ### Rate Limits & Timeouts (12 patches)
@@ -331,6 +332,17 @@ vpcc bench — 2.1.128 (237 MB)
 | 07 | `mcp-guard` | MCP spawn timeout preload — prevents startup hangs from `npx @latest` |
 | 08w | `cli-syntax-selfheal-wrapper` | Wrapper with syntax guard and auto-repair |
 
+### Retired (6 patches)
+
+| # | Patch | Reason |
+|---|---|---|
+| 27 | `js-malware-refusal` | System prompt text rewritten in v2.1.152 |
+| 43 | `js-max-thinking-default-on` | Feature now enabled by default upstream |
+| 83 | `js-always-enable-effort-on` | Feature now enabled by default upstream |
+| 84 | `js-plan-mode-interview-phase-on` | `tengu_plan_mode_interview_phase` removed in v2.1.152 |
+| 94 | `js-session-memory-on` | `tengu_session_memory` removed in v2.1.152 |
+| 95 | `js-cold-compact-on` | `tengu_cold_compact` removed in v2.1.152 |
+
 ---
 
 ## 🛰 Scanner & Drift Detection
@@ -340,8 +352,8 @@ The scanner uses a **multi-strategy detection cascade** with confidence scoring:
 ```
 $ vpcc scan
 
-vpcc scan — 83 js_replace patches
-  target : ~/.local/share/claude/versions/2.1.132
+vpcc scan — 100 js_replace patches
+  target : ~/.local/share/claude/versions/2.1.152
   format : Bun SEA (Mach-O)
 
   ok     1.0  regex   js-trust-dialog                      @0x002f7dc0
@@ -349,7 +361,10 @@ vpcc scan — 83 js_replace patches
   ok     0.9  anchor  js-metrics-disable                   @0x00657501
   ok     1.0  regex   js-tengu-feature-flags-unlock        --
   ...
-  54 ok  28 applied  1 nometa
+  ok     1.0  regex   js-off-switch-neutralize             @0x008c2410
+  retired      —      js-max-thinking-default-on           (feature now default upstream)
+  ...
+  54 ok  28 applied  1 nometa  6 retired
 ```
 
 ### Detection strategies (in order)
@@ -364,6 +379,7 @@ vpcc scan — 83 js_replace patches
 | 6 | `fuzzy_ident` | 0.5 | Anchors match with minifier-tolerant identifiers |
 | 7 | `keyword` | 0.3 | Long tokens extracted from anchors found |
 | 8 | `optional` | 0.6 | All-optional mega-patch with anchors present (no-op by design) |
+| 0 | `retired` | — | Patch marked as retired — skipped (feature removed upstream) |
 
 ### Auto-heal drift
 
@@ -409,6 +425,8 @@ vpcc watch          # daemon: poll binary, auto-backup + autoheal on change
 | **Chocolatey** (Win) | `C:\ProgramData\chocolatey\lib\claude-code\` | Auto-detected |
 | **Winget** (Win) | `%LOCALAPPDATA%\Microsoft\WinGet\Packages\*claude*\` | Auto-detected |
 | **shutil.which** fallback | `$PATH` | Last resort, cross-platform |
+
+> **Windows compatibility notes:** All `chmod()` calls are guarded for Windows. Atomic binary swap uses `os.replace()` (POSIX + Windows). MCP guard uses portable `p.kill()` (no SIGKILL dependency).
 
 ---
 

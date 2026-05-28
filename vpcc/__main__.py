@@ -618,7 +618,10 @@ def patch_bun_sea_inplace(binary: Path, patches: list) -> dict:
         tmp_bin = binary.parent / f".{binary.name}.vpcctmp-{os.getpid()}"
         try:
             tmp_bin.write_bytes(bytes(data))
-            tmp_bin.chmod(mode)
+            try:
+                tmp_bin.chmod(mode)
+            except OSError:
+                pass  # Windows: chmod not fully supported
 
             # macOS: re-sign with ad-hoc signature after patching (code signature
             # invalidated by byte changes; unsigned Mach-O gets SIGKILL on arm64).
@@ -635,9 +638,11 @@ def patch_bun_sea_inplace(binary: Path, patches: list) -> dict:
                         "applied": applied_total, "skipped": skipped_total, "per_patch": per_patch,
                         "_bounds": (bun_lo, bun_hi, eff_lo, eff_hi)}
 
-            binary.unlink()
-            tmp_bin.rename(binary)
-            binary.chmod(mode)
+            os.replace(str(tmp_bin), str(binary))
+            try:
+                binary.chmod(mode)
+            except OSError:
+                pass  # Windows: chmod not fully supported
         except Exception as e:
             tmp_bin.unlink(missing_ok=True)
             return {"ok": False, "err": f"write failed: {e}", "applied": 0, "skipped": skipped_total}
@@ -733,12 +738,21 @@ def _write_bun_js_DISABLED(binary: Path, text: str) -> tuple[bool, str]:
 
 # ── patch logic ───────────────────────────────────────────────────────────────
 
+def _is_retired_json(f: Path) -> bool:
+    """Quick check: is this patch JSON marked retired?"""
+    try:
+        return bool(json.loads(f.read_text(encoding="utf-8")).get("retired"))
+    except (json.JSONDecodeError, OSError):
+        return False
+
 def load_patches() -> list[dict[str, Any]]:
     patches = []
     for f in sorted(PATCH_DIR.glob("*.json")):
         try:
             p = json.loads(f.read_text(encoding="utf-8"))
             if p.get("disabled"):
+                continue
+            if p.get("retired"):
                 continue
             patches.append(p)
         except json.JSONDecodeError as e:
@@ -957,6 +971,14 @@ def cmd_patch(args) -> int:
         except Exception:
             pass
 
+        # Stamp SHA for guard fast-path
+        try:
+            stamp = Path.home() / ".vpcc" / "last_patched_sha"
+            stamp.parent.mkdir(parents=True, exist_ok=True)
+            stamp.write_text(sha256_short(target))
+        except OSError:
+            pass
+
     return 1 if fail else 0
 
 
@@ -1010,7 +1032,7 @@ def _apply_mcp_guard(p: dict, dry_run: bool = False) -> tuple[bool, str]:
         "    _cp.spawn = function(cmd, args, opts) { const p = _oS.apply(this, arguments);\n"
         '      const isNpx = typeof cmd === "string" && cmd.includes("npx") &&\n'
         '        Array.isArray(args) && args.some(a => typeof a === "string" && a.includes("@latest"));\n'
-        '      if (isNpx) { const t = setTimeout(() => { try { p.kill("SIGKILL"); } catch(_) {} }, 30000);\n'
+        '      if (isNpx) { const t = setTimeout(() => { try { p.kill(); } catch(_) {} }, 30000);\n'
         '        p.on("close", () => clearTimeout(t)); } return p; }; } catch(_) {}\n'
     )
 
@@ -1137,8 +1159,9 @@ def cmd_verify(args) -> int:
     required_missing = 0
     optional_missing = 0
     applied = 0
-
     for p in load_patches():
+        if p.get("retired"):
+            continue
         if p.get("type") != "js_replace":
             continue
         checkable = [s for s in p.get("patches", []) if s.get("applied_marker")]
@@ -1333,6 +1356,10 @@ def cmd_doctor(args) -> int:
     """Full health report: sha, patches applied, sig drift, backup count, upstream."""
     target, kind = find_target()
     patches = load_patches()
+    n_retired = sum(
+        1 for f in sorted(PATCH_DIR.glob("*.json"))
+        if _is_retired_json(f)
+    )
     print(f"{B}vpcc doctor{X}")
     print(f"  vpcc ver   : {__import__('vpcc').__version__ if hasattr(__import__('vpcc'), '__version__') else '2.1.114'}")
     print(f"  patches    : {len(patches)}")
@@ -1370,6 +1397,7 @@ def cmd_doctor(args) -> int:
             print(f"  {Y}sig nometa : {len(nometa)} patches (pre-v2.1.114, no anchor_strings yet){X}")
     except Exception as e:
         print(f"  {R}sig scan   : failed — {e}{X}")
+    print(f"  retired    : {n_retired} patches")
 
     # applied markers
     try:
@@ -1397,19 +1425,716 @@ def cmd_doctor(args) -> int:
     return 0
 
 
+
+def cmd_guard(args) -> int:
+    """Fast SHA-based guard: if CC binary changed since last patch, run autopilot.
+
+    Designed to be called from wrapper scripts before every `claude` invocation.
+    <100ms when no update needed (single SHA comparison against stamp file).
+    On change: runs full autopilot (scan → heal → patch → commit → push → issue).
+    """
+    target, kind = find_target()
+    if not target:
+        return 0  # no CC found, nothing to guard
+
+    stamp = Path.home() / ".vpcc" / "last_patched_sha"
+    cur_sha = sha256_short(target)
+
+    if stamp.is_file():
+        try:
+            if stamp.read_text().strip() == cur_sha:
+                return 0  # binary unchanged, nothing to do
+        except OSError:
+            pass
+
+    # Binary changed — run full autopilot pipeline
+    print(f"{B}vpcc guard — CC binary changed ({cur_sha}), running autopilot...{X}")
+    backup(target, kind)
+    rc = cmd_autopilot(type("A", (), {})())
+
+    # Stamp the new SHA regardless of outcome (avoid infinite retry loops)
+    try:
+        stamp.parent.mkdir(parents=True, exist_ok=True)
+        stamp.write_text(sha256_short(target))
+    except OSError:
+        pass
+
+    return rc
+
+
+def cmd_install_guard(args) -> int:
+    """Install platform-specific background guard (auto-patch on CC update).
+
+    Windows: Task Scheduler task (every 6h + on logon)
+    macOS: launchd plist (every 6h)
+    Linux: systemd --user timer (every 6h)
+    """
+    vpcc_bin = shutil.which("vpcc") or str(Path(sys.executable).parent / "vpcc")
+
+    if sys.platform == "win32":
+        # Windows Task Scheduler
+        task_name = "vpcc-autoheal"
+        # Delete existing task first (idempotent)
+        subprocess.run(["schtasks", "/Delete", "/TN", task_name, "/F"],
+                       capture_output=True, timeout=10)
+        # Create: run every 6 hours + on logon
+        rc = subprocess.run([
+            "schtasks", "/Create", "/TN", task_name,
+            "/TR", f'"{vpcc_bin}" guard',
+            "/SC", "HOURLY", "/MO", "6",
+            "/RL", "LIMITED",
+            "/F",
+        ], capture_output=True, text=True, timeout=15)
+        if rc.returncode != 0:
+            print(f"{R}Task Scheduler failed: {rc.stderr.strip()}{X}")
+            return 1
+        # Add logon trigger
+        subprocess.run([
+            "schtasks", "/Change", "/TN", task_name,
+            "/ENABLE",
+        ], capture_output=True, timeout=10)
+        print(f"{G}{CHECK} Windows Task Scheduler: {task_name} (every 6h + logon){X}")
+
+    elif sys.platform == "darwin":
+        # macOS launchd
+        plist_dir = Path.home() / "Library" / "LaunchAgents"
+        plist_dir.mkdir(parents=True, exist_ok=True)
+        plist_path = plist_dir / "cc.voidchecksum.vpcc-guard.plist"
+        plist_content = f"""<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>cc.voidchecksum.vpcc-guard</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>{vpcc_bin}</string>
+        <string>guard</string>
+    </array>
+    <key>StartInterval</key>
+    <integer>21600</integer>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>{Path.home()}/.vpcc/guard.log</string>
+    <key>StandardErrorPath</key>
+    <string>{Path.home()}/.vpcc/guard.log</string>
+    <key>Nice</key>
+    <integer>10</integer>
+</dict>
+</plist>
+"""
+        plist_path.write_text(plist_content)
+        subprocess.run(["launchctl", "unload", str(plist_path)], capture_output=True, timeout=10)
+        subprocess.run(["launchctl", "load", str(plist_path)], capture_output=True, timeout=10)
+        print(f"{G}{CHECK} macOS launchd: {plist_path.name} (every 6h + login){X}")
+
+    else:
+        # Linux systemd --user
+        unit_dir = Path(os.environ.get("XDG_CONFIG_HOME", str(Path.home() / ".config"))) / "systemd" / "user"
+        unit_dir.mkdir(parents=True, exist_ok=True)
+
+        svc = unit_dir / "vpcc-guard.service"
+        svc.write_text(f"""[Unit]
+Description=vpcc guard — auto-patch Claude Code on update
+Documentation=https://github.com/VoidChecksum/void-patcher-cc
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart={vpcc_bin} guard
+Nice=10
+
+[Install]
+WantedBy=default.target
+""")
+        tmr = unit_dir / "vpcc-guard.timer"
+        tmr.write_text("""[Unit]
+Description=Run vpcc guard periodically
+Documentation=https://github.com/VoidChecksum/void-patcher-cc
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=6h
+RandomizedDelaySec=15min
+Persistent=true
+Unit=vpcc-guard.service
+
+[Install]
+WantedBy=timers.target
+""")
+        subprocess.run(["systemctl", "--user", "daemon-reload"], capture_output=True, timeout=10)
+        subprocess.run(["systemctl", "--user", "enable", "--now", "vpcc-guard.timer"],
+                       capture_output=True, timeout=10)
+        print(f"{G}{CHECK} systemd --user: vpcc-guard.timer (every 6h + boot){X}")
+
+    print(f"  vpcc guard runs automatically — Claude Code updates are patched within minutes")
+    return 0
+
+
+def cmd_uninstall_guard(args) -> int:
+    """Remove platform-specific background guard."""
+    if sys.platform == "win32":
+        r = subprocess.run(["schtasks", "/Delete", "/TN", "vpcc-autoheal", "/F"],
+                           capture_output=True, text=True, timeout=10)
+        print(f"{G}{CHECK} removed Windows scheduled task{X}" if r.returncode == 0 else f"{Y}no task found{X}")
+    elif sys.platform == "darwin":
+        plist = Path.home() / "Library" / "LaunchAgents" / "cc.voidchecksum.vpcc-guard.plist"
+        if plist.exists():
+            subprocess.run(["launchctl", "unload", str(plist)], capture_output=True, timeout=10)
+            plist.unlink()
+            print(f"{G}{CHECK} removed macOS launchd agent{X}")
+        else:
+            print(f"{Y}no launchd agent found{X}")
+    else:
+        unit_dir = Path(os.environ.get("XDG_CONFIG_HOME", str(Path.home() / ".config"))) / "systemd" / "user"
+        subprocess.run(["systemctl", "--user", "disable", "--now", "vpcc-guard.timer"],
+                       capture_output=True, timeout=10)
+        for name in ("vpcc-guard.service", "vpcc-guard.timer"):
+            f = unit_dir / name
+            if f.exists():
+                f.unlink()
+        subprocess.run(["systemctl", "--user", "daemon-reload"], capture_output=True, timeout=10)
+        print(f"{G}{CHECK} removed systemd timer{X}")
+
+    # Remove stamp file
+    stamp = Path.home() / ".vpcc" / "last_patched_sha"
+    stamp.unlink(missing_ok=True)
+    return 0
+
+def _detect_install_method() -> str:
+    """Detect how vpcc was installed. Returns one of: pipx, pip, uv, git, unknown."""
+    vpcc_path = Path(__file__).resolve()
+    vpcc_str = str(vpcc_path).lower().replace("\\", "/")
+
+    if "/pipx/" in vpcc_str:
+        return "pipx"
+    if "/uv/" in vpcc_str or "/.local/share/uv/" in vpcc_str:
+        return "uv"
+
+    # Check if we're in a git repo (developer install / editable)
+    git_dir = vpcc_path.parent
+    for _ in range(5):
+        if (git_dir / ".git").exists():
+            return "git"
+        git_dir = git_dir.parent
+
+    # pip (any venv or user install)
+    return "pip"
+
+
+def cmd_update(args) -> int:
+    """OMP-style full self-update: upgrade vpcc itself + patches + re-patch binary.
+
+    Detects install method (pipx/pip/uv/git) and runs the right upgrade command,
+    then syncs patches from GitHub and re-applies them to the CC binary.
+
+    This is the single command users should run after a CC update or periodically.
+    """
+    from vpcc import __version__
+
+    print(f"{B}vpcc update{X}")
+    print(f"  current : v{__version__}")
+    method = _detect_install_method()
+    print(f"  install : {method}")
+
+    REPO_URL = f"git+https://github.com/{_updater.REPO}"
+
+    # ── Step 1: Check if a new version is available ───────────────────────
+    print(f"\n  {B}[1/4] checking for updates...{X}")
+    remote_ver = None
+    try:
+        raw = _updater._req(
+            f"https://raw.githubusercontent.com/{_updater.REPO}/{_updater.BRANCH}/vpcc/__init__.py",
+            accept="text/plain", timeout=10,
+        ).decode("utf-8", errors="replace")
+        for line in raw.splitlines():
+            if line.startswith("__version__"):
+                remote_ver = line.split('"')[1]
+                break
+    except Exception:
+        pass
+
+    if remote_ver:
+        print(f"  remote  : v{remote_ver}")
+        if remote_ver == __version__:
+            print(f"  {G}{CHECK} vpcc is already at the latest version{X}")
+            needs_tool_update = False
+        else:
+            needs_tool_update = True
+    else:
+        print(f"  {Y}{WARN_ICON} could not check remote version — updating anyway{X}")
+        needs_tool_update = True
+
+    # ── Step 2: Update vpcc itself ────────────────────────────────────────
+    if needs_tool_update:
+        print(f"\n  {B}[2/4] updating vpcc ({method})...{X}")
+        rc = _run_tool_update(method, REPO_URL)
+        if rc == 0:
+            print(f"  {G}{CHECK} vpcc updated{X}")
+        else:
+            print(f"  {Y}{WARN_ICON} tool update returned rc={rc} — continuing with patch sync{X}")
+    else:
+        print(f"\n  {B}[2/4] skipping tool update (already current){X}")
+
+    # ── Step 3: Sync patches from GitHub ──────────────────────────────────
+    print(f"\n  {B}[3/4] syncing patches...{X}")
+    remote_sha = _updater.remote_head_sha("patches")
+    if remote_sha:
+        state = _updater.load_state()
+        local_sha = state.get("patches_commit")
+        if local_sha == remote_sha:
+            print(f"  {G}{CHECK} patches already at latest ({remote_sha[:7]}){X}")
+        else:
+            changed, sha_or_err = _updater.sync_patches(PATCH_DIR, remote_sha)
+            if changed >= 0:
+                print(f"  {G}{CHECK} {changed} patch file(s) synced @ {sha_or_err[:7]}{X}")
+            else:
+                print(f"  {R}{CROSS} patch sync failed: {sha_or_err}{X}")
+    else:
+        print(f"  {Y}{WARN_ICON} could not reach GitHub — using local patches{X}")
+
+    # ── Step 4: Re-apply patches to CC binary ─────────────────────────────
+    print(f"\n  {B}[4/4] patching Claude Code binary...{X}")
+    target, kind = find_target()
+    if target:
+        class _P: dry_run = False
+        rc_patch = cmd_patch(_P())
+        if rc_patch == 0:
+            # Stamp guard SHA
+            try:
+                stamp = Path.home() / ".vpcc" / "last_patched_sha"
+                stamp.parent.mkdir(parents=True, exist_ok=True)
+                stamp.write_text(sha256_short(target))
+            except OSError:
+                pass
+    else:
+        print(f"  {Y}{WARN_ICON} Claude Code not found — skipping binary patch{X}")
+        rc_patch = 0
+
+    # ── Summary ───────────────────────────────────────────────────────────
+    print(f"\n{B}{'─' * 40}{X}")
+    if rc_patch == 0:
+        print(f"  {G}{CHECK} vpcc update complete{X}")
+    else:
+        print(f"  {Y}{WARN_ICON} update complete with warnings (rc={rc_patch}){X}")
+
+    # Show new version if we updated
+    if needs_tool_update:
+        try:
+            r = subprocess.run(
+                [sys.executable, "-c", "from vpcc import __version__; print(__version__)"],
+                capture_output=True, text=True, timeout=5)
+            new_ver = r.stdout.strip()
+            if new_ver and new_ver != __version__:
+                print(f"  {G}v{__version__} {ARROW} v{new_ver}{X}")
+        except Exception:
+            pass
+
+    return rc_patch
+
+
+def _run_tool_update(method: str, repo_url: str) -> int:
+    """Run the appropriate package manager command to upgrade vpcc."""
+    cmds: dict[str, list[list[str]]] = {
+        "pipx": [
+            ["pipx", "install", "--force", repo_url],
+        ],
+        "uv": [
+            ["uv", "tool", "install", "--force", repo_url],
+        ],
+        "pip": [
+            [sys.executable, "-m", "pip", "install", "--upgrade", "--force-reinstall", repo_url],
+        ],
+        "git": [
+            # For git installs: pull latest + reinstall in editable mode
+            ["git", "pull", "--ff-only"],
+        ],
+    }
+
+    for cmd in cmds.get(method, cmds["pip"]):
+        try:
+            # For git pull, run in the repo directory
+            cwd = str(ROOT) if method == "git" and cmd[0] == "git" else None
+            r = subprocess.run(cmd, capture_output=True, text=True, timeout=120, cwd=cwd)
+            if r.returncode != 0:
+                err = (r.stderr or r.stdout or "").strip().splitlines()
+                if err:
+                    print(f"  {Y}{err[-1][:100]}{X}")
+                return r.returncode
+        except FileNotFoundError:
+            print(f"  {Y}{WARN_ICON} '{cmd[0]}' not found — trying pip fallback{X}")
+            # Fallback to pip
+            try:
+                r = subprocess.run(
+                    [sys.executable, "-m", "pip", "install", "--upgrade", "--force-reinstall", repo_url],
+                    capture_output=True, text=True, timeout=120)
+                return r.returncode
+            except Exception:
+                return 1
+        except Exception as e:
+            print(f"  {R}{e}{X}")
+            return 1
+    return 0
+
+def cmd_autopilot(args) -> int:
+    """Full automatic pipeline: detect drift → auto-heal → patch → commit → push → issue.
+
+    Runs the entire vpcc lifecycle unattended:
+    1. Scan binary for signature drift
+    2. Auto-heal any drifted patches from anchor context windows
+    3. Re-apply all patches to the binary
+    4. If this is a git repo, commit healed patches and push to origin
+    5. If any patches couldn't be healed, open a GitHub issue
+
+    Exit codes: 0=all good, 1=partial (some drift unfixable), 2=fatal error
+    """
+    target, kind = find_target()
+    if not target:
+        print(f"{R}claude-code not found{X}")
+        return 2
+
+    ts = datetime.now().strftime("%H:%M:%S")
+    cur_sha = sha256_short(target)
+    print(f"{B}vpcc autopilot — {ts}{X}")
+    print(f"  target : {target}")
+    print(f"  sha    : {cur_sha}")
+
+    # ── 1. Scan for drift ─────────────────────────────────────────────────
+    print(f"\n  {B}[1/5] scanning...{X}")
+    try:
+        text = _scanner.load_text_from_target(target, kind)
+    except Exception as e:
+        print(f"  {R}extract failed: {e}{X}")
+        return 2
+    patches = _scanner.load_patches_from_dir(PATCH_DIR)
+    sc = _scanner.SigScanner(text)
+    rows = sc.scan_patches(patches)
+
+    n_ok = sum(1 for r in rows if r["status"] == "ok")
+    n_applied = sum(1 for r in rows if r["status"] == "applied")
+    n_drift = sum(1 for r in rows if r["status"] == "drift")
+    n_retired = sum(1 for r in rows if r["status"] == "retired")
+    print(f"  {G}{n_ok} ok{X}  {n_applied} applied  {R}{n_drift} drift{X}  {n_retired} retired")
+
+    if n_drift == 0:
+        print(f"  {G}no drift — skipping heal{X}")
+    else:
+        # ── 2. Auto-heal drifted patches ──────────────────────────────────
+        print(f"\n  {B}[2/5] auto-healing {n_drift} drifted patches...{X}")
+        heal_result = _scanner.auto_heal_drift(text, PATCH_DIR, verbose=True)
+        healed = heal_result["healed"]
+        failed = heal_result["failed"]
+        print(f"  {G}{healed} healed{X}  {R}{failed} failed{X}")
+
+    # ── 3. Apply patches ──────────────────────────────────────────────────
+    print(f"\n  {B}[3/5] patching binary...{X}")
+    class _P: dry_run = False
+    rc_patch = cmd_patch(_P())
+
+    # ── 4. Git commit + push (if in a git repo with changes) ─────────────
+    print(f"\n  {B}[4/5] checking git...{X}")
+    git_pushed = False
+    repo_root = _find_git_root()
+    if repo_root:
+        rc_diff = subprocess.run(
+            ["git", "diff", "--quiet", "--", "patches/"],
+            cwd=str(repo_root), capture_output=True, timeout=10,
+        )
+        has_changes = rc_diff.returncode != 0
+        # Also check for untracked new patches
+        rc_untracked = subprocess.run(
+            ["git", "ls-files", "--others", "--exclude-standard", "patches/"],
+            cwd=str(repo_root), capture_output=True, text=True, timeout=10,
+        )
+        has_new = bool(rc_untracked.stdout.strip())
+
+        if has_changes or has_new:
+            # Get CC version for commit message
+            cc_ver = _detect_cc_version(target)
+            msg = (f"fix(patches): auto-heal for Claude Code {cc_ver}\n\n"
+                   f"Binary SHA: {cur_sha}\n"
+                   f"Healed: {heal_result['healed'] if n_drift else 0} patches\n"
+                   f"Scan: {n_ok} ok, {n_applied} applied, {n_drift} drift\n\n"
+                   f"[autopilot]")
+            subprocess.run(["git", "add", "patches/"], cwd=str(repo_root),
+                           capture_output=True, timeout=10)
+            rc_commit = subprocess.run(
+                ["git", "commit", "-m", msg],
+                cwd=str(repo_root), capture_output=True, text=True, timeout=15,
+            )
+            if rc_commit.returncode == 0:
+                print(f"  {G}{CHECK} committed:{X} {rc_commit.stdout.strip().splitlines()[0]}")
+                rc_push = subprocess.run(
+                    ["git", "push", "origin", "HEAD"],
+                    cwd=str(repo_root), capture_output=True, text=True, timeout=60,
+                )
+                if rc_push.returncode == 0:
+                    print(f"  {G}{CHECK} pushed to origin{X}")
+                    git_pushed = True
+                else:
+                    print(f"  {Y}{WARN_ICON} push failed: {rc_push.stderr.strip()[:80]}{X}")
+            else:
+                print(f"  {Y}nothing to commit{X}")
+        else:
+            print(f"  {G}no patch changes to commit{X}")
+    else:
+        print(f"  {Y}not a git repo — skip commit/push{X}")
+
+    # ── 5. Create GitHub issue for unfixable drift ────────────────────────
+    unfixed = []
+    if n_drift > 0:
+        # Re-scan after healing to see what's still broken
+        rows2 = _scanner.SigScanner(text).scan_patches(
+            _scanner.load_patches_from_dir(PATCH_DIR))
+        unfixed = [r for r in rows2 if r["status"] == "drift"]
+
+    print(f"\n  {B}[5/5] issue check...{X}")
+    if unfixed:
+        cc_ver = _detect_cc_version(target)
+        issue_title = f"Signature drift: {len(unfixed)} patches broken on CC {cc_ver}"
+        issue_body = (
+            f"## Autopilot drift report\n\n"
+            f"- **Claude Code version**: `{cc_ver}`\n"
+            f"- **Binary SHA**: `{cur_sha}`\n"
+            f"- **Unfixed patches**: {len(unfixed)}\n\n"
+            f"| Patch | Anchors |\n|---|---|\n"
+        )
+        for u in unfixed:
+            anchors = ", ".join(f"`{a[:40]}`" for a in (u.get("anchors") or [])[:2])
+            issue_body += f"| `{u['id']}` | {anchors or 'none'} |\n"
+        issue_body += (
+            f"\n### Action needed\n"
+            f"RE the binary at `{target}` and update `search_regex` + `anchor_strings` "
+            f"in the affected `patches/*.json` files.\n\n"
+            f"*Generated by `vpcc autopilot`*"
+        )
+        try:
+            rc_issue = subprocess.run(
+                ["gh", "issue", "create",
+                 "--title", issue_title,
+                 "--body", issue_body,
+                 "--label", "signature-drift"],
+                cwd=str(repo_root) if repo_root else None,
+                capture_output=True, text=True, timeout=30,
+            )
+            if rc_issue.returncode == 0:
+                print(f"  {G}{CHECK} issue created:{X} {rc_issue.stdout.strip()}")
+            else:
+                print(f"  {Y}{WARN_ICON} gh issue failed (install 'gh' CLI for auto-issues){X}")
+        except FileNotFoundError:
+            print(f"  {Y}{WARN_ICON} 'gh' CLI not found — install for auto-issues{X}")
+        except Exception:
+            print(f"  {Y}{WARN_ICON} issue creation failed{X}")
+    else:
+        print(f"  {G}no unfixed drift — no issue needed{X}")
+
+    # ── Summary ───────────────────────────────────────────────────────────
+    print(f"\n{B}{'─' * 50}{X}")
+    status_icon = CHECK if not unfixed and rc_patch == 0 else WARN_ICON if unfixed else CROSS
+    print(f"  {G if not unfixed else Y}{status_icon} autopilot complete{X}")
+    print(f"  patches : {rc_patch == 0 and 'applied' or 'failed'}")
+    if n_drift:
+        print(f"  healed  : {heal_result['healed']}/{n_drift}")
+    if git_pushed:
+        print(f"  git     : committed + pushed")
+    if unfixed:
+        print(f"  {R}unfixed : {len(unfixed)} patches need manual RE{X}")
+    return 1 if unfixed else (2 if rc_patch != 0 else 0)
+
+
+def _find_git_root() -> Path | None:
+    """Find the git repo root containing PATCH_DIR, if any."""
+    try:
+        r = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            cwd=str(PATCH_DIR), capture_output=True, text=True, timeout=5,
+        )
+        if r.returncode == 0 and r.stdout.strip():
+            return Path(r.stdout.strip())
+    except Exception:
+        pass
+    return None
+
+
+def _detect_cc_version(target: Path) -> str:
+    """Run the binary with --version and extract the version string."""
+    try:
+        r = subprocess.run([str(target), "--version"],
+                           capture_output=True, text=True, timeout=15)
+        for line in (r.stdout + r.stderr).splitlines():
+            line = line.strip()
+            if line and line[0].isdigit():
+                return line.split()[0]
+    except Exception:
+        pass
+    return target.name
+
+
+def cmd_dashboard(args) -> int:
+    """Real-time status dashboard with auto-refresh.
+
+    Shows: CC version, SHA, patch status, guard status, last heal time.
+    Refreshes every --interval seconds. Ctrl-C to exit.
+    """
+    import time
+
+    interval = getattr(args, "interval", 5)
+    CLEAR = "\033[2J\033[H"  # ANSI clear screen + home
+    DIM = "\033[90m"
+
+    try:
+        while True:
+            target, kind = find_target()
+            ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            lines = [
+                f"{CLEAR}{B}vpcc dashboard{X}  {DIM}{ts}{X}",
+                f"{DIM}{'─' * 60}{X}",
+            ]
+
+            if not target:
+                lines.append(f"  {R}claude-code not found{X}")
+            else:
+                cur_sha = sha256_short(target)
+                cc_ver = _detect_cc_version(target)
+                size_mb = target.stat().st_size // (1024 * 1024)
+
+                lines.append(f"  {B}target{X}   : {target}")
+                lines.append(f"  {B}version{X}  : {cc_ver}")
+                lines.append(f"  {B}sha256{X}   : {cur_sha}")
+                lines.append(f"  {B}size{X}     : {size_mb} MB")
+                lines.append(f"  {B}format{X}   : {'Bun SEA' if kind == 'bun_sea' else 'cli.js'}")
+
+                # Guard stamp
+                stamp = Path.home() / ".vpcc" / "last_patched_sha"
+                if stamp.is_file():
+                    stamp_sha = stamp.read_text().strip()
+                    stamp_age = time.time() - stamp.stat().st_mtime
+                    age_str = _human_age(stamp_age)
+                    if stamp_sha == cur_sha:
+                        lines.append(f"  {B}guard{X}    : {G}{CHECK} patched ({age_str} ago){X}")
+                    else:
+                        lines.append(f"  {B}guard{X}    : {R}{CROSS} stale — binary changed since last patch{X}")
+                else:
+                    lines.append(f"  {B}guard{X}    : {Y}{WARN_ICON} no stamp — run 'vpcc patch'{X}")
+
+                # Scan cache
+                cached = _scanner.load_cached_rows(target, PATCH_DIR)
+                if cached:
+                    n_ok = sum(1 for r in cached if r["status"] == "ok")
+                    n_applied = sum(1 for r in cached if r["status"] == "applied")
+                    n_drift = sum(1 for r in cached if r["status"] == "drift")
+                    n_retired = sum(1 for r in cached if r["status"] == "retired")
+                    n_total = n_ok + n_applied + n_drift
+                    lines.append("")
+                    lines.append(f"  {B}patches{X}  : {n_total} scanned")
+                    lines.append(f"    {G}{CHECK} {n_ok} ok{X}  "
+                                 f"{G}{CHECK} {n_applied} applied{X}  "
+                                 f"{R + CROSS + ' ' + str(n_drift) + ' drift' + X if n_drift else DIM + '0 drift' + X}  "
+                                 f"{DIM}{n_retired} retired{X}")
+                    if n_drift:
+                        drift_ids = [r["id"] for r in cached if r["status"] == "drift"]
+                        for did in drift_ids[:5]:
+                            lines.append(f"    {R}{ARROW} {did}{X}")
+                        if len(drift_ids) > 5:
+                            lines.append(f"    {DIM}... and {len(drift_ids) - 5} more{X}")
+                else:
+                    lines.append(f"\n  {B}patches{X}  : {DIM}(run 'vpcc scan' to populate cache){X}")
+
+                # Backups
+                baks = sorted(BACKUP_DIR.glob("claude.*.bak"))
+                lines.append(f"\n  {B}backups{X}  : {len(baks)} in {BACKUP_DIR}")
+
+                # Guard scheduler
+                guard_status = _detect_guard_scheduler()
+                lines.append(f"  {B}scheduler{X}: {guard_status}")
+
+                # Upstream
+                try:
+                    info = _updater.upstream_status(PATCH_DIR)
+                    if info["drift"]:
+                        lines.append(f"  {B}upstream{X} : {Y}behind — run 'vpcc self-update'{X}")
+                    elif info["remote_commit"]:
+                        lines.append(f"  {B}upstream{X} : {G}current{X}")
+                    else:
+                        lines.append(f"  {B}upstream{X} : {DIM}unreachable{X}")
+                except Exception:
+                    lines.append(f"  {B}upstream{X} : {DIM}error{X}")
+
+            lines.append(f"\n{DIM}refreshing every {interval}s — Ctrl-C to exit{X}")
+            print("\n".join(lines), flush=True)
+            time.sleep(interval)
+
+    except KeyboardInterrupt:
+        print(f"\n{B}dashboard stopped{X}")
+        return 0
+
+
+def _human_age(seconds: float) -> str:
+    """Convert seconds to human-readable age string."""
+    if seconds < 60:
+        return f"{int(seconds)}s"
+    if seconds < 3600:
+        return f"{int(seconds // 60)}m"
+    if seconds < 86400:
+        return f"{int(seconds // 3600)}h"
+    return f"{int(seconds // 86400)}d"
+
+
+def _detect_guard_scheduler() -> str:
+    """Detect if a background guard scheduler is installed."""
+    if sys.platform == "win32":
+        try:
+            r = subprocess.run(
+                ["schtasks", "/Query", "/TN", "vpcc-autoheal", "/FO", "LIST"],
+                capture_output=True, text=True, timeout=5,
+            )
+            if r.returncode == 0:
+                return f"{G}Windows Task Scheduler active{X}"
+        except Exception:
+            pass
+        return f"{Y}not installed — run 'vpcc install-guard'{X}"
+    elif sys.platform == "darwin":
+        plist = Path.home() / "Library" / "LaunchAgents" / "cc.voidchecksum.vpcc-guard.plist"
+        if plist.exists():
+            return f"{G}macOS launchd active{X}"
+        return f"{Y}not installed — run 'vpcc install-guard'{X}"
+    else:
+        try:
+            r = subprocess.run(
+                ["systemctl", "--user", "is-active", "vpcc-guard.timer"],
+                capture_output=True, text=True, timeout=5,
+            )
+            if r.stdout.strip() == "active":
+                return f"{G}systemd timer active{X}"
+        except Exception:
+            pass
+        return f"{Y}not installed — run 'vpcc install-guard'{X}"
+
 def cmd_watch(args) -> int:
-    """Daemon: poll cli.js/SEA mtime+sha; on change, backup + autoheal."""
+    """Daemon: poll binary mtime+sha; on change → full autopilot pipeline.
+
+    Replaces simple autoheal with the full autopilot flow:
+    scan → heal → patch → git commit/push → GitHub issue for unfixable drift.
+    """
     import time
     target, kind = find_target()
     if not target:
         print(f"{R}claude-code not found{X}")
         return 2
+
+    DIM = "\033[90m"
     print(f"{B}vpcc watch — polling every {args.interval}s{X}")
-    print(f"  target: {target}")
+    print(f"  target : {target}")
 
     last_sha = sha256_short(target)
     last_mtime = target.stat().st_mtime
-    print(f"  sha   : {last_sha}")
+    cc_ver = _detect_cc_version(target)
+    print(f"  version: {cc_ver}")
+    print(f"  sha    : {last_sha}")
+    print(f"  {DIM}watching for changes... (Ctrl-C to stop){X}")
 
     try:
         while True:
@@ -1417,7 +2142,6 @@ def cmd_watch(args) -> int:
             try:
                 target, kind = find_target()
                 if not target:
-                    print(f"{Y}  target vanished — waiting{X}")
                     continue
                 m = target.stat().st_mtime
                 if m == last_mtime:
@@ -1426,15 +2150,31 @@ def cmd_watch(args) -> int:
                 if cur_sha == last_sha:
                     last_mtime = m
                     continue
-                print(f"\n{Y}[{datetime.now().strftime('%H:%M:%S')}] CC changed: {last_sha} -> {cur_sha}{X}")
+
+                ts = datetime.now().strftime("%H:%M:%S")
+                new_ver = _detect_cc_version(target)
+                print(f"\n{Y}[{ts}] CC updated: {cc_ver} ({last_sha}) {ARROW} {new_ver} ({cur_sha}){X}")
                 backup(target, kind)
-                class _A: force = False; quiet = False
-                rc = cmd_autoheal(_A())
-                print(f"  autoheal rc={rc}")
+
+                # Run full autopilot (scan → heal → patch → commit → push → issue)
+                rc = cmd_autopilot(type("A", (), {})())
+                print(f"  autopilot rc={rc}")
+
+                # Update stamp
+                try:
+                    stamp = Path.home() / ".vpcc" / "last_patched_sha"
+                    stamp.parent.mkdir(parents=True, exist_ok=True)
+                    stamp.write_text(sha256_short(target))
+                except OSError:
+                    pass
+
                 last_sha = sha256_short(target)
                 last_mtime = target.stat().st_mtime
+                cc_ver = new_ver
+                print(f"  {DIM}watching for changes...{X}")
+
             except Exception as e:
-                print(f"{R}  watch loop error: {e}{X}")
+                print(f"{R}  watch error: {e}{X}")
     except KeyboardInterrupt:
         print(f"\n{B}watch stopped{X}")
         return 0
@@ -1643,7 +2383,10 @@ def cmd_install_rules(args) -> int:
         hook_src = src_dir / "hooks" / "vpcc-auto-allow.sh"
         hook_dst = hooks_dir / "vpcc-auto-allow.sh"
         hook_dst.write_bytes(hook_src.read_bytes())
-        hook_dst.chmod(0o755)
+        try:
+            hook_dst.chmod(0o755)
+        except OSError:
+            pass  # Windows: chmod not fully supported
         print(f"  {G}{CHECK}{X} hook {ARROW} {hook_dst}")
 
     print(f"\n{G}{CHECK} authorization rules installed{X}")
@@ -1732,7 +2475,10 @@ def cmd_install_preload(args) -> int:
     dst_dir.mkdir(parents=True, exist_ok=True)
     dst = dst_dir / "claude-preload.js"
     dst.write_bytes(src.read_bytes())
-    dst.chmod(0o644)
+    try:
+        dst.chmod(0o644)
+    except OSError:
+        pass  # Windows: chmod not fully supported
     print(f"{G}{CHECK} installed preload{X}  {src.name} {ARROW} {dst}")
     print(f"  wrapper will auto-load via BUN_OPTIONS=--preload on next run")
     return 0
@@ -1833,11 +2579,27 @@ def main() -> int:
         help="All-in-one: self-update + autoheal + verify + warm cache")
     sub.add_parser("bench",
         help="Microbenchmark: sha256, text load, scan cold/cached")
+    sub.add_parser("guard", help="Fast SHA guard: auto-patch if CC binary changed (<100ms when current)")
+    sub.add_parser("install-guard", help="Install platform-specific auto-patch scheduler (Task Scheduler / launchd / systemd)")
+    sub.add_parser("uninstall-guard", help="Remove auto-patch scheduler")
+    sub.add_parser("autopilot",
+        help="Full pipeline: scan → auto-heal → patch → git commit/push → GitHub issue")
+    p_dash = sub.add_parser("dashboard",
+        help="Real-time status display (version, SHA, patches, guard, drift)")
+    p_dash.add_argument("--interval", "-i", type=int, default=5,
+        help="Refresh interval seconds (default 5)")
+    sub.add_parser("tui",
+        help="Interactive terminal UI — full vpcc control panel (curses)")
+    sub.add_parser("update",
+        help="Full self-update: upgrade vpcc + sync patches + re-patch binary (like omp update)")
 
     args = ap.parse_args()
     if args.cmd is None:
         ap.print_help()
         return 0
+    if args.cmd == "tui":
+        from .tui import run_curses_tui
+        return run_curses_tui()
     return {"patch": cmd_patch, "verify": cmd_verify,
             "rollback": cmd_rollback, "status": cmd_status,
             "list": cmd_list,
@@ -1852,6 +2614,12 @@ def main() -> int:
             "install-rules": cmd_install_rules,
             "uninstall-rules": cmd_uninstall_rules,
             "upgrade": cmd_upgrade,
+            "guard": cmd_guard,
+            "install-guard": cmd_install_guard,
+            "uninstall-guard": cmd_uninstall_guard,
+            "autopilot": cmd_autopilot,
+            "dashboard": cmd_dashboard,
+            "update": cmd_update,
             "bench": cmd_bench}[args.cmd](args)
 
 

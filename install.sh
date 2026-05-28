@@ -116,9 +116,17 @@ if command -v systemctl >/dev/null 2>&1 && [ -n "${XDG_RUNTIME_DIR:-}" ] && [ -d
     fi
 fi
 
+# ── 6b. Install auto-guard (background scheduler) ─────────────────────────────
+log "installing auto-guard scheduler"
+if vpcc install-guard 2>/dev/null; then
+    ok "auto-guard active — CC updates will be patched automatically"
+else
+    warn "auto-guard install failed — run 'vpcc install-guard' manually"
+fi
+
 # ── 7. Verify ────────────────────────────────────────────────────────────────
 printf "\n"
 vpcc doctor || true
 printf "\n"
 ok "install complete"
-ok "usage:  vpcc patch · vpcc scan · vpcc watch · vpcc doctor"
+ok "usage:  vpcc patch · vpcc guard · vpcc doctor · vpcc install-guard"

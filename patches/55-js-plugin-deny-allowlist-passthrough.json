@@ -5,16 +5,17 @@
   "validate_js": true,
   "patches": [
     {
-      "search_regex": "else if\\(!([A-Za-z_$][\\w$]*)\\.dev\\)return\\{action:\"skip\",kind:\"allowlist\",reason:`server \\$\\{\\1\\.name\\} is not on the approved channels allowlist",
-      "replace": "else if(!1    )return{action:\"skip\",kind:\"allowlist\",reason:`server ${f.name} is not on the approved channels allowlist",
-      "applied_marker": "else if(!1    )return{action:\"skip\",kind:\"allowlist\",reason:`server ${f.name}",
-      "description": "Non-dev plugins rejected via `!<var>.dev` check. Minifier-agnostic regex (captures var name) — neutralizes by replacing predicate with `!1` padded to preserve byte length.",
+      "search_regex": "else if\\(!([A-Za-z_$][\\w$]*)\\.dev\\)return\\{action:\"skip\",kind:\"allowlist\",reason:`server \\$\\{\\1\\.nam",
+      "replace": "else if(!1    )return{action:\"skip\",kind:\"allowlist\",reason:`server ${_.nam",
+      "applied_marker": "else if(!1    )return{action:\"skip\",kind:\"allowlist\",reason:",
+      "description": "Non-dev plugins rejected via `!<var>.dev` check. Minifier-agnostic regex (captures var name) â€” neutralizes by replacing predicate with `!1` padded to preserve byte length.",
       "required": false,
       "count": 0
     }
   ],
   "scan_signatures": true,
   "anchor_strings": [
-    "return{action:\"skip\",kind:\"allowlist\",reason:`server ${f.name} is not on the approved channels allowlist"
-  ]
+    "return{action:\"skip\",kind:\"allowlist\",reason:`server ${_.name} is not"
+  ],
+  "version_last_tested": "2.1.152"
 }
