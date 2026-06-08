@@ -52,12 +52,23 @@ _BUN_SECTION = ".bun"
 
 def _npm_global_roots() -> list[Path]:
     roots: list[Path] = []
-    try:
-        r = subprocess.run(["npm", "root", "-g"], capture_output=True, text=True, timeout=5)
-        if r.returncode == 0 and r.stdout.strip():
-            roots.insert(0, Path(r.stdout.strip()))
-    except Exception:
-        pass
+    # On Windows the npm shim is npm.cmd (or npm.exe), not bare npm; Python's
+    # subprocess.run does not honor PATHEXT, so a bare ["npm", ...] invocation
+    # raises FileNotFoundError before the bin resolution ever finds the shim.
+    # Probe candidates in order; first success wins.
+    npm_candidates = ["npm"]
+    if os.name == "nt":
+        npm_candidates = ["npm.cmd", "npm.exe", "npm"]
+    for npm in npm_candidates:
+        try:
+            r = subprocess.run([npm, "root", "-g"], capture_output=True, text=True, timeout=5)
+            if r.returncode == 0 and r.stdout.strip():
+                roots.insert(0, Path(r.stdout.strip()))
+                break
+        except (FileNotFoundError, OSError):
+            continue
+        except Exception:
+            break
     home = Path.home()
     roots += [
         home / ".npm-global/lib/node_modules",
