@@ -127,4 +127,135 @@
 
   // 6. Breadcrumb for `vpcc doctor`.
   try { process.env.VPCC_PRELOAD_LOADED = "1"; } catch (_) {}
+
+  // 7. Windows POSIX-path normalization for plugin hook resolution.
+  //
+  // Problem: vpcc removes the permission gates that vanilla Claude Code uses
+  // to silently deny third-party plugin Stop/PreToolUse hooks (patches 55,
+  // 57, 69, plus section 4 above). Once those hooks actually fire on Windows,
+  // a latent CC bug surfaces: CC resolves ${CLAUDE_PLUGIN_ROOT} to a POSIX
+  // path like /c/Users/foo/... whenever it is launched from a Git Bash /
+  // MSYS-derived context (which is what claude.cmd produces). Windows Node
+  // then mis-interprets /c/Users/... as relative-to-current-drive and
+  // produces C:\c\Users\foo\..., throwing MODULE_NOT_FOUND on every hook.
+  // Upstream CC bugs: anthropics/claude-code#24529, #16116, #25184.
+  //
+  // Two-layer fix, Windows-only, idempotent:
+  //   Layer A: normalize POSIX-style absolute paths in env vars CC reads to
+  //             compute plugin roots, before CC reads them.
+  //   Layer B: wrap child_process.{spawn,exec,execSync,spawnSync} and
+  //             Bun.spawn so any argv token that slipped through as /c/...
+  //             gets rewritten on the way out.
+  // The on-disk half of this fix (rewriting baked manifests) lives in
+  // contrib/windows/fix-plugin-hook-paths.ps1.
+  if (process.platform === "win32" && !globalThis.__VPCC_WIN_NORMALIZED__) {
+    globalThis.__VPCC_WIN_NORMALIZED__ = true;
+
+    // Convert "/c/Users/foo" -> "C:\\Users\\foo". Only acts on POSIX-rooted
+    // single-letter drive prefixes; leaves all other strings alone.
+    const posixToWin = (p) => {
+      if (typeof p !== "string" || p.length < 3 || p[0] !== "/") return p;
+      const m = /^\/([a-zA-Z])\/(.*)$/.exec(p);
+      if (!m) return p;
+      return m[1].toUpperCase() + ":\\" + m[2].replace(/\//g, "\\");
+    };
+
+    // Token-level fix for command strings and argv elements: rewrite every
+    // /X/path segment that appears after a quote, whitespace, equals sign,
+    // or start of string (i.e. anywhere a fresh path token would begin).
+    const posixToWinTokens = (s) => {
+      if (typeof s !== "string") return s;
+      if (s.indexOf("/") < 0) return s;
+      return s.replace(
+        /(["'\s=]|^)\/([a-zA-Z])\/([^"'\s]+)/g,
+        (_, prefix, drive, rest) =>
+          prefix + drive.toUpperCase() + ":/" + rest
+      );
+    };
+
+    // Layer A: env vars CC reads to compute plugin paths.
+    try {
+      const envKeys = [
+        "HOME",
+        "USERPROFILE",
+        "APPDATA",
+        "LOCALAPPDATA",
+        "CLAUDE_PLUGIN_ROOT",
+        "CLAUDE_CONFIG_DIR",
+      ];
+      for (const k of envKeys) {
+        const v = process.env[k];
+        if (v) {
+          const fixed = posixToWin(v);
+          if (fixed !== v) process.env[k] = fixed;
+        }
+      }
+    } catch (_) { /* swallow */ }
+
+    // Layer B: wrap child_process so any /c/... slipping through to spawn
+    // gets converted before Windows Node sees it.
+    let cp = null;
+    try { cp = require("node:child_process"); }
+    catch (_) {
+      try { cp = require("child_process"); } catch (__) { /* unavailable */ }
+    }
+
+    const wrapSpawnLike = (orig) => function vpccSpawnLike(cmd, args, opts) {
+      try {
+        if (typeof cmd === "string") cmd = posixToWinTokens(cmd);
+        if (Array.isArray(args)) args = args.map(posixToWinTokens);
+      } catch (_) { /* fall through to original */ }
+      return orig.apply(this, [cmd, args, opts]);
+    };
+
+    const wrapExecLike = (orig) => function vpccExecLike(cmd, ...rest) {
+      try {
+        if (typeof cmd === "string") cmd = posixToWinTokens(cmd);
+      } catch (_) { /* fall through */ }
+      return orig.apply(this, [cmd, ...rest]);
+    };
+
+    if (cp) {
+      try { cp.spawn = wrapSpawnLike(cp.spawn); } catch (_) {}
+      try { cp.spawnSync = wrapSpawnLike(cp.spawnSync); } catch (_) {}
+      try { cp.exec = wrapExecLike(cp.exec); } catch (_) {}
+      try { cp.execSync = wrapExecLike(cp.execSync); } catch (_) {}
+      try { cp.execFile = wrapSpawnLike(cp.execFile); } catch (_) {}
+      try { cp.execFileSync = wrapSpawnLike(cp.execFileSync); } catch (_) {}
+    }
+
+    // Bun.spawn forward-compat: wrap if CC starts using Bun-native spawn
+    // for hooks instead of Node child_process.
+    try {
+      const B = globalThis.Bun;
+      if (B && typeof B.spawn === "function") {
+        const _bspawn = B.spawn;
+        B.spawn = function vpccBunSpawn(arg, opts) {
+          try {
+            if (Array.isArray(arg)) {
+              arg = arg.map(posixToWinTokens);
+            } else if (arg && Array.isArray(arg.cmd)) {
+              arg = { ...arg, cmd: arg.cmd.map(posixToWinTokens) };
+            }
+          } catch (_) { /* fall through */ }
+          return _bspawn.call(B, arg, opts);
+        };
+      }
+      if (B && typeof B.spawnSync === "function") {
+        const _bspawnS = B.spawnSync;
+        B.spawnSync = function vpccBunSpawnSync(arg, opts) {
+          try {
+            if (Array.isArray(arg)) {
+              arg = arg.map(posixToWinTokens);
+            } else if (arg && Array.isArray(arg.cmd)) {
+              arg = { ...arg, cmd: arg.cmd.map(posixToWinTokens) };
+            }
+          } catch (_) { /* fall through */ }
+          return _bspawnS.call(B, arg, opts);
+        };
+      }
+    } catch (_) { /* swallow */ }
+
+    try { process.env.VPCC_WIN_NORMALIZED = "1"; } catch (_) {}
+  }
 })();
