@@ -448,44 +448,65 @@ def _find_bun_section(data) -> tuple[int, int]:
 def _find_active_bundle_bounds(data, bun_lo: int, bun_hi: int) -> tuple[int, int]:
     """
     Bun SEA ≥ 2.1.119 embeds the main entry bundle PLUS a virtual-filesystem
-    (VFS) copy of the same source at a second location.  The layout is:
+    (VFS) copy of the same source at a second location.  Patching the VFS copy
+    corrupts Bun's module-loader ("CommonJS wrapper" crash).
 
-        [header][active-entry-blob (JS source, ~13 MB)][bytecode-for-deps (~102 MB)]
-        [lookup-key\x00][vfs-path\x00][vfs-copy-of-cli.js][other-vfs-files][trailer]
+    Two distinct .bun section layouts have been observed:
 
-    Patching any byte in the VFS copy corrupts the module Bun re-parses at
-    startup, causing the "entry.instantiate" crash even though the active
-    bundle itself is fine.
+    Layout A — pre-2.1.150 (marker close to section start):
+        [u32 size?][// @bun @bytecode][active-source-blob][bytecode-deps][VFS]
+        The first '// @bun @bytecode' is the active bundle header.  A u32 size
+        field may precede it.  We read the size field to get [marker, marker+size)
+        or fall back to using the second marker as the upper bound.
 
-    Detection: the active bundle always starts with "// @bun @bytecode" and its
-    byte-length is encoded as a little-endian u32 at (data_start - 4).
-    We read that field and return [abs_start, abs_end) so callers only scan the
-    active bundle region.
+    Layout B — 2.1.150 Windows PE (marker far from section start, ≥4 KB in):
+        [raw-JS-source][binary-bytecode-deps ... // @bun @bytecode ...][VFS...]
+        The active bundle is raw JS source with NO '// @bun @bytecode' header.
+        The first marker we find is the START of a compiled dependency blob.
+        The correct patch window is [bun_lo, abs_marker) — the raw source that
+        precedes any compiled bytecode.
 
-    Falls back to the full [bun_lo, bun_hi) range if the marker or size look
-    implausible (e.g., old single-bundle builds).
+    Strategy:
+     1. Find the first '// @bun @bytecode' marker.
+     2. If it is > 4 KB from the section start → Layout B: return [bun_lo, marker).
+     3. Else try the u32 size field at (marker-4).  If valid → return [marker, end).
+     4. Else search for a second marker (VFS boundary) → return [marker, marker2).
+     5. Last resort → return full section [bun_lo, bun_hi).
     """
     BUN_BYTECODE_MARKER = b"// @bun @bytecode"
+    marker_len = len(BUN_BYTECODE_MARKER)
     section_start = bun_lo
-    # Search for the marker within the section
+
+    # ── Step 1: find first marker ────────────────────────────────────────────
     abs_marker = data.find(BUN_BYTECODE_MARKER, section_start, bun_hi)
     if abs_marker < 0:
-        return bun_lo, bun_hi  # fallback: no marker found
+        return bun_lo, bun_hi  # no bytecode at all — patch whole section
 
-    data_start = abs_marker  # absolute offset in `data`
-    size_field_off = data_start - 4
-    if size_field_off < section_start:
-        return bun_lo, bun_hi  # no room for size field
+    gap = abs_marker - section_start
 
-    import struct as _s
-    blob_size = _s.unpack_from("<I", data, size_field_off)[0]
-    active_end = data_start + blob_size
+    # ── Step 2: Layout B — marker far into section ───────────────────────────
+    # Everything before the first bytecode marker is raw JS source.
+    # Bun 2.1.150 Windows PE: gap ≈ 108 MB; the [bun_lo, abs_marker) slice
+    # contains the active JS bundle that must be patched.
+    if gap > 4096:
+        return bun_lo, abs_marker
 
-    # Sanity: blob_size must be positive and fit inside the section
-    if blob_size < 1024 or active_end > bun_hi:
-        return bun_lo, bun_hi  # implausible — fall back
+    # ── Step 3: Layout A — marker close to section start, try size field ─────
+    size_field_off = abs_marker - 4
+    if size_field_off >= section_start:
+        import struct as _s
+        blob_size = _s.unpack_from("<I", data, size_field_off)[0]
+        active_end = abs_marker + blob_size
+        if 1024 <= blob_size <= bun_hi - abs_marker:
+            return abs_marker, active_end   # ← pre-2.1.150 happy path
 
-    return data_start, active_end
+    # ── Step 4: size field absent/implausible — find second marker (VFS) ─────
+    abs_marker2 = data.find(BUN_BYTECODE_MARKER, abs_marker + marker_len, bun_hi)
+    if abs_marker2 > abs_marker:
+        return abs_marker, abs_marker2
+
+    # ── Step 5: last resort — full section ───────────────────────────────────
+    return bun_lo, bun_hi
 
 
 def patch_bun_sea_inplace(binary: Path, patches: list) -> dict:
@@ -500,127 +521,183 @@ def patch_bun_sea_inplace(binary: Path, patches: list) -> dict:
     2.1.119 change: the .bun section now contains a second VFS copy of the
     main cli.js source.  Patching that copy corrupts Bun's module-loader.
     _find_active_bundle_bounds() restricts writes to the active-entry blob only.
+
+    Auto-retry: if the verify step fails and some patches needed >64 bytes of
+    space-padding (replacement shorter than match), those patches are omitted
+    and the binary is re-patched.  Large padding can overwrite adjacent JS that
+    was captured by a greedy regex but not reproduced in the replacement (e.g.
+    a regex ending with `}func` consumes the start of the next `function`
+    keyword, leaving `tion nextFunc()` after padding — invalid JS).  The retry
+    result carries `skipped_heavy` so callers can report which patches were
+    dropped.
     """
     mode = binary.stat().st_mode & 0o7777
     original_size = binary.stat().st_size
-    data = bytearray(binary.read_bytes())
+    source_bytes = binary.read_bytes()   # immutable; reused across attempts
 
-    bun_off, bun_size = _find_bun_section(data)
-    bun_lo, bun_hi = bun_off, bun_off + bun_size
+    def _attempt(attempt_patches: list) -> dict:
+        data = bytearray(source_bytes)
 
-    if not _bun_section_has_valid_trailer(data, bun_lo, bun_hi):
-        return {"ok": False, "err": "Bun trailer invalid — format change", "applied": 0, "skipped": 0}
+        bun_off, bun_size = _find_bun_section(data)
+        bun_lo, bun_hi = bun_off, bun_off + bun_size
 
-    # Narrow the writable region to the active entry bundle only, so we never
-    # accidentally corrupt the VFS copy or the bundled-module bytecode blobs.
-    eff_lo, eff_hi = _find_active_bundle_bounds(data, bun_lo, bun_hi)
+        if not _bun_section_has_valid_trailer(data, bun_lo, bun_hi):
+            return {"ok": False, "err": "Bun trailer invalid — format change", "applied": 0, "skipped": 0}
 
-    applied_total = 0
-    skipped_total = 0
-    per_patch = []
+        # Narrow the writable region to the active entry bundle only, so we never
+        # accidentally corrupt the VFS copy or the bundled-module bytecode blobs.
+        eff_lo, eff_hi = _find_active_bundle_bounds(data, bun_lo, bun_hi)
 
-    for p in patches:
-        applied_n = 0
-        skipped_n = 0
-        max_padding = 0
-        for sub in p.get("patches", []):
-            search_regex = sub.get("search_regex")
-            search = sub.get("search")
-            replace = sub.get("replace", "")
-            marker = sub.get("applied_marker")
+        applied_total = 0
+        skipped_total = 0
+        per_patch = []
 
-            if marker and data.find(marker.encode("utf-8", "surrogateescape"), eff_lo, eff_hi) >= 0:
-                continue
+        for p in attempt_patches:
+            applied_n = 0
+            skipped_n = 0
+            max_padding = 0
+            for sub in p.get("patches", []):
+                search_regex = sub.get("search_regex")
+                search = sub.get("search")
+                replace = sub.get("replace", "")
+                marker = sub.get("applied_marker")
 
-            if search_regex:
-                try:
-                    pat = re.compile(search_regex.encode("utf-8", "surrogateescape"), re.DOTALL)
-                except re.error:
-                    skipped_n += 1
+                if marker and data.find(marker.encode("utf-8", "surrogateescape"), eff_lo, eff_hi) >= 0:
                     continue
-                section_view = bytes(data[eff_lo:eff_hi])
-                for m in pat.finditer(section_view):
-                    mb = m.group(0)
+
+                if search_regex:
                     try:
-                        rb = m.expand(replace.encode("utf-8", "surrogateescape"))
-                    except Exception:
+                        pat = re.compile(search_regex.encode("utf-8", "surrogateescape"), re.DOTALL)
+                    except re.error:
                         skipped_n += 1
                         continue
-                    if len(rb) > len(mb):
+                    section_view = bytes(data[eff_lo:eff_hi])
+                    # Use search() not finditer() — apply to the FIRST match only.
+                    # The active bundle always precedes the VFS copy in the .bun
+                    # section, so the first match is always in the active bundle.
+                    # Applying to every match would also corrupt the VFS copy,
+                    # breaking Bun's module loader ("CommonJS wrapper" crash).
+                    m = pat.search(section_view)
+                    if m:
+                        mb = m.group(0)
+                        try:
+                            rb = m.expand(replace.encode("utf-8", "surrogateescape"))
+                        except Exception:
+                            skipped_n += 1
+                            continue
+                        if len(rb) > len(mb):
+                            skipped_n += 1
+                            continue
+                        if len(rb) < len(mb):
+                            padding = len(mb) - len(rb)
+                            rb = rb + b" " * padding
+                            if padding > max_padding:
+                                max_padding = padding
+                        abs_start = eff_lo + m.start()
+                        data[abs_start:abs_start + len(mb)] = rb
+                        applied_n += 1
+                elif search:
+                    s_b = search.encode("utf-8", "surrogateescape")
+                    r_b = replace.encode("utf-8", "surrogateescape")
+                    if len(r_b) > len(s_b):
                         skipped_n += 1
                         continue
-                    if len(rb) < len(mb):
-                        padding = len(mb) - len(rb)
-                        rb = rb + b" " * padding
+                    if len(r_b) < len(s_b):
+                        padding = len(s_b) - len(r_b)
+                        r_b = r_b + b" " * padding
                         if padding > max_padding:
                             max_padding = padding
-                    abs_start = eff_lo + m.start()
-                    data[abs_start:abs_start + len(mb)] = rb
-                    applied_n += 1
-            elif search:
-                s_b = search.encode("utf-8", "surrogateescape")
-                r_b = replace.encode("utf-8", "surrogateescape")
-                if len(r_b) > len(s_b):
-                    skipped_n += 1
-                    continue
-                if len(r_b) < len(s_b):
-                    padding = len(s_b) - len(r_b)
-                    r_b = r_b + b" " * padding
-                    if padding > max_padding:
-                        max_padding = padding
-                pos = eff_lo
-                while True:
-                    j = data.find(s_b, pos, eff_hi)
-                    if j < 0:
-                        break
-                    data[j:j + len(s_b)] = r_b
-                    applied_n += 1
-                    pos = j + len(s_b)
+                    # Apply to the FIRST occurrence only (same VFS-safety reason
+                    # as above).
+                    j = data.find(s_b, eff_lo, eff_hi)
+                    if j >= 0:
+                        data[j:j + len(s_b)] = r_b
+                        applied_n += 1
 
-        per_patch.append({"id": p["id"], "applied": applied_n, "skipped": skipped_n, "max_padding": max_padding})
-        applied_total += applied_n
-        skipped_total += skipped_n
+            per_patch.append({"id": p["id"], "applied": applied_n, "skipped": skipped_n, "max_padding": max_padding})
+            applied_total += applied_n
+            skipped_total += skipped_n
 
-    if len(data) != original_size:
-        return {"ok": False, "err": f"size drift {len(data)} vs {original_size}",
-                "applied": 0, "skipped": skipped_total, "per_patch": per_patch}
+        if len(data) != original_size:
+            return {"ok": False, "err": f"size drift {len(data)} vs {original_size}",
+                    "applied": 0, "skipped": skipped_total, "per_patch": per_patch}
 
-    if applied_total == 0:
-        return {"ok": True, "noop": True, "applied": 0, "skipped": skipped_total, "per_patch": per_patch}
+        if applied_total == 0:
+            return {"ok": True, "noop": True, "applied": 0, "skipped": skipped_total, "per_patch": per_patch}
 
-    # Write to temp same-dir file, verify by running, then atomic swap.
-    tmp_bin = binary.parent / f".{binary.name}.vpcctmp-{os.getpid()}"
-    try:
-        tmp_bin.write_bytes(bytes(data))
+        # Write to temp same-dir file, verify by running, then atomic swap.
+        tmp_bin = binary.parent / f".{binary.name}.vpcctmp-{os.getpid()}"
         try:
-            tmp_bin.chmod(mode)
-        except OSError:
-            pass  # Windows: chmod not fully supported
+            tmp_bin.write_bytes(bytes(data))
+            try:
+                tmp_bin.chmod(mode)
+            except OSError:
+                pass  # Windows: chmod not fully supported
 
-        # macOS: re-sign with ad-hoc signature after patching (code signature
-        # invalidated by byte changes; unsigned Mach-O gets SIGKILL on arm64).
-        if sys.platform == "darwin":
-            subprocess.run(["codesign", "--force", "--sign", "-", str(tmp_bin)],
-                           capture_output=True, timeout=30)
+            # macOS: re-sign with ad-hoc signature after patching (code signature
+            # invalidated by byte changes; unsigned Mach-O gets SIGKILL on arm64).
+            if sys.platform == "darwin":
+                subprocess.run(["codesign", "--force", "--sign", "-", str(tmp_bin)],
+                               capture_output=True, timeout=30)
 
-        r = subprocess.run([str(tmp_bin), "--version"],
-                           capture_output=True, text=True, timeout=60)
-        out = (r.stdout or "") + (r.stderr or "")
-        if r.returncode != 0 or "Claude Code" not in out:
+            r = subprocess.run([str(tmp_bin), "--version"],
+                               capture_output=True, text=True, timeout=60)
+            out = (r.stdout or "") + (r.stderr or "")
+            if r.returncode != 0 or "Claude Code" not in out:
+                tmp_bin.unlink(missing_ok=True)
+                return {"ok": False, "err": f"verify failed: {out[:500]!r} rc={r.returncode}",
+                        "applied": applied_total, "skipped": skipped_total, "per_patch": per_patch,
+                        "_bounds": (bun_lo, bun_hi, eff_lo, eff_hi)}
+
+            os.replace(str(tmp_bin), str(binary))
+            try:
+                binary.chmod(mode)
+            except OSError:
+                pass  # Windows: chmod not fully supported
+        except Exception as e:
             tmp_bin.unlink(missing_ok=True)
-            return {"ok": False, "err": f"verify failed: {out[:120]!r} rc={r.returncode}",
-                    "applied": applied_total, "skipped": skipped_total, "per_patch": per_patch}
+            return {"ok": False, "err": f"write failed: {e}", "applied": 0, "skipped": skipped_total}
 
-        os.replace(str(tmp_bin), str(binary))
-        try:
-            binary.chmod(mode)
-        except OSError:
-            pass  # Windows: chmod not fully supported
-    except Exception as e:
-        tmp_bin.unlink(missing_ok=True)
-        return {"ok": False, "err": f"write failed: {e}", "applied": 0, "skipped": skipped_total}
+        return {"ok": True, "applied": applied_total, "skipped": skipped_total, "per_patch": per_patch}
 
-    return {"ok": True, "applied": applied_total, "skipped": skipped_total, "per_patch": per_patch}
+    # ── First attempt: all patches ──────────────────────────────────────────
+    result = _attempt(patches)
+    if result["ok"]:
+        return result
+
+    if "verify failed" not in result.get("err", ""):
+        return result
+
+    per_patch_0 = result.get("per_patch", [])
+
+    # ── Retry 1: drop patches that needed >64 bytes of padding ──────────────
+    heavy_ids = {pr["id"] for pr in per_patch_0 if pr.get("max_padding", 0) > 64}
+    if heavy_ids:
+        reduced1 = [p for p in patches if p.get("id") not in heavy_ids]
+        if reduced1:
+            result["_retry_attempted"] = True
+            r1 = _attempt(reduced1)
+            if r1["ok"]:
+                r1["skipped_heavy"] = sorted(heavy_ids)
+                return r1
+            result["_retry_err"] = r1.get("err", "unknown")
+
+    # ── Retry 2: drop ALL patches that needed any padding (>0 bytes) ─────────
+    # Some patches with small padding (1-64 B) also corrupt the active bundle
+    # when the greedy regex consumed bytes the replacement didn't reproduce.
+    any_pad_ids = {pr["id"] for pr in per_patch_0 if pr.get("max_padding", 0) > 0}
+    extra_ids = any_pad_ids - heavy_ids   # new IDs not already dropped in r1
+    if extra_ids:
+        reduced2 = [p for p in patches if p.get("id") not in any_pad_ids]
+        if reduced2:
+            result["_retry2_attempted"] = True
+            r2 = _attempt(reduced2)
+            if r2["ok"]:
+                r2["skipped_heavy"] = sorted(any_pad_ids)
+                return r2
+            result["_retry2_err"] = r2.get("err", "unknown")
+
+    return result
 
 
 def read_bun_js(binary: Path) -> tuple[str | None, str]:
@@ -802,7 +879,17 @@ def cmd_patch(args) -> int:
             result = patch_bun_sea_inplace(target, js_patches)
             if not result["ok"]:
                 print(f"  {R}fail{X}  [bun-inplace]  {result.get('err','unknown')}")
+                if result.get("_retry_attempted"):
+                    print(f"  {R}fail{X}  [bun-inplace retry]  {result.get('_retry_err','unknown')}")
+                if result.get("_retry2_attempted"):
+                    print(f"  {R}fail{X}  [bun-inplace retry-2]  {result.get('_retry2_err','unknown')}")
                 fail += len(js_patches)
+                # Bounds diagnostic — helps confirm whether VFS-copy isolation worked.
+                bounds = result.get("_bounds")
+                if bounds:
+                    blo, bhi, elo, ehi = bounds
+                    print(f"  {Y}diag{X}  bun=[{hex(blo)},{hex(bhi)}) eff=[{hex(elo)},{hex(ehi)})"
+                          f"  section={bhi-blo} eff={ehi-elo}")
                 # Patches that needed the most padding are the most likely corruption source.
                 heavy = sorted(
                     [pr for pr in result.get("per_patch", []) if pr.get("max_padding", 0) > 64],
@@ -820,6 +907,9 @@ def cmd_patch(args) -> int:
                     msg = "no-op (already applied)" if n == 0 else f"{n} in-place replacement(s)"
                     print(f"  {G}ok{X}    {pr['id']:40s}  {msg}")
                     ok += 1
+                for pid in result.get("skipped_heavy", []):
+                    print(f"  {Y}skip{X}  {pid:40s}  skipped — padding caused verify failure; retry succeeded without")
+                    skip += 1
                 if result.get("noop"):
                     pass  # all already applied
                 else:
@@ -2129,7 +2219,7 @@ def cmd_upgrade(args) -> int:
     """
     print(f"{B}vpcc upgrade — full pipeline{X}")
     print(f"  step 1/4: self-update patches")
-    rc_su = cmd_self_update(type("A", (), {"force": False})())
+    rc_su = cmd_self_update(type("A", (), {"force": False, "dry_run": False, "no_reapply": False})())
     if rc_su not in (0, 1):
         print(f"  {Y}self-update returned rc={rc_su}, continuing{X}")
 
