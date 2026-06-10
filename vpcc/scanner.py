@@ -19,10 +19,17 @@ Pure stdlib. Zero deps.
 """
 from __future__ import annotations
 
+import hashlib
 import json
+import os
 import re
 from pathlib import Path
 from typing import Any
+
+try:
+    from vpcc import __version__ as _CACHE_VERSION
+except ImportError:
+    _CACHE_VERSION = "0"
 
 
 # ---------------------------------------------------------------------------
@@ -728,8 +735,6 @@ def suggest_anchors(text: str, regex_or_context: str, n: int = 3) -> list[str]:
 # patch change. Cheap to compute (single hash + dir stat), saves ~1.5s/scan.
 # ---------------------------------------------------------------------------
 
-import os
-import hashlib
 
 
 def _cache_dir() -> Path:
@@ -761,14 +766,19 @@ def _scan_cache_key(target: Path, patch_dir: Path) -> tuple[str, int]:
 
 
 def load_cached_rows(target: Path, patch_dir: Path) -> list[dict[str, Any]] | None:
-    """Return cached scan rows if (target sha, patch mtime) matches. Else None."""
+    """Return cached scan rows if (target sha, patch mtime, vpcc version) all match.
+
+    The vpcc version is embedded in the filename so upgrading vpcc automatically
+    busts all stale caches — prevents retired-patch "drift" rows from persisting
+    across an upgrade that added the retired filter.
+    """
     if os.environ.get("VPCC_NO_CACHE"):
         return None
     try:
         sha, mt = _scan_cache_key(target, patch_dir)
     except OSError:
         return None
-    cache_file = _cache_dir() / f"scan_{sha}_{mt}.json"
+    cache_file = _cache_dir() / f"scan_{sha}_{mt}_{_CACHE_VERSION}.json"
     if not cache_file.is_file():
         return None
     try:
@@ -783,8 +793,8 @@ def save_cached_rows(target: Path, patch_dir: Path, rows: list[dict[str, Any]]) 
         return
     try:
         sha, mt = _scan_cache_key(target, patch_dir)
-        cache_file = _cache_dir() / f"scan_{sha}_{mt}.json"
-        # prune old cache files for this binary (keep current only)
+        cache_file = _cache_dir() / f"scan_{sha}_{mt}_{_CACHE_VERSION}.json"
+        # prune old cache files for this binary (all versions, keep current only)
         for old in _cache_dir().glob(f"scan_{sha}_*.json"):
             if old != cache_file:
                 try:

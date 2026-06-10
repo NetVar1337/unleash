@@ -9,6 +9,7 @@ Launched via: vpcc tui
 from __future__ import annotations
 
 import os
+import re
 import sys
 import time
 import subprocess
@@ -16,6 +17,8 @@ import threading
 from pathlib import Path
 from datetime import datetime
 from typing import Any
+
+_ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-9;]*m")
 
 # ── lazy imports from vpcc core (avoid circular at module level) ─────────────
 def _core():
@@ -508,8 +511,7 @@ def _run_action_captured(cmd: str, state: State):
 
 def _strip_ansi(s: str) -> str:
     """Remove ANSI escape sequences from a string."""
-    import re
-    return re.sub(r"\x1b\[[0-9;]*m", "", s)
+    return _ANSI_ESCAPE_RE.sub("", s)
 
 
 # ── ANSI fallback TUI ────────────────────────────────────────────────────────

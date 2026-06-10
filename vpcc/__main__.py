@@ -80,8 +80,7 @@ def _npm_global_roots() -> list[Path]:
 
 
 def _version_glob(base: Path, suffix: str) -> list[Path]:
-    import glob as _glob
-    return [Path(m) for m in _glob.glob(str(base / "*" / "lib" / "node_modules" / suffix))]
+    return list(base.glob("*/lib/node_modules/" + suffix))
 
 
 def find_target() -> tuple[Path | None, str]:
@@ -494,8 +493,7 @@ def _find_active_bundle_bounds(data, bun_lo: int, bun_hi: int) -> tuple[int, int
     # ── Step 3: Layout A — marker close to section start, try size field ─────
     size_field_off = abs_marker - 4
     if size_field_off >= section_start:
-        import struct as _s
-        blob_size = _s.unpack_from("<I", data, size_field_off)[0]
+        blob_size = _struct.unpack_from("<I", data, size_field_off)[0]
         active_end = abs_marker + blob_size
         if 1024 <= blob_size <= bun_hi - abs_marker:
             return abs_marker, active_end   # ← pre-2.1.150 happy path
@@ -725,27 +723,6 @@ def write_bun_js(binary: Path, text: str) -> tuple[bool, str]:
     """HARD LOCK: Bun SEA bytecode cannot be safely text-patched. Refuse writes."""
     return False, "Bun SEA bytecode — binary writes disabled to prevent corruption"
 
-def _write_bun_js_DISABLED(binary: Path, text: str) -> tuple[bool, str]:
-    """Inject patched JS text back into .bun ELF section. Unlinks first (ETXTBSY guard)."""
-    with tempfile.TemporaryDirectory() as tmp:
-        src = Path(tmp) / "src.exe"
-        shutil.copy2(binary, src)
-        section = Path(tmp) / "section.bin"
-        section.write_bytes(text.encode("utf-8", errors="surrogateescape"))
-        out = Path(tmp) / "patched.exe"
-        shutil.copy2(src, out)
-        r = subprocess.run(
-            ["objcopy", "--update-section", f"{_BUN_SECTION}={section}", str(out)],
-            capture_output=True, text=True,
-        )
-        if r.returncode != 0:
-            return False, f"objcopy inject: {(r.stderr or r.stdout).strip()}"
-        mode = binary.stat().st_mode & 0o7777
-        binary.unlink()        # must unlink running binary before replacing (ETXTBSY)
-        shutil.copy2(out, binary)
-        binary.chmod(mode)
-    return True, ""
-
 
 # ── patch logic ───────────────────────────────────────────────────────────────
 
@@ -810,7 +787,7 @@ def backup(target: Path, kind: str) -> Path:
     ext   = "exe.bak" if kind == "bun_sea" else "js.bak"
     dst   = BACKUP_DIR / f"claude.{stamp}.{sha256_short(target)}.{ext}"
     shutil.copy2(target, dst)
-    for old in sorted(BACKUP_DIR.glob("claude.*.*"))[:-10]:
+    for old in sorted(BACKUP_DIR.glob("claude.*.bak"))[:-10]:
         old.unlink(missing_ok=True)
     return dst
 
@@ -1011,9 +988,6 @@ def _apply_settings(patch: dict, dry_run: bool = False) -> tuple[bool, str]:
     except json.JSONDecodeError:
         cur = {}
     wanted = patch.get("settings", {})
-    out = dict(cur)
-    changed = sum(1 for k, v in wanted.items() if out.setdefault(k, None) != v and not out.__setitem__(k, v))  # type: ignore
-    # simpler:
     out = dict(cur)
     changed = 0
     for k, v in wanted.items():
@@ -1223,9 +1197,13 @@ def cmd_rollback(args) -> int:
         return 1
     latest = baks[-1]
     mode = target.stat().st_mode & 0o7777
-    target.unlink()
-    shutil.copy2(latest, target)
-    target.chmod(mode)
+    tmp = target.parent / f".{target.name}.vpcc-rollback-{os.getpid()}"
+    shutil.copy2(latest, tmp)
+    try:
+        tmp.chmod(mode)
+    except OSError:
+        pass
+    os.replace(tmp, target)
     print(f"{G}{CHECK} restored{X} {target} <- {latest.name}")
     return 0
 
@@ -1371,8 +1349,9 @@ def cmd_doctor(args) -> int:
         1 for f in sorted(PATCH_DIR.glob("*.json"))
         if _is_retired_json(f)
     )
+    from vpcc import __version__
     print(f"{B}vpcc doctor{X}")
-    print(f"  vpcc ver   : {__import__('vpcc').__version__ if hasattr(__import__('vpcc'), '__version__') else '2.1.114'}")
+    print(f"  vpcc ver   : {__version__}")
     print(f"  patches    : {len(patches)}")
     if not target:
         print(f"  target     : {R}NOT FOUND{X}")
