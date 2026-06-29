@@ -58,7 +58,7 @@ jobs:
           branch = os.environ.get("TARGET_BRANCH") or "main"
 
           products = {
-              "unleash-cc": {"label": "Unleash", "pattern": "cc-v*", "prefix": "cc-v", "workflow": "release.yml"},
+              "unleash-cc": {"label": "Unleash", "pattern": "cc-v*", "prefix": "cc-v", "workflow": "release.yml", "fallback": "1.0.0"},
               "unleash-gpt": {"label": "Unleash-GPT", "pattern": "gpt-v*", "prefix": "gpt-v", "workflow": "release-unleash-gpt.yml"},
               "unleash-omp": {"label": "Unleash-OMP", "pattern": "omp-v*", "prefix": "omp-v", "workflow": "release-unleash-omp.yml"},
           }
@@ -93,6 +93,8 @@ jobs:
           display_tags = {}
           for key, info in products.items():
               current = latest_version(info["pattern"], info["prefix"])
+              if current == "0.0.0" and "fallback" in info:
+                  current = info["fallback"]
               next_version = bump_version(current) if key in selected else current
               tag = f"{info['prefix']}{next_version}"
               next_tags[key] = tag
