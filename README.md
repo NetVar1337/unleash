@@ -11,11 +11,13 @@
 
 <br />
 
-<a href="#-quick-start"><img src="https://img.shields.io/badge/get_started-unleash_patch-8b5cf6?style=for-the-badge" alt="get started" /></a>
+<a href="#-quick-start"><img src="https://img.shields.io/badge/npm_install_--g_unleash--cc-cb3837?style=for-the-badge&logo=npm&logoColor=white" alt="npm install" /></a>
 &nbsp;
 <a href="#-interactive-tui"><img src="https://img.shields.io/badge/TUI-interactive-22d3ee?style=for-the-badge" alt="tui" /></a>
 &nbsp;
 <a href="https://github.com/VoidChecksum/unleash/releases"><img src="https://img.shields.io/badge/download-latest-10b981?style=for-the-badge" alt="download" /></a>
+&nbsp;
+<a href="https://www.npmjs.com/package/unleash-cc"><img src="https://img.shields.io/npm/v/unleash-cc?style=for-the-badge&color=8b5cf6&label=npm" alt="npm version" /></a>
 
 <br />
 <br />
@@ -53,7 +55,10 @@ unleash setup    # patches + rules + plugins + auto-update guard — everything 
 ## ⚡ Quick Start
 
 ```bash
-# full setup: patch binary + install rules + install plugins + auto-update guard
+# install via npm (recommended — works everywhere)
+npm install -g unleash-cc
+
+# one-shot full setup: patch + rules + plugins + auto-update guard
 unleash setup
 ```
 
