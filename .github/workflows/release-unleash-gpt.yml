@@ -1,0 +1,185 @@
+name: Release Unleash-GPT
+
+on:
+  push:
+    tags:
+      - 'gpt-v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            suffix: linux-amd64
+          - goos: linux
+            goarch: arm64
+            suffix: linux-arm64
+          - goos: darwin
+            goarch: amd64
+            suffix: darwin-amd64
+          - goos: darwin
+            goarch: arm64
+            suffix: darwin-arm64
+          - goos: windows
+            goarch: amd64
+            suffix: windows-amd64
+            ext: .exe
+          - goos: windows
+            goarch: arm64
+            suffix: windows-arm64
+            ext: .exe
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Build Unleash-GPT
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: '0'
+        run: |
+          cd go
+          VERSION="${GITHUB_REF_NAME#gpt-v}"
+          go build -ldflags="-s -w -X main.version=$VERSION" \
+            -o ../unleash-gpt-${{ matrix.suffix }}${{ matrix.ext }} ./cmd/unleash-gpt
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: unleash-gpt-${{ matrix.suffix }}
+          path: unleash-gpt-${{ matrix.suffix }}${{ matrix.ext || '' }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Generate checksums
+        run: |
+          cd artifacts
+          sha256sum unleash-gpt-* > checksums.txt
+          cat checksums.txt
+
+      - name: Create Unleash-GPT release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Unleash-GPT ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            artifacts/unleash-gpt-*
+            artifacts/checksums.txt
+          body: |
+            ## Quick Start
+
+            ```bash
+            npm install -g unleash-gpt
+            unleash-gpt setup
+            ```
+
+            **Windows:** Download `unleash-gpt-windows-amd64.exe`, rename to `unleash-gpt.exe`.
+
+            **macOS:** Download `unleash-gpt-darwin-arm64` (Apple Silicon) or `unleash-gpt-darwin-amd64` (Intel).
+
+            **Linux:** Download `unleash-gpt-linux-amd64` or `unleash-gpt-linux-arm64`.
+
+  npm:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Prepare Unleash-GPT npm package
+        run: |
+          VERSION="${GITHUB_REF_NAME#gpt-v}"
+          mkdir -p npm-pkg/bin
+
+          cp artifacts/unleash-gpt-linux-amd64 npm-pkg/bin/unleash-gpt-linux-x64
+          cp artifacts/unleash-gpt-linux-arm64 npm-pkg/bin/unleash-gpt-linux-arm64
+          cp artifacts/unleash-gpt-darwin-amd64 npm-pkg/bin/unleash-gpt-darwin-x64
+          cp artifacts/unleash-gpt-darwin-arm64 npm-pkg/bin/unleash-gpt-darwin-arm64
+          cp artifacts/unleash-gpt-windows-amd64.exe npm-pkg/bin/unleash-gpt-win32-x64.exe
+          cp artifacts/unleash-gpt-windows-arm64.exe npm-pkg/bin/unleash-gpt-win32-arm64.exe
+          chmod +x npm-pkg/bin/unleash-gpt-*
+
+          cat > npm-pkg/package.json << EOF
+          {
+            "name": "unleash-gpt",
+            "version": "$VERSION",
+            "description": "Unleash-GPT for Codex CLI — operator config and byte patcher",
+            "license": "GPL-3.0-or-later",
+            "repository": {
+              "type": "git",
+              "url": "https://github.com/VoidChecksum/unleash"
+            },
+            "homepage": "https://github.com/VoidChecksum/unleash",
+            "author": "VoidChecksum",
+            "keywords": [
+              "codex-cli", "binary-patching", "go",
+              "telemetry-removal", "operator-authorization"
+            ],
+            "bin": {
+              "unleash-gpt": "bin/run.js"
+            },
+            "os": ["darwin", "linux", "win32"],
+            "cpu": ["x64", "arm64"],
+            "files": ["bin/"]
+          }
+          EOF
+
+          cat > npm-pkg/bin/run.js << 'RUNJS'
+          #!/usr/bin/env node
+          const { execFileSync } = require("child_process");
+          const path = require("path");
+          const os = require("os");
+
+          const platform = os.platform();
+          const arch = os.arch();
+
+          let bin;
+          if (platform === "win32") {
+            bin = arch === "arm64" ? "unleash-gpt-win32-arm64.exe" : "unleash-gpt-win32-x64.exe";
+          } else if (platform === "darwin") {
+            bin = arch === "arm64" ? "unleash-gpt-darwin-arm64" : "unleash-gpt-darwin-x64";
+          } else {
+            bin = arch === "arm64" ? "unleash-gpt-linux-arm64" : "unleash-gpt-linux-x64";
+          }
+
+          const binPath = path.join(__dirname, bin);
+          try {
+            execFileSync(binPath, process.argv.slice(2), { stdio: "inherit" });
+          } catch (e) {
+            process.exit(e.status || 1);
+          }
+          RUNJS
+
+      - name: Publish Unleash-GPT to npm
+        working-directory: npm-pkg
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public

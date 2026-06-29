@@ -366,6 +366,31 @@ Everything else is pre-authorized.
 
 <br />
 
+## 🧠 Unleash-GPT for Codex CLI
+
+This repo ships Unleash-GPT as a separate Codex-focused Go binary with its own release tags and npm package:
+
+```bash
+npm install -g unleash-gpt
+unleash-gpt setup
+```
+
+Build from source:
+```bash
+cd go
+go build -o unleash-gpt ./cmd/unleash-gpt
+
+unleash-gpt setup           # install Codex rules/config + run patch pass
+unleash-gpt status          # show discovered Codex target
+unleash-gpt patch --dry-run # scan/apply bundled Codex byte patches when present
+```
+
+Release tags use `gpt-v*` and publish separate `unleash-gpt-*` artifacts plus the `unleash-gpt` npm package. Normal Unleash releases keep using `v*` tags and the `unleash-cc` npm package.
+
+Unleash-GPT keeps Codex state under `~/.unleash-gpt/` and writes Codex operator config to `~/.codex/AGENTS.md` plus `~/.codex/config.toml`. Normal Claude Code Unleash commands remain unchanged.
+
+<br />
+
 ## 🔨 Build
 
 ```bash

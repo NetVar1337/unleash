@@ -1,0 +1,15 @@
+{
+  "id": "codex-telemetry-endpoints-localhost",
+  "patches": [
+    {
+      "search": "https://ae32ed50620d7a7792c1ce5df38b3e3e@o33249.ingest.us.sentry.io/4510195390611458",
+      "replace": "http://127.0.0.1:9/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "applied_marker": "http://127.0.0.1:9/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    },
+    {
+      "search": "https://ab.chatgpt.com/otlp/v1/metrics",
+      "replace": "http://127.0.0.1:9/xxxxxxxxxxxxxxxxxxx",
+      "applied_marker": "http://127.0.0.1:9/xxxxxxxxxxxxxxxxxxx"
+    }
+  ]
+}
