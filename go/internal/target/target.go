@@ -35,6 +35,8 @@ func FindTarget() (string, string) {
 	subChecks := []check{
 		{pkg + "/node_modules/@anthropic-ai/claude-code-linux-x64/claude", "bun_sea"},
 		{pkg + "/node_modules/@anthropic-ai/claude-code-linux-arm64/claude", "bun_sea"},
+		{pkg + "/node_modules/@anthropic-ai/claude-code-linux-x64-musl/claude", "bun_sea"},
+		{pkg + "/node_modules/@anthropic-ai/claude-code-linux-arm64-musl/claude", "bun_sea"},
 		{pkg + "/node_modules/@anthropic-ai/claude-code-darwin-x64/claude", "bun_sea"},
 		{pkg + "/node_modules/@anthropic-ai/claude-code-darwin-arm64/claude", "bun_sea"},
 		{pkg + "/node_modules/@anthropic-ai/claude-code-win32-x64/claude.exe", "bun_sea"},
@@ -117,13 +119,35 @@ func FindTarget() (string, string) {
 		}
 	}
 
-	// 6. Homebrew
+	// 6. Homebrew (formula node_modules + cask Caskroom)
 	for _, hb := range []string{
 		"/opt/homebrew/lib/node_modules",
 		"/usr/local/lib/node_modules",
 	} {
 		if p, k := probeChecks(hb, checks); p != "" {
 			return p, k
+		}
+	}
+	// Homebrew cask: /opt/homebrew/Caskroom/claude-code/<ver>/claude or /usr/local/Caskroom/...
+	for _, caskBase := range []string{
+		"/opt/homebrew/Caskroom/claude-code",
+		"/usr/local/Caskroom/claude-code",
+		"/opt/homebrew/Caskroom/claude-code@latest",
+		"/usr/local/Caskroom/claude-code@latest",
+	} {
+		if isDir(caskBase) {
+			entries := sortedDirEntriesDesc(caskBase)
+			for _, e := range entries {
+				if !e.IsDir() {
+					continue
+				}
+				for _, bin := range []string{"claude", "bin/claude"} {
+					p := filepath.Join(caskBase, e.Name(), bin)
+					if fileExists(p) && fileSize(p) > minBinSize {
+						return resolvePath(p), "bun_sea"
+					}
+				}
+			}
 		}
 	}
 
@@ -139,7 +163,7 @@ func FindTarget() (string, string) {
 		}
 	}
 
-	// 8. Native installer candidate paths (symlinks, legacy layouts)
+	// 8. Native installer + system package (apt/dnf/apk) candidate paths
 	nativeCandidates := []string{
 		filepath.Join(home, ".local", "bin", "claude"),
 		filepath.Join(home, ".local", "bin", "claude.exe"),
@@ -151,8 +175,13 @@ func FindTarget() (string, string) {
 		filepath.Join(home, ".local", "share", "claude-code", "claude.exe"),
 		filepath.Join(home, ".local", "bin", "claude-code"),
 		filepath.Join(home, ".local", "bin", "claude-code.exe"),
+		// System package manager installs (apt, dnf, apk)
+		"/usr/bin/claude",
+		"/usr/local/bin/claude",
 		"/usr/local/share/claude-code/claude",
 		"/opt/claude-code/bin/claude",
+		// Homebrew bin symlinks
+		"/opt/homebrew/bin/claude",
 	}
 	for _, p := range nativeCandidates {
 		if isDir(p) {
