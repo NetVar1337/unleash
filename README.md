@@ -217,7 +217,7 @@ Go 1.24.2+ is required. Release workflows build all six platform targets for eac
 
 | Product | Git tag pattern | GitHub artifacts | npm package | npm binary |
 |---|---|---|---|---|
-| Unleash | `v*` | `unleash-*` | `unleash-cc` | `unleash` |
+| Unleash | `cc-v*` | `unleash-*` | `unleash-cc` | `unleash` |
 | Unleash-GPT | `gpt-v*` | `unleash-gpt-*` | `unleash-gpt` | `unleash-gpt` |
 | Unleash-OMP | `omp-v*` | `unleash-omp-*` | `unleash-omp` | `unleash-omp` |
 
@@ -229,7 +229,7 @@ Go 1.24.2+ is required. Release workflows build all six platform targets for eac
 | Unleash-OMP | `omp-v1.0.1` |
 <!-- release-versions:end -->
 
-The npm packages are thin launchers with prebuilt platform binaries in `bin/`. Publishing is tag-driven: push `vX.Y.Z` to publish `unleash-cc@X.Y.Z`, `gpt-vX.Y.Z` to publish `unleash-gpt@X.Y.Z`, and `omp-vX.Y.Z` to publish `unleash-omp@X.Y.Z`.
+The npm packages are thin launchers with prebuilt platform binaries in `bin/`. Publishing is tag-driven: push `cc-vX.Y.Z` to publish `unleash-cc@X.Y.Z`, `gpt-vX.Y.Z` to publish `unleash-gpt@X.Y.Z`, and `omp-vX.Y.Z` to publish `unleash-omp@X.Y.Z`.
 
 ---
 

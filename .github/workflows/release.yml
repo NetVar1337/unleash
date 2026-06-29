@@ -3,7 +3,8 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - 'cc-v*'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -117,7 +118,7 @@ jobs:
 
       - name: Prepare npm package
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${GITHUB_REF_NAME#cc-v}"
           mkdir -p npm-pkg/bin
 
           # Copy all binaries

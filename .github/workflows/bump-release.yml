@@ -25,6 +25,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   bump:
@@ -44,6 +45,7 @@ jobs:
           PRODUCT: ${{ inputs.product }}
           BUMP: ${{ inputs.bump }}
           TARGET_BRANCH: ${{ github.ref_name }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           python3 <<'PY'
           import os
@@ -56,9 +58,9 @@ jobs:
           branch = os.environ.get("TARGET_BRANCH") or "main"
 
           products = {
-              "unleash-cc": {"label": "Unleash", "pattern": "v*", "prefix": "v"},
-              "unleash-gpt": {"label": "Unleash-GPT", "pattern": "gpt-v*", "prefix": "gpt-v"},
-              "unleash-omp": {"label": "Unleash-OMP", "pattern": "omp-v*", "prefix": "omp-v"},
+              "unleash-cc": {"label": "Unleash", "pattern": "cc-v*", "prefix": "cc-v", "workflow": "release.yml"},
+              "unleash-gpt": {"label": "Unleash-GPT", "pattern": "gpt-v*", "prefix": "gpt-v", "workflow": "release-unleash-gpt.yml"},
+              "unleash-omp": {"label": "Unleash-OMP", "pattern": "omp-v*", "prefix": "omp-v", "workflow": "release-unleash-omp.yml"},
           }
           selected = list(products) if product == "all" else [product]
           if any(item not in products for item in selected):
@@ -124,5 +126,9 @@ jobs:
               version = tag.removeprefix(products[key]["prefix"])
               run("tag", "-a", tag, "-m", f"release {key} {version}")
               run("push", "origin", tag)
+              subprocess.check_call([
+                  "gh", "workflow", "run", products[key]["workflow"],
+                  "--ref", tag,
+              ])
               print(f"{key}: {tag}")
           PY
