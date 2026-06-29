@@ -135,5 +135,31 @@ func runDoctor() int {
 		fmt.Printf("  upstream   : unreachable\n")
 	}
 
+
+	// Dependencies
+	fmt.Printf("\n%sdependencies%s\n", console.B, console.X)
+	claudeBin := "claude"
+	if runtime.GOOS == "windows" {
+		claudeBin = "claude.exe"
+	}
+	for _, dep := range []struct {
+		name string
+		args []string
+		req  bool
+	}{
+		{"node", []string{"-v"}, true},
+		{"npm", []string{"-v"}, true},
+		{claudeBin, []string{"--version"}, true},
+		{"git", []string{"--version"}, false},
+	} {
+		ds := checkBin(dep.name, dep.args...)
+		if ds.found {
+			fmt.Printf("  %-10s : %s%s%s\n", dep.name, console.G, ds.version, console.X)
+		} else if dep.req {
+			fmt.Printf("  %-10s : %smissing%s\n", dep.name, console.R, console.X)
+		} else {
+			fmt.Printf("  %-10s : %snot found (optional)%s\n", dep.name, console.Y, console.X)
+		}
+	}
 	return 0
 }
