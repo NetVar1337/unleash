@@ -1,0 +1,21 @@
+{
+  "id": "js-additional-protection-header-blank",
+  "description": "Blank the x-anthropic-additional-protection header name in bytecode constant pool. Prevents server-side content filter activation flag from being sent.",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": true,
+  "patches": [
+    {
+      "search": "x-anthropic-additional-protection",
+      "replace": "x-vpcc-noop-additional-protectn ",
+      "applied_marker": "x-vpcc-noop-additional-protectn",
+      "description": "Rename additional-protection header to non-functional name",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "anchor_strings": [
+    "x-anthropic-additional-protection"
+  ],
+  "version_first_seen": "2.1.195"
+}

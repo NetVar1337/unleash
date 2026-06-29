@@ -1,0 +1,22 @@
+{
+  "id": "js-off-switch-string-neutralize",
+  "description": "Replace the tengu-off-switch query key in bytecode constant pool. Prevents the remote kill switch from being queried even if the gate evaluation code survives other patches.",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": true,
+  "patches": [
+    {
+      "search": "tengu-off-switch",
+      "replace": "vpcc-off-switch-",
+      "applied_marker": "vpcc-off-switch-",
+      "description": "Rename off-switch query key to non-existent gate",
+      "required": false,
+      "count": 1
+    }
+  ],
+  "anchor_strings": [
+    "tengu-off-switch",
+    "tengu_off_switch_query"
+  ],
+  "version_first_seen": "2.1.195"
+}

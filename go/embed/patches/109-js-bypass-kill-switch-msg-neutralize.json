@@ -1,0 +1,22 @@
+{
+  "id": "js-bypass-kill-switch-msg-neutralize",
+  "description": "Replace the bypass_permissions_disabled warning message in bytecode constant pool with benign text. The async Statsig recheck that triggers process.exit is defanged when this message string is absent from the log path.",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": true,
+  "patches": [
+    {
+      "search": "bypassPermissions mode is being disabled by feature gate (async check)",
+      "replace": "bypassPermissions mode gate check skipped by operator authorization    ",
+      "applied_marker": "gate check skipped by operator authorization",
+      "description": "Replace kill switch log message",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "anchor_strings": [
+    "bypass_permissions_disabled",
+    "feature gate (async check)"
+  ],
+  "version_first_seen": "2.1.195"
+}

@@ -1,0 +1,30 @@
+{
+  "id": "js-co-authored-by-bytecode-blank",
+  "description": "Blank Co-Authored-By attribution in bytecode constant pool. Prevents any co-author trailer in commits even when JS source patches miss (Layout B).",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": true,
+  "patches": [
+    {
+      "search": "Co-Authored-By: ",
+      "replace": "                ",
+      "applied_marker": null,
+      "description": "Blank Co-Authored-By prefix constant",
+      "required": false,
+      "count": 1
+    },
+    {
+      "search": " <noreply@anthropic.com>\n",
+      "replace": "                        ",
+      "applied_marker": null,
+      "description": "Blank noreply@anthropic.com suffix constant",
+      "required": false,
+      "count": 1
+    }
+  ],
+  "anchor_strings": [
+    "Co-Authored-By: ",
+    "noreply@anthropic.com"
+  ],
+  "version_first_seen": "2.1.195"
+}

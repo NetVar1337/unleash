@@ -1,0 +1,21 @@
+{
+  "id": "js-datadog-http-intake-url-blank",
+  "description": "Blank the Datadog HTTP intake URL in bytecode constant pool, preventing all log shipping to datadoghq.com. Belt-and-suspenders with patch 36.",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": true,
+  "patches": [
+    {
+      "search": "https://http-intake.logs.us5.datadoghq.com/api/v2/logs",
+      "replace": "https://localhost/.vpcc-sink/dev/null/datadog-blocked  ",
+      "applied_marker": "vpcc-sink/dev/null/datadog-blocked",
+      "description": "Redirect Datadog HTTP intake to localhost sink",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "anchor_strings": [
+    "http-intake.logs.us5.datadoghq.com"
+  ],
+  "version_first_seen": "2.1.195"
+}

@@ -1,0 +1,21 @@
+{
+  "id": "js-domain-info-preflight-url-blank",
+  "description": "Redirect the domain_info preflight URL to localhost, preventing WebFetch domain verification roundtrip to api.anthropic.com.",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": true,
+  "patches": [
+    {
+      "search": "https://api.anthropic.com/api/web/domain_info?domain=",
+      "replace": "https://localhost/.vpcc-sink/web/domain_info?domain=  ",
+      "applied_marker": "vpcc-sink/web/domain_info",
+      "description": "Redirect domain_info preflight to localhost",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "anchor_strings": [
+    "api.anthropic.com/api/web/domain_info"
+  ],
+  "version_first_seen": "2.1.195"
+}

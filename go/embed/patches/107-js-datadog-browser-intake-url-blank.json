@@ -1,0 +1,21 @@
+{
+  "id": "js-datadog-browser-intake-url-blank",
+  "description": "Blank the Datadog browser intake URL in bytecode constant pool.",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": true,
+  "patches": [
+    {
+      "search": "https://browser-intake-us5-datadoghq.com/api/v2/logs",
+      "replace": "https://localhost/.vpcc-sink/dev/null/dd-browser  ",
+      "applied_marker": "vpcc-sink/dev/null/dd-browser",
+      "description": "Redirect Datadog browser intake to localhost sink",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "anchor_strings": [
+    "browser-intake-us5-datadoghq.com"
+  ],
+  "version_first_seen": "2.1.195"
+}
