@@ -18,7 +18,7 @@ import (
 // ── constants ───────────────────────────────────────────────────────────────
 
 const (
-	Repo    = "VoidChecksum/void-patcher-cc"
+	Repo    = "VoidChecksum/unleash"
 	Branch  = "main"
 	APIBase = "https://api.github.com/repos/" + Repo
 	UA      = "unleash-updater/1.0"
@@ -98,8 +98,88 @@ func DownloadTarball(sha string) ([]byte, error) {
 	if err == nil {
 		return data, nil
 	}
-	// Fallback to API tarball endpoint.
-	return doReq(fmt.Sprintf("%s/tarball/%s", APIBase, sha), "application/octet-stream", 60*time.Second)
+	// Fallback to API tarball endpoint. GitHub rejects application/octet-stream
+	// on this JSON API route with HTTP 415; the response redirects to codeload.
+	return doReq(fmt.Sprintf("%s/tarball/%s", APIBase, sha), "application/vnd.github+json", 60*time.Second)
+}
+
+// DownloadPatchFiles fetches patches/*.json directly through the contents API.
+// This avoids downloading the whole repository tarball just to sync patch JSON.
+func DownloadPatchFiles(ref string) (map[string][]byte, error) {
+	url := fmt.Sprintf("%s/contents/patches?ref=%s", APIBase, ref)
+	data, err := doReq(url, "application/vnd.github+json", 30*time.Second)
+	if err != nil {
+		return nil, err
+	}
+
+	var entries []struct {
+		Name        string `json:"name"`
+		Type        string `json:"type"`
+		DownloadURL string `json:"download_url"`
+	}
+	if err := json.Unmarshal(data, &entries); err != nil {
+		return nil, err
+	}
+
+	staged := map[string][]byte{}
+	for _, entry := range entries {
+		if entry.Type != "file" || !strings.HasSuffix(entry.Name, ".json") {
+			continue
+		}
+		if entry.DownloadURL == "" {
+			return nil, fmt.Errorf("%s missing download_url", entry.Name)
+		}
+		content, err := doReq(entry.DownloadURL, "application/vnd.github.raw", 30*time.Second)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", entry.Name, err)
+		}
+		staged[entry.Name] = content
+	}
+	if len(staged) == 0 {
+		return nil, fmt.Errorf("contents API returned no patches")
+	}
+	return staged, nil
+}
+
+func downloadPatchFilesFromTarball(ref string) (map[string][]byte, error) {
+	tarBytes, err := DownloadTarball(ref)
+	if err != nil {
+		return nil, fmt.Errorf("download failed: %v", err)
+	}
+
+	gzr, err := gzip.NewReader(bytes.NewReader(tarBytes))
+	if err != nil {
+		return nil, fmt.Errorf("tar open failed: %v", err)
+	}
+	defer gzr.Close()
+
+	tr := tar.NewReader(gzr)
+	staged := map[string][]byte{}
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("tar read failed: %v", err)
+		}
+		if hdr.Typeflag != tar.TypeReg {
+			continue
+		}
+		parts := splitTarPath(hdr.Name)
+		if len(parts) < 3 || parts[1] != "patches" || !strings.HasSuffix(parts[2], ".json") {
+			continue
+		}
+		content, err := io.ReadAll(tr)
+		if err != nil {
+			continue
+		}
+		staged[parts[2]] = content
+	}
+	if len(staged) == 0 {
+		return nil, fmt.Errorf("tarball contained no patches/")
+	}
+	return staged, nil
 }
 
 // ── state persistence ───────────────────────────────────────────────────────
@@ -134,7 +214,7 @@ func SaveState(kv map[string]interface{}) {
 
 // ── patch dir sync ──────────────────────────────────────────────────────────
 
-// SyncPatches downloads the tarball, extracts patches/*.json into patchDir.
+// SyncPatches downloads patches/*.json into patchDir.
 // Returns (changed_file_count, commit_sha). changed == -1 signals an error
 // with the second value containing the error message.
 func SyncPatches(patchDir string, sha string) (int, string) {
@@ -147,47 +227,13 @@ func SyncPatches(patchDir string, sha string) (int, string) {
 		}
 	}
 
-	tarBytes, err := DownloadTarball(targetSHA)
+	staged, err := DownloadPatchFiles(targetSHA)
 	if err != nil {
-		return -1, fmt.Sprintf("download failed: %v", err)
-	}
-
-	gzr, err := gzip.NewReader(bytes.NewReader(tarBytes))
-	if err != nil {
-		return -1, fmt.Sprintf("tar open failed: %v", err)
-	}
-	defer gzr.Close()
-
-	tr := tar.NewReader(gzr)
-
-	// staged collects filename → content for patches/*.json entries.
-	staged := map[string][]byte{}
-	for {
-		hdr, err := tr.Next()
-		if err == io.EOF {
-			break
+		tarStaged, tarErr := downloadPatchFilesFromTarball(targetSHA)
+		if tarErr != nil {
+			return -1, fmt.Sprintf("download failed: contents API: %v; tarball: %v", err, tarErr)
 		}
-		if err != nil {
-			return -1, fmt.Sprintf("tar read failed: %v", err)
-		}
-		if hdr.Typeflag != tar.TypeReg {
-			continue
-		}
-		// Tarball paths are like "<prefix>/patches/foo.json".
-		// Split into parts and match the pattern.
-		parts := splitTarPath(hdr.Name)
-		if len(parts) < 3 || parts[1] != "patches" || !strings.HasSuffix(parts[2], ".json") {
-			continue
-		}
-		content, err := io.ReadAll(tr)
-		if err != nil {
-			continue
-		}
-		staged[parts[2]] = content
-	}
-
-	if len(staged) == 0 {
-		return -1, "tarball contained no patches/"
+		staged = tarStaged
 	}
 
 	// Validate every staged file before touching patchDir.

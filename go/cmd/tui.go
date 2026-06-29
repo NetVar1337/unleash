@@ -1,8 +1,10 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -150,16 +152,16 @@ type tuiModel struct {
 	formatStr  string
 
 	// patches
-	allPatches  []patches.Patch
-	scanRows    []patches.ScanRow
-	scanDone    bool
-	byCategory  map[string][]int // category -> indices into allPatches
-	toggleSet   map[int]bool     // indices into allPatches user has toggled
+	allPatches []patches.Patch
+	scanRows   []patches.ScanRow
+	scanDone   bool
+	byCategory map[string][]int // category -> indices into allPatches
+	toggleSet  map[int]bool     // indices into allPatches user has toggled
 
 	// patch manager state
-	catIdx      int   // selected category index
-	patchIdx    int   // selected patch index in current category
-	patchFocus  bool  // true = right panel focused, false = left (categories)
+	catIdx      int  // selected category index
+	patchIdx    int  // selected patch index in current category
+	patchFocus  bool // true = right panel focused, false = left (categories)
 	searchMode  bool
 	searchInput textinput.Model
 
@@ -188,12 +190,12 @@ func initialModel() tuiModel {
 	dv := viewport.New(80, 20)
 
 	m := tuiModel{
-		width:       120,
-		height:      40,
-		view:        viewDashboard,
-		toggleSet:   make(map[int]bool),
-		byCategory:  make(map[string][]int),
-		searchInput: ti,
+		width:          120,
+		height:         40,
+		view:           viewDashboard,
+		toggleSet:      make(map[int]bool),
+		byCategory:     make(map[string][]int),
+		searchInput:    ti,
 		scanViewport:   sv,
 		doctorViewport: dv,
 	}
@@ -245,6 +247,9 @@ func (m *tuiModel) patchStatus(patchIdx int) string {
 	if p.Retired {
 		return "RETIRED"
 	}
+	if p.Type == "settings" && settingsPatchApplied(p) {
+		return "APPLIED"
+	}
 	if !m.scanDone {
 		return "AVAILABLE"
 	}
@@ -265,6 +270,43 @@ func (m *tuiModel) patchStatus(patchIdx int) string {
 		}
 	}
 	return "AVAILABLE"
+}
+
+func settingsPatchApplied(p patches.Patch) bool {
+	if len(p.Settings) == 0 {
+		return false
+	}
+	settingsPath := p.SettingsPath
+	if settingsPath == "" {
+		settingsPath = filepath.Join(homeDir(), ".claude", "settings.json")
+		if _, err := os.Stat(settingsPath); os.IsNotExist(err) && isWindows() {
+			appdata := os.Getenv("APPDATA")
+			if appdata != "" {
+				alt := filepath.Join(appdata, "claude", "settings.json")
+				if _, err := os.Stat(alt); err == nil {
+					settingsPath = alt
+				}
+			}
+		}
+	} else {
+		settingsPath = expandHome(settingsPath)
+	}
+
+	data, err := os.ReadFile(settingsPath)
+	if err != nil {
+		return false
+	}
+	var cur map[string]interface{}
+	if json.Unmarshal(data, &cur) != nil {
+		return false
+	}
+	for k, v := range p.Settings {
+		existing, exists := cur[k]
+		if !exists || !jsonEqual(existing, v) {
+			return false
+		}
+	}
+	return true
 }
 
 func (m *tuiModel) currentCategoryPatches() []int {
@@ -313,12 +355,63 @@ func runScanAsync(targetPath, kind string, patchList []patches.Patch) tea.Cmd {
 
 func runPatchAsync(targetPath string, patchList []patches.Patch) tea.Cmd {
 	return func() tea.Msg {
-		_, err := target.Backup(targetPath, "bun_sea")
-		if err != nil {
-			return patchDoneMsg{result: binary.PatchResult{Err: err.Error()}}
+		return patchDoneMsg{result: applySelectedPatches(targetPath, patchList)}
+	}
+}
+
+func applySelectedPatches(targetPath string, patchList []patches.Patch) binary.PatchResult {
+	var jsPatches, metaPatches []patches.Patch
+	for _, p := range patchList {
+		if p.Type == "js_replace" {
+			jsPatches = append(jsPatches, p)
+		} else {
+			metaPatches = append(metaPatches, p)
 		}
-		result := binary.PatchBunSEAInplace(targetPath, patchList)
-		return patchDoneMsg{result: result}
+	}
+
+	result := binary.PatchResult{OK: true}
+	if len(jsPatches) > 0 {
+		if targetPath == "" {
+			result.Skipped += len(jsPatches)
+		} else {
+			_, err := target.Backup(targetPath, "bun_sea")
+			if err != nil {
+				return binary.PatchResult{Err: err.Error()}
+			}
+			jsResult := binary.PatchBunSEAInplace(targetPath, jsPatches)
+			if !jsResult.OK {
+				return jsResult
+			}
+			result.Applied += jsResult.Applied
+			result.Skipped += jsResult.Skipped
+			result.PerPatch = append(result.PerPatch, jsResult.PerPatch...)
+			result.SkippedHeavy = append(result.SkippedHeavy, jsResult.SkippedHeavy...)
+			result.Noop = jsResult.Noop && len(metaPatches) == 0
+		}
+	}
+
+	for _, p := range metaPatches {
+		success, msg := applyMetaPatch(p, targetPath, false)
+		if !success {
+			return binary.PatchResult{Err: fmt.Sprintf("%s: %s", p.ID, msg)}
+		}
+		result.Applied++
+	}
+	return result
+}
+
+func applyMetaPatch(p patches.Patch, targetPath string, dryRun bool) (bool, string) {
+	switch p.Type {
+	case "settings", "hook":
+		return applySettings(p, dryRun)
+	case "mcp_guard":
+		return applyMCPGuard(p, dryRun)
+	case "wrapper":
+		return applyWrapper(p, "bun_sea", targetPath, dryRun)
+	case "binary_install":
+		return applyBinaryInstall(p, "bun_sea", dryRun)
+	default:
+		return false, fmt.Sprintf("type=%s (unknown)", p.Type)
 	}
 }
 
@@ -641,21 +734,24 @@ func (m tuiModel) handlePatchMgrKey(key string) (tea.Model, tea.Cmd) {
 }
 
 func (m tuiModel) applyToggled() (tea.Model, tea.Cmd) {
-	if m.targetPath == "" {
-		m.statusMsg = "No target binary found"
-		return m, nil
-	}
-
 	var toApply []patches.Patch
+	hasMeta := false
 	for idx := range m.toggleSet {
 		p := m.allPatches[idx]
 		if !p.Retired {
 			toApply = append(toApply, p)
+			if p.Type != "js_replace" {
+				hasMeta = true
+			}
 		}
 	}
 
 	if len(toApply) == 0 {
 		m.statusMsg = "No patches selected"
+		return m, nil
+	}
+	if m.targetPath == "" && !hasMeta {
+		m.statusMsg = "No target binary found"
 		return m, nil
 	}
 
