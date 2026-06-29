@@ -1,0 +1,10 @@
+{
+  "id": "omp-telemetry-endpoints-localhost",
+  "patches": [
+    {
+      "search": "https://qa.omp.sh/v1/grievances",
+      "replace": "http://127.0.0.1:9/xxxxxxxxxxxx",
+      "applied_marker": "http://127.0.0.1:9/xxxxxxxxxxxx"
+    }
+  ]
+}

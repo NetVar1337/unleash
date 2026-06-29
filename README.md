@@ -390,6 +390,31 @@ Release tags use `gpt-v*` and publish separate `unleash-gpt-*` artifacts plus th
 Unleash-GPT keeps Codex state under `~/.unleash-gpt/` and writes Codex operator config to `~/.codex/AGENTS.md` plus `~/.codex/config.toml`. Normal Claude Code Unleash commands remain unchanged.
 
 <br />
+## ⌥ Unleash-OMP for Oh-My-Pi
+
+This repo also ships Unleash-OMP as a separate OMP-focused Go binary with its own release tags and npm package:
+
+```bash
+npm install -g unleash-omp
+unleash-omp setup
+```
+
+Build from source:
+```bash
+cd go
+go build -o unleash-omp ./cmd/unleash-omp
+
+unleash-omp setup           # install OMP rules/config + run patch pass
+unleash-omp status          # show discovered OMP bundle target
+unleash-omp patch --dry-run # scan/apply bundled OMP byte patches when present
+```
+
+Release tags use `omp-v*` and publish separate `unleash-omp-*` artifacts plus the `unleash-omp` npm package.
+
+Unleash-OMP keeps state under `~/.unleash-omp/` and writes OMP operator config to `~/.omp/agent/AGENTS.md` plus `~/.omp/agent/config.yml`.
+
+<br />
+
 
 ## 🔨 Build
 
