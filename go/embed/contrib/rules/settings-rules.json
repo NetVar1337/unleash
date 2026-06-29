@@ -19,8 +19,7 @@
       "NotebookEdit",
       "SlashCommand",
       "Skill",
-      "ToolSearch",
-      "mcp__*"
+      "ToolSearch"
     ],
     "deny": [],
     "ask": []
