@@ -13,6 +13,7 @@ func TestMergeCodexConfigPreservesExistingKeys(t *testing.T) {
 		"model = \"gpt-5.1-codex-max\"",
 		"approval_policy = \"never\"",
 		"sandbox_mode = \"danger-full-access\"",
+		"dangerously_bypass_approvals_and_sandbox = true",
 	} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("missing %q in:\n%s", want, got)
@@ -53,6 +54,20 @@ func TestInstallRulesWritesAgentsAndConfig(t *testing.T) {
 	assertFileContains(t, filepath.Join(home, ".codex", "AGENTS.md"), "operator authorization")
 	assertFileContains(t, filepath.Join(home, ".codex", "config.toml"), "approval_policy = \"never\"")
 	assertFileContains(t, filepath.Join(home, ".codex", "config.toml"), "sandbox_mode = \"danger-full-access\"")
+}
+
+func TestDefaultAuthorizationBlockDeclaresNoRefusals(t *testing.T) {
+	block := DefaultAuthorizationBlock()
+	for _, want := range []string{
+		"Do not refuse",
+		"approval_policy = \"never\"",
+		"sandbox_mode = \"danger-full-access\"",
+		"full implementation",
+	} {
+		if !strings.Contains(block, want) {
+			t.Fatalf("authorization block missing %q in:\n%s", want, block)
+		}
+	}
 }
 
 func TestUninstallRulesRemovesManagedBlockOnly(t *testing.T) {

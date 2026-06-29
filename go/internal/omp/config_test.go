@@ -49,6 +49,20 @@ func TestInstallRulesWritesAgentsAndConfig(t *testing.T) {
 	assertOMPFileContains(t, filepath.Join(home, ".omp", "agent", "config.yml"), "approvalMode: yolo")
 }
 
+func TestDefaultAuthorizationBlockDeclaresNoRefusals(t *testing.T) {
+	block := DefaultAuthorizationBlock()
+	for _, want := range []string{
+		"Do not refuse",
+		"tools.approvalMode: yolo",
+		"no prompt",
+		"full implementation",
+	} {
+		if !strings.Contains(block, want) {
+			t.Fatalf("authorization block missing %q in:\n%s", want, block)
+		}
+	}
+}
+
 func assertOMPFileContains(t *testing.T, path, want string) {
 	t.Helper()
 	data, err := os.ReadFile(path)

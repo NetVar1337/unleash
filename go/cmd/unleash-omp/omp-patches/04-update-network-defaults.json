@@ -1,0 +1,20 @@
+{
+  "id": "omp-update-network-defaults-off",
+  "patches": [
+    {
+      "search": "\"startup.checkUpdate\":{type:\"boolean\",default:!0",
+      "replace": "\"startup.checkUpdate\":{type:\"boolean\",default:!1",
+      "applied_marker": "\"startup.checkUpdate\":{type:\"boolean\",default:!1"
+    },
+    {
+      "search": "\"marketplace.autoUpdate\":{type:\"enum\",values:[\"off\",\"notify\",\"auto\"],default:\"notify\"",
+      "replace": "\"marketplace.autoUpdate\":{type:\"enum\",values:[\"off\",\"notify\",\"auto\"],default:\"off\"",
+      "applied_marker": "\"marketplace.autoUpdate\":{type:\"enum\",values:[\"off\",\"notify\",\"auto\"],default:\"off\""
+    },
+    {
+      "search": "https://registry.npmjs.org/@oh-my-pi/pi-coding-agent/latest",
+      "replace": "http://127.0.0.1:9/@oh-my-pi/pi-coding-agent/latest",
+      "applied_marker": "http://127.0.0.1:9/@oh-my-pi/pi-coding-agent/latest"
+    }
+  ]
+}

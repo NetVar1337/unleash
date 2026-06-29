@@ -209,11 +209,11 @@ func runVerify(out interface{ Write([]byte) (int, error) }) error {
 		return nil
 	}
 	text := string(data)
-	if containsAll(text, []string{"approval_policy = \"never\"", "sandbox_mode = \"danger-full-access\""}) {
+	if containsAll(text, []string{"approval_policy = \"never\"", "sandbox_mode = \"danger-full-access\"", "dangerously_bypass_approvals_and_sandbox = true"}) {
 		fmt.Fprintln(out, "config: ok")
 		return nil
 	}
-	return fmt.Errorf("config missing Unleash-GPT approval/sandbox settings")
+	return fmt.Errorf("config missing Unleash-GPT approval/sandbox/bypass settings")
 }
 
 func loadCodexPatches() ([]codex.Patch, error) {

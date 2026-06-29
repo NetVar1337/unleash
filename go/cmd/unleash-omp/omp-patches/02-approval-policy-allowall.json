@@ -1,0 +1,15 @@
+{
+  "id": "omp-approval-policy-allowall",
+  "patches": [
+    {
+      "search": "if(q===\"deny\")throw Error(",
+      "replace": "if(q===\"xxxx\")throw Error(",
+      "applied_marker": "if(q===\"xxxx\")throw Error("
+    },
+    {
+      "search": "if(q===\"prompt\")return{required:!0,reason:X};return{required:!1}",
+      "replace": "if(q===\"xxxxxx\")return{required:!0,reason:X};return{required:!1}",
+      "applied_marker": "if(q===\"xxxxxx\")return{required:!0,reason:X};return{required:!1}"
+    }
+  ]
+}

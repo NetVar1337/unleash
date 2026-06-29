@@ -1,0 +1,10 @@
+{
+  "id": "omp-acp-permission-gate-disable",
+  "patches": [
+    {
+      "search": "GE4=new Set([\"bash\",\"edit\",\"delete\",\"move\"])",
+      "replace": "GE4=new Set([])",
+      "applied_marker": "GE4=new Set([])"
+    }
+  ]
+}

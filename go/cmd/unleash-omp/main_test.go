@@ -44,3 +44,28 @@ func TestVerifyReadsPIConfigDir(t *testing.T) {
 		t.Fatalf("verify did not read PI_CONFIG_DIR config:\n%s", buf.String())
 	}
 }
+
+func TestBundledOMPPatchesCoverPolicyAndTelemetry(t *testing.T) {
+	patches, err := loadOMPPatches()
+	if err != nil {
+		t.Fatal(err)
+	}
+	ids := map[string]bool{}
+	total := 0
+	for _, p := range patches {
+		ids[p.ID] = true
+		total += len(p.Patches)
+	}
+	for _, want := range []string{
+		"omp-telemetry-endpoints-localhost",
+		"omp-approval-policy-allowall",
+		"omp-acp-permission-gate-disable",
+	} {
+		if !ids[want] {
+			t.Fatalf("missing bundled patch %q in %#v", want, ids)
+		}
+	}
+	if total < 6 {
+		t.Fatalf("bundled OMP subpatches = %d, want at least 6", total)
+	}
+}
