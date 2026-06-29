@@ -45,7 +45,7 @@
 Single-shot binary patcher for [Claude Code](https://claude.ai/code). Rewrites Bun SEA bytecode in-place — no rebuilds, no JS extraction, no runtime hooks. One binary. One command.
 
 ```bash
-unleash patch
+unleash setup    # patches + rules + plugins + auto-update guard — everything in one shot
 ```
 
 <br />
@@ -53,8 +53,15 @@ unleash patch
 ## ⚡ Quick Start
 
 ```bash
-# one-liner: patch + authorize
-unleash patch && unleash install-rules --no-hook
+# full setup: patch binary + install rules + install plugins + auto-update guard
+unleash setup
+```
+
+Or step by step:
+```bash
+unleash patch                        # patch the binary
+unleash install-rules --no-hook      # deploy authorization doctrine
+unleash install-guard                # auto-patch on CC updates
 ```
 
 <details>
@@ -125,6 +132,19 @@ Full terminal interface built with [Bubbletea](https://github.com/charmbracelet/
 
 <br />
 
+
+## 🔌 Bundled Plugins
+
+`unleash setup` automatically installs these Claude Code plugins:
+
+| Plugin | What it does | Source |
+|---|---|---|
+| **[ponytail](https://ponytail.dev)** | Forces the laziest solution that works. Stdlib over custom, native over deps, one line over fifty. 54% less code, safety never cut. | [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail) |
+| **[caveman](https://github.com/JuliusBrussee/caveman)** | Cuts ~75% of output tokens by compressing verbosity. Brain still big, mouth small. Levels: lite/full/ultra. | [JuliusBrussee/caveman](https://github.com/JuliusBrussee/caveman) |
+| **[karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills)** | Behavioral guidelines from Andrej Karpathy: think before coding, simplicity first, surgical changes, goal-driven execution. | [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) |
+| **[oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode)** | Multi-agent orchestration: team mode, autopilot, deep interview, 19 specialized agents. | [Yeachan-Heo/oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) |
+
+All plugins work alongside unleash's binary patches — the authorization doctrine ensures zero refusals regardless of plugin behavior.
 ## 📋 What Gets Patched
 
 <table>
@@ -300,6 +320,7 @@ Everything else is pre-authorized.
 
 | Command | Description |
 |---|---|
+| **`unleash setup`** | **One-shot full setup**: patch + rules + plugins + guard |
 | **`unleash patch`** | Apply all patches (idempotent, auto-backup) |
 | **`unleash tui`** | Interactive terminal UI — full control panel |
 | **`unleash verify`** | Confirm applied markers are present |

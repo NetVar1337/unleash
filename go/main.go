@@ -50,6 +50,7 @@ func main() {
 		cmd.NewDashboardCmd(),
 		cmd.NewTuiCmd(),
 		cmd.NewUpdateCmd(),
+		cmd.NewSetupCmd(),
 	)
 
 	if err := rootCmd.Execute(); err != nil {
