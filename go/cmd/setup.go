@@ -35,42 +35,63 @@ func runSetup() error {
 
 	// ── Step 1: Patch binary ──────────────────────────────────────────────
 	fmt.Printf("\n  %s[1/5] patching Claude Code binary...%s\n", console.B, console.X)
+	patchOK := true
 	tgt, kind := target.FindTarget()
 	if tgt == "" {
 		fmt.Printf("  %sClaude Code not found — skipping binary patch%s\n", console.Y, console.X)
+		patchOK = false
 	} else {
 		fmt.Printf("  target: %s (%s)\n", tgt, kind)
-		err := RunPatchQuiet()
-		if err != nil {
-			fmt.Printf("  %spatch failed — continuing with rules%s\n", console.R, console.X)
+		if err := RunPatchQuiet(); err != nil {
+			fmt.Printf("  %spatch failed%s\n", console.R, console.X)
+			patchOK = false
 		}
 	}
 
 	// ── Step 2: Install rules ─────────────────────────────────────────────
 	fmt.Printf("\n  %s[2/5] installing authorization rules...%s\n", console.B, console.X)
-	runInstallRules(true) // --no-hook
+	rulesOK := runInstallRules(true) == 0 // --no-hook
 
 	// ── Step 3: Install plugins ───────────────────────────────────────────
 	fmt.Printf("\n  %s[3/5] installing plugins...%s\n", console.B, console.X)
-	installPlugins()
+	pluginsInstalled, pluginsSkipped := installPlugins()
 
 	// ── Step 4: Install guard ─────────────────────────────────────────────
 	fmt.Printf("\n  %s[4/5] installing auto-patch guard...%s\n", console.B, console.X)
-	installGuardQuiet()
+	guardOK := installGuardQuiet()
 
 	// ── Step 5: Verify ───────────────────────────────────────────────────
 	fmt.Printf("\n  %s[5/5] verifying installation...%s\n", console.B, console.X)
-	verifyDependencies()
+	depsOK := verifyDependencies()
 
 	// ── Summary ───────────────────────────────────────────────────────────
+	fmt.Printf("\n%sunleash setup summary%s\n", console.B, console.X)
+	printSetupStatus("dependencies checked", depsOK)
+	printSetupStatus("patches applied to Claude Code binary", patchOK)
+	printSetupStatus("authorization rules deployed", rulesOK)
+	if pluginsSkipped == 0 {
+		printSetupStatus(fmt.Sprintf("plugins installed (%d)", pluginsInstalled), true)
+	} else if pluginsInstalled > 0 {
+		printSetupStatus(fmt.Sprintf("plugins partially installed (%d installed, %d skipped)", pluginsInstalled, pluginsSkipped), false)
+	} else {
+		printSetupStatus("plugins skipped (install manually from Claude Code)", false)
+	}
+	printSetupStatus("auto-patch guard installed", guardOK)
+
+	if !patchOK || !rulesOK || !guardOK || !depsOK {
+		return fmt.Errorf("setup incomplete")
+	}
 	fmt.Printf("\n%s%s unleash setup complete%s\n", console.G, console.CHECK, console.X)
-	fmt.Printf("  %s dependencies checked\n", console.CHECK)
-	fmt.Printf("  %s patches applied to Claude Code binary\n", console.CHECK)
-	fmt.Printf("  %s authorization rules deployed\n", console.CHECK)
-	fmt.Printf("  %s plugins installed (ponytail, caveman, karpathy, omc)\n", console.CHECK)
-	fmt.Printf("  %s auto-patch guard installed\n", console.CHECK)
 	fmt.Printf("\n  restart Claude Code to activate.\n")
 	return nil
+}
+
+func printSetupStatus(label string, ok bool) {
+	if ok {
+		fmt.Printf("  %s %s\n", console.CHECK, label)
+		return
+	}
+	fmt.Printf("  %s %s\n", console.WARN, label)
 }
 
 // ── dependency management ───────────────────────────────────────────────────
@@ -250,7 +271,7 @@ func installClaudeCode(npmPath string) bool {
 }
 
 // verifyDependencies prints a final dependency summary.
-func verifyDependencies() {
+func verifyDependencies() bool {
 	claudeBin := "claude"
 	if runtime.GOOS == "windows" {
 		claudeBin = "claude.exe"
@@ -288,91 +309,95 @@ func verifyDependencies() {
 		fmt.Printf("  %s Claude Code binary: %snot found%s\n", console.CROSS, console.R, console.X)
 		allGood = false
 	}
-
-	if !allGood {
-		fmt.Printf("\n  %ssome dependencies are missing — unleash will work partially%s\n", console.Y, console.X)
-	}
+	return allGood
 }
 
 // installPlugins installs the 4 recommended plugins via Claude Code marketplace.
-func installPlugins() {
+func installPlugins() (int, int) {
 	plugins := []struct {
 		name string
 		repo string
 		pkg  string
 	}{
-		{"ponytail", "DietrichGebert/ponytail", "ponytail@ponytail"},
-		{"caveman", "JuliusBrussee/caveman", "caveman@caveman"},
-		{"karpathy-skills", "multica-ai/andrej-karpathy-skills", "andrej-karpathy-skills@karpathy-skills"},
-		{"oh-my-claudecode", "Yeachan-Heo/oh-my-claudecode", "oh-my-claudecode"},
+		{"ponytail", "ponytail", "ponytail@ponytail"},
+		{"caveman", "caveman", "caveman@caveman"},
+		{"karpathy-skills", "andrej-karpathy-skills", "andrej-karpathy-skills@karpathy-skills"},
+		{"oh-my-claudecode", "oh-my-claudecode", "oh-my-claudecode"},
 	}
 
-	claudeBin := "claude"
-	if runtime.GOOS == "windows" {
-		claudeBin = "claude.exe"
+	claudePath, err := exec.LookPath("claude")
+	if err != nil && runtime.GOOS == "windows" {
+		claudePath, err = exec.LookPath("claude.exe")
 	}
-
-	// Check if claude is available
-	claudePath, err := exec.LookPath(claudeBin)
 	if err != nil {
 		fmt.Printf("  %sClaude Code CLI not found in PATH — install plugins manually:%s\n", console.Y, console.X)
 		for _, p := range plugins {
 			fmt.Printf("    /plugin marketplace add %s\n", p.repo)
 			fmt.Printf("    /plugin install %s\n", p.pkg)
 		}
-		return
+		return 0, len(plugins)
 	}
 
-	// Ensure plugin config dir exists
 	home, _ := os.UserHomeDir()
 	pluginDir := filepath.Join(home, ".claude", "plugins")
 	os.MkdirAll(pluginDir, 0o755)
 
+	installed := 0
+	skipped := 0
 	for _, p := range plugins {
 		fmt.Printf("  %s %s...", console.DOT, p.name)
 
-		// Add marketplace
 		cmd1 := exec.Command(claudePath, "--no-interactive", "plugin", "marketplace", "add", p.repo)
 		cmd1.Stdout = nil
 		cmd1.Stderr = nil
-		cmd1.Run() // ignore errors — marketplace may already be added
+		_ = cmd1.Run()
 
-		// Install plugin
 		cmd2 := exec.Command(claudePath, "--no-interactive", "plugin", "install", p.pkg)
 		cmd2.Stdout = nil
 		cmd2.Stderr = nil
-		err := cmd2.Run()
-		if err != nil {
+		if err := cmd2.Run(); err != nil {
 			fmt.Printf(" %sskipped (install manually: /plugin install %s)%s\n", console.Y, p.pkg, console.X)
+			skipped++
 		} else {
 			fmt.Printf(" %sdone%s\n", console.G, console.X)
+			installed++
 		}
 	}
+	return installed, skipped
 }
 
 // installGuardQuiet installs the auto-patch guard without verbose output.
-func installGuardQuiet() {
+func installGuardQuiet() bool {
 	vpccBin := "unleash"
 	if runtime.GOOS == "windows" {
 		vpccBin = "unleash.exe"
 	}
 	if found, err := exec.LookPath(vpccBin); err == nil {
 		vpccBin = found
+	} else if exe, err := os.Executable(); err == nil {
+		vpccBin = exe
 	}
 
 	switch runtime.GOOS {
 	case "windows":
-		exec.Command("schtasks", "/Delete", "/TN", "unleash-guard", "/F").Run()
+		_ = exec.Command("schtasks", "/Delete", "/TN", "unleash-guard", "/F").Run()
 		cmd := exec.Command("schtasks", "/Create", "/TN", "unleash-guard",
 			"/TR", fmt.Sprintf(`"%s" guard`, vpccBin),
 			"/SC", "HOURLY", "/MO", "6", "/RL", "LIMITED", "/F")
-		cmd.Run()
+		if err := cmd.Run(); err != nil {
+			fmt.Printf("  %s Windows Task Scheduler failed: %v%s\n", console.WARN, err, console.X)
+			return installWindowsStartupGuard(vpccBin)
+		}
 		fmt.Printf("  %s Windows Task Scheduler: unleash-guard (every 6h)%s\n", console.CHECK, console.X)
+		return true
 	case "darwin":
-		plistDir := filepath.Join(os.Getenv("HOME"), "Library", "LaunchAgents")
-		os.MkdirAll(plistDir, 0o755)
-		plist := filepath.Join(plistDir, "dev.unleash.guard.plist")
 		home, _ := os.UserHomeDir()
+		plistDir := filepath.Join(home, "Library", "LaunchAgents")
+		if err := os.MkdirAll(plistDir, 0o755); err != nil {
+			fmt.Printf("  %s macOS launchd dir failed: %v%s\n", console.WARN, err, console.X)
+			return false
+		}
+		plist := filepath.Join(plistDir, "dev.unleash.guard.plist")
 		content := fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -385,14 +410,24 @@ func installGuardQuiet() {
     <key>StandardErrorPath</key><string>%s/.unleash/guard.log</string>
 </dict>
 </plist>`, vpccBin, home, home)
-		os.WriteFile(plist, []byte(content), 0o644)
-		exec.Command("launchctl", "unload", plist).Run()
-		exec.Command("launchctl", "load", plist).Run()
+		if err := os.WriteFile(plist, []byte(content), 0o644); err != nil {
+			fmt.Printf("  %s macOS launchd plist failed: %v%s\n", console.WARN, err, console.X)
+			return false
+		}
+		_ = exec.Command("launchctl", "unload", plist).Run()
+		if err := exec.Command("launchctl", "load", plist).Run(); err != nil {
+			fmt.Printf("  %s macOS launchd load failed: %v%s\n", console.WARN, err, console.X)
+			return false
+		}
 		fmt.Printf("  %s macOS launchd: dev.unleash.guard (every 6h)%s\n", console.CHECK, console.X)
+		return true
 	default:
 		home, _ := os.UserHomeDir()
 		unitDir := filepath.Join(home, ".config", "systemd", "user")
-		os.MkdirAll(unitDir, 0o755)
+		if err := os.MkdirAll(unitDir, 0o755); err != nil {
+			fmt.Printf("  %s systemd unit dir failed: %v%s\n", console.WARN, err, console.X)
+			return false
+		}
 		svc := fmt.Sprintf(`[Unit]
 Description=unleash guard — auto-patch Claude Code on update
 [Service]
@@ -410,10 +445,67 @@ Persistent=true
 [Install]
 WantedBy=timers.target
 `
-		os.WriteFile(filepath.Join(unitDir, "unleash-guard.service"), []byte(svc), 0o644)
-		os.WriteFile(filepath.Join(unitDir, "unleash-guard.timer"), []byte(tmr), 0o644)
-		exec.Command("systemctl", "--user", "daemon-reload").Run()
-		exec.Command("systemctl", "--user", "enable", "--now", "unleash-guard.timer").Run()
+		if err := os.WriteFile(filepath.Join(unitDir, "unleash-guard.service"), []byte(svc), 0o644); err != nil {
+			fmt.Printf("  %s systemd service write failed: %v%s\n", console.WARN, err, console.X)
+			return false
+		}
+		if err := os.WriteFile(filepath.Join(unitDir, "unleash-guard.timer"), []byte(tmr), 0o644); err != nil {
+			fmt.Printf("  %s systemd timer write failed: %v%s\n", console.WARN, err, console.X)
+			return false
+		}
+		if err := exec.Command("systemctl", "--user", "daemon-reload").Run(); err != nil {
+			fmt.Printf("  %s systemd daemon-reload failed: %v%s\n", console.WARN, err, console.X)
+			return false
+		}
+		if err := exec.Command("systemctl", "--user", "enable", "--now", "unleash-guard.timer").Run(); err != nil {
+			fmt.Printf("  %s systemd timer enable failed: %v%s\n", console.WARN, err, console.X)
+			return false
+		}
 		fmt.Printf("  %s systemd: unleash-guard.timer (every 6h)%s\n", console.CHECK, console.X)
+		return true
 	}
+}
+
+func installWindowsStartupGuard(vpccBin string) bool {
+	appData := os.Getenv("APPDATA")
+	localAppData := os.Getenv("LOCALAPPDATA")
+	if appData == "" || localAppData == "" {
+		fmt.Printf("  %s Windows startup guard skipped: APPDATA/LOCALAPPDATA missing%s\n", console.WARN, console.X)
+		return false
+	}
+
+	guardDir := filepath.Join(localAppData, "unleash")
+	if err := os.MkdirAll(guardDir, 0o755); err != nil {
+		fmt.Printf("  %s Windows startup guard dir failed: %v%s\n", console.WARN, err, console.X)
+		return false
+	}
+	psPath := filepath.Join(guardDir, "unleash-guard-loop.ps1")
+	logPath := filepath.Join(guardDir, "guard.log")
+	ps := fmt.Sprintf(`$ErrorActionPreference = 'SilentlyContinue'
+$bin = %q
+$log = %q
+while ($true) {
+  try { & $bin guard *>> $log } catch {}
+  Start-Sleep -Seconds 21600
+}
+`, vpccBin, logPath)
+	if err := os.WriteFile(psPath, []byte(ps), 0o644); err != nil {
+		fmt.Printf("  %s Windows startup guard script failed: %v%s\n", console.WARN, err, console.X)
+		return false
+	}
+
+	startupDir := filepath.Join(appData, "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
+	if err := os.MkdirAll(startupDir, 0o755); err != nil {
+		fmt.Printf("  %s Windows startup dir failed: %v%s\n", console.WARN, err, console.X)
+		return false
+	}
+	cmdPath := filepath.Join(startupDir, "unleash-guard.cmd")
+	cmd := fmt.Sprintf("@echo off\r\nstart \"\" /min powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File %q\r\n", psPath)
+	if err := os.WriteFile(cmdPath, []byte(cmd), 0o644); err != nil {
+		fmt.Printf("  %s Windows startup guard launcher failed: %v%s\n", console.WARN, err, console.X)
+		return false
+	}
+
+	fmt.Printf("  %s Windows Startup fallback: unleash-guard.cmd (runs guard every 6h after login)%s\n", console.CHECK, console.X)
+	return true
 }

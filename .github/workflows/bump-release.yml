@@ -1,0 +1,128 @@
+name: Bump Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      product:
+        description: Product to release
+        type: choice
+        required: true
+        default: all
+        options:
+          - all
+          - unleash-cc
+          - unleash-gpt
+          - unleash-omp
+      bump:
+        description: Semver bump type
+        type: choice
+        required: true
+        default: patch
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git identity
+        run: |
+          git config user.name "VoidChecksum"
+          git config user.email "voidchecksum@users.noreply.github.com"
+
+      - name: Update README and create release tag(s)
+        env:
+          PRODUCT: ${{ inputs.product }}
+          BUMP: ${{ inputs.bump }}
+          TARGET_BRANCH: ${{ github.ref_name }}
+        run: |
+          python3 <<'PY'
+          import os
+          import re
+          import subprocess
+          from pathlib import Path
+
+          product = os.environ["PRODUCT"]
+          bump = os.environ["BUMP"]
+          branch = os.environ.get("TARGET_BRANCH") or "main"
+
+          products = {
+              "unleash-cc": {"label": "Unleash", "pattern": "v*", "prefix": "v"},
+              "unleash-gpt": {"label": "Unleash-GPT", "pattern": "gpt-v*", "prefix": "gpt-v"},
+              "unleash-omp": {"label": "Unleash-OMP", "pattern": "omp-v*", "prefix": "omp-v"},
+          }
+          selected = list(products) if product == "all" else [product]
+          if any(item not in products for item in selected):
+              raise SystemExit(f"unknown product: {product}")
+
+          def git(*args: str) -> str:
+              return subprocess.check_output(["git", *args], text=True).strip()
+
+          def run(*args: str) -> None:
+              subprocess.check_call(["git", *args])
+
+          def latest_version(pattern: str, prefix: str) -> str:
+              tags = git("tag", "--list", pattern, "--sort=-v:refname").splitlines()
+              if not tags:
+                  return "0.0.0"
+              tag = tags[0]
+              return tag.removeprefix(prefix)
+
+          def bump_version(version: str) -> str:
+              major, minor, patch = [int(x) for x in version.split(".")]
+              if bump == "major":
+                  return f"{major + 1}.0.0"
+              if bump == "minor":
+                  return f"{major}.{minor + 1}.0"
+              if bump == "patch":
+                  return f"{major}.{minor}.{patch + 1}"
+              raise SystemExit(f"unknown bump: {bump}")
+
+          next_tags = {}
+          display_tags = {}
+          for key, info in products.items():
+              current = latest_version(info["pattern"], info["prefix"])
+              next_version = bump_version(current) if key in selected else current
+              tag = f"{info['prefix']}{next_version}"
+              next_tags[key] = tag
+              display_tags[key] = tag
+
+          readme = Path("README.md")
+          text = readme.read_text(encoding="utf-8")
+          block = "\n".join([
+              "<!-- release-versions:start -->",
+              "| Product | Latest release |",
+              "|---|---|",
+              f"| Unleash | `{display_tags['unleash-cc']}` |",
+              f"| Unleash-GPT | `{display_tags['unleash-gpt']}` |",
+              f"| Unleash-OMP | `{display_tags['unleash-omp']}` |",
+              "<!-- release-versions:end -->",
+          ])
+          new_text, count = re.subn(r"<!-- release-versions:start -->.*?<!-- release-versions:end -->", block, text, flags=re.S)
+          if count != 1:
+              raise SystemExit("README release-versions block missing or duplicated")
+          readme.write_text(new_text, encoding="utf-8")
+
+          run("add", "README.md")
+          if subprocess.call(["git", "diff", "--cached", "--quiet"]) != 0:
+              run("commit", "-m", "docs: update release versions")
+              run("push", "origin", f"HEAD:{branch}")
+
+          for key in selected:
+              tag = next_tags[key]
+              if subprocess.call(["git", "rev-parse", tag], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0:
+                  raise SystemExit(f"{tag} already exists")
+              version = tag.removeprefix(products[key]["prefix"])
+              run("tag", "-a", tag, "-m", f"release {key} {version}")
+              run("push", "origin", tag)
+              print(f"{key}: {tag}")
+          PY

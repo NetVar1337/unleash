@@ -40,7 +40,7 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
+          go-version: '1.24.2'
 
       - name: Copy assets for embedding
         run: |
@@ -91,12 +91,8 @@ jobs:
             ## Quick Start
 
             ```bash
-            # Download for your platform
-            curl -sSL https://github.com/VoidChecksum/unleash/releases/download/${{ github.ref_name }}/unleash-linux-amd64 -o unleash
-            chmod +x unleash
-
-            # One-shot setup
-            ./unleash setup
+            npm install -g unleash-cc@latest
+            unleash setup
             ```
 
             **Windows:** Download `unleash-windows-amd64.exe`, rename to `unleash.exe`.
@@ -186,6 +182,8 @@ jobs:
             process.exit(e.status || 1);
           }
           RUNJS
+
+          chmod +x npm-pkg/bin/run.js
 
       - name: Publish to npm
         working-directory: npm-pkg

@@ -209,7 +209,7 @@ GOOS=darwin  GOARCH=arm64 go build -o unleash-omp-darwin-arm64 ./cmd/unleash-omp
 GOOS=windows GOARCH=amd64 go build -o unleash-omp-windows-amd64.exe ./cmd/unleash-omp
 ```
 
-Go 1.21+ is required. Release workflows build all six platform targets for each product.
+Go 1.24.2+ is required. Release workflows build all six platform targets for each product.
 
 ---
 
@@ -221,7 +221,15 @@ Go 1.21+ is required. Release workflows build all six platform targets for each 
 | Unleash-GPT | `gpt-v*` | `unleash-gpt-*` | `unleash-gpt` | `unleash-gpt` |
 | Unleash-OMP | `omp-v*` | `unleash-omp-*` | `unleash-omp` | `unleash-omp` |
 
-The npm packages are thin launchers with prebuilt platform binaries in `bin/`. Publishing is tag-driven: push `gpt-vX.Y.Z` to publish `unleash-gpt@X.Y.Z`, and `omp-vX.Y.Z` to publish `unleash-omp@X.Y.Z`.
+<!-- release-versions:start -->
+| Product | Latest release |
+|---|---|
+| Unleash | `v1.0.0` |
+| Unleash-GPT | `gpt-v1.0.0` |
+| Unleash-OMP | `omp-v1.0.0` |
+<!-- release-versions:end -->
+
+The npm packages are thin launchers with prebuilt platform binaries in `bin/`. Publishing is tag-driven: push `vX.Y.Z` to publish `unleash-cc@X.Y.Z`, `gpt-vX.Y.Z` to publish `unleash-gpt@X.Y.Z`, and `omp-vX.Y.Z` to publish `unleash-omp@X.Y.Z`.
 
 ---
 
