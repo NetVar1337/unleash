@@ -17,5 +17,6 @@
   "anchor_strings": [
     "Math.max(600000"
   ],
-  "version_last_tested": "2.1.114"
+  "version_last_tested": "2.1.114",
+  "category": "ratelimit"
 }

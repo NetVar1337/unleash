@@ -17,5 +17,6 @@
   "anchor_strings": [
     "browser-intake-us5-datadoghq.com"
   ],
-  "version_first_seen": "2.1.195"
+  "version_first_seen": "2.1.195",
+  "category": "telemetry"
 }

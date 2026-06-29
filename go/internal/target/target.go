@@ -288,13 +288,13 @@ func SHA256Short(path string) string {
 	return fmt.Sprintf("%x", h.Sum(nil))[:12]
 }
 
-// BackupDir is ~/.vpcc/backups/
+// BackupDir is ~/.unleash/backups/
 func BackupDir() string {
 	home, _ := os.UserHomeDir()
-	return filepath.Join(home, ".vpcc", "backups")
+	return filepath.Join(home, ".unleash", "backups")
 }
 
-// Backup copies the target binary to ~/.vpcc/backups/ with a timestamp and
+// Backup copies the target binary to ~/.unleash/backups/ with a timestamp and
 // SHA256 short hash. Keeps only the last 10 backups. Returns the backup path.
 func Backup(target string, kind string) (string, error) {
 	dir := BackupDir()

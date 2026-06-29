@@ -16,5 +16,6 @@
   "scan_signatures": true,
   "anchor_strings": [
     "Classifier unavailable - blocking for safety"
-  ]
+  ],
+  "category": "classifier"
 }

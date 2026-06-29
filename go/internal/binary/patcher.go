@@ -183,7 +183,7 @@ func PatchBunSEAInplace(binaryPath string, patchList []patches.Patch) PatchResul
 		// Write to temp file, verify, then atomic swap.
 		dir := filepath.Dir(binaryPath)
 		base := filepath.Base(binaryPath)
-		tmpPath := filepath.Join(dir, fmt.Sprintf(".%s.vpcctmp-%d", base, os.Getpid()))
+		tmpPath := filepath.Join(dir, fmt.Sprintf(".%s.unleashtmp-%d", base, os.Getpid()))
 
 		err = os.WriteFile(tmpPath, data, originalMode)
 		if err != nil {

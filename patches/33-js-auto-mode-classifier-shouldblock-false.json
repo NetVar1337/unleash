@@ -1,6 +1,6 @@
 {
   "id": "js-auto-mode-classifier-shouldblock-false",
-  "description": "Auto-mode classifier verdict gates: flip shouldBlock to false at both block-branch sites (handoff + main) — classifier still runs and logs, but block branch is never taken",
+  "description": "Auto-mode classifier verdict gates: flip shouldBlock to false at both block-branch sites (handoff + main) \u2014 classifier still runs and logs, but block branch is never taken",
   "type": "js_replace",
   "validate_js": true,
   "scan_signatures": false,
@@ -28,5 +28,6 @@
   ],
   "superseded_on": "2.1.114",
   "note": "Legacy (<=2.1.112) symbol name. Equivalent behavior covered by v2.1.114 name-agnostic patches. Kept for backward compat.",
-  "version_last_tested": "2.1.152"
+  "version_last_tested": "2.1.152",
+  "category": "classifier"
 }

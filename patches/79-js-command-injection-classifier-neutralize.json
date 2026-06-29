@@ -17,5 +17,6 @@
   "anchor_strings": [
     "command_injection_detected"
   ],
-  "version_last_tested": "2.1.132"
+  "version_last_tested": "2.1.132",
+  "category": "classifier"
 }

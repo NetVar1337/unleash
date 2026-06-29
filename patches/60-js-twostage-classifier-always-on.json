@@ -18,5 +18,6 @@
     "tengu_auto_mode_config",
     "twoStageClassifier"
   ],
-  "version_last_tested": "2.1.114"
+  "version_last_tested": "2.1.114",
+  "category": "classifier"
 }

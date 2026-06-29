@@ -17,5 +17,6 @@
   "anchor_strings": [
     "Co-Authored-By:",
     "<noreply@anthropic.com>"
-  ]
+  ],
+  "category": "attribution"
 }

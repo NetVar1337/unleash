@@ -54,7 +54,7 @@ func RunRollback() int {
 
 	// Copy to temp, then atomic replace
 	dir := filepath.Dir(tgt)
-	tmpPath := filepath.Join(dir, fmt.Sprintf(".%s.vpcc-rollback-%d", filepath.Base(tgt), os.Getpid()))
+	tmpPath := filepath.Join(dir, fmt.Sprintf(".%s.unleash-rollback-%d", filepath.Base(tgt), os.Getpid()))
 
 	src, err := os.Open(latest)
 	if err != nil {

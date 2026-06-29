@@ -7,8 +7,8 @@
   "patches": [
     {
       "search": "https://http-intake.logs.us5.datadoghq.com/api/v2/logs",
-      "replace": "https://localhost/.vpcc-sink/dev/null/datadog-blocked  ",
-      "applied_marker": "vpcc-sink/dev/null/datadog-blocked",
+      "replace": "https://localhost/.vpcc/null/dd-http-intake-sinked    ",
+      "applied_marker": "vpcc/null/dd-http-intake-sinked",
       "description": "Redirect Datadog HTTP intake to localhost sink",
       "required": false,
       "count": 0
@@ -17,5 +17,6 @@
   "anchor_strings": [
     "http-intake.logs.us5.datadoghq.com"
   ],
-  "version_first_seen": "2.1.195"
+  "version_first_seen": "2.1.195",
+  "category": "telemetry"
 }

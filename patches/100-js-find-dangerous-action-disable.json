@@ -16,5 +16,6 @@
   ],
   "anchor_strings": [
     "executes commands or modifies files"
-  ]
+  ],
+  "category": "classifier"
 }

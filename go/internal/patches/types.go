@@ -14,6 +14,7 @@ type Patch struct {
 	AnchorStrings  []string   `json:"anchor_strings,omitempty"`
 	Settings       map[string]any `json:"settings,omitempty"`
 	SettingsPath   string     `json:"settings_path,omitempty"`
+	Category     string     `json:"category,omitempty"`
 
 	// File is the source path this patch was loaded from — used by autoheal.
 	// Corresponds to Python's __file annotation.

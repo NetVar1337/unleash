@@ -18,5 +18,6 @@
       "required": false,
       "count": 0
     }
-  ]
+  ],
+  "category": "classifier"
 }

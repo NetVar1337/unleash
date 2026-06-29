@@ -1,6 +1,6 @@
 {
   "id": "js-brief-mode-entitlement-allow",
-  "description": "Force isBriefEntitled() to always return true — unlocks the 'brief mode' quiet/compressed output UI and brief tool without Statsig gate.",
+  "description": "Force isBriefEntitled() to always return true \u2014 unlocks the 'brief mode' quiet/compressed output UI and brief tool without Statsig gate.",
   "type": "js_replace",
   "validate_js": true,
   "patches": [
@@ -20,5 +20,6 @@
   ],
   "superseded_on": "2.1.114",
   "note": "Legacy (<=2.1.112) symbol name. Equivalent behavior covered by v2.1.114 name-agnostic patches. Kept for backward compat.",
-  "version_last_tested": "2.1.152"
+  "version_last_tested": "2.1.152",
+  "category": "permissions"
 }

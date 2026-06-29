@@ -16,5 +16,6 @@
   ],
   "anchor_strings": [
     "return Boolean"
-  ]
+  ],
+  "category": "permissions"
 }

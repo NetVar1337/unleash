@@ -17,5 +17,6 @@
   "anchor_strings": [
     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"
   ],
-  "version_last_tested": "2.1.119"
+  "version_last_tested": "2.1.119",
+  "category": "telemetry"
 }

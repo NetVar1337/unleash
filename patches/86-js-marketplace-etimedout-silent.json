@@ -17,5 +17,6 @@
   "anchor_strings": [
     "timed out while downloading marketplace"
   ],
-  "version_last_tested": "2.1.119"
+  "version_last_tested": "2.1.119",
+  "category": "infrastructure"
 }

@@ -18,5 +18,6 @@
     "tengu_plan_mode_interview_phase"
   ],
   "version_last_tested": "2.1.119",
-  "retired": true
+  "retired": true,
+  "category": "refusal"
 }

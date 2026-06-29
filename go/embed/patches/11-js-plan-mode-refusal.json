@@ -16,5 +16,6 @@
   "scan_signatures": true,
   "anchor_strings": [
     "Plan mode is active. The user indicated"
-  ]
+  ],
+  "category": "refusal"
 }

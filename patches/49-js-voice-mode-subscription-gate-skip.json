@@ -16,5 +16,6 @@
   "scan_signatures": true,
   "anchor_strings": [
     "\"Voice mode requires a Claude.ai account. Please run /login to sign in.\""
-  ]
+  ],
+  "category": "subscription"
 }

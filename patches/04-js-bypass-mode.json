@@ -26,5 +26,6 @@
     ",isBypassPermissionsModeAvailable:!1}",
     "destination:\"session\"});return{...",
     ",isBypassPermissionsModeAvailable:!1"
-  ]
+  ],
+  "category": "permissions"
 }

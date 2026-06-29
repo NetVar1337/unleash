@@ -16,5 +16,6 @@
   ],
   "anchor_strings": [
     "function Ydq(H,_){if(!iK())return"
-  ]
+  ],
+  "category": "ratelimit"
 }

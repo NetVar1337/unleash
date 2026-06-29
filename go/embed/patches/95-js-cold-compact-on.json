@@ -1,7 +1,7 @@
 {
   "id": "js-cold-compact-on",
   "disabled": true,
-  "description": "DISABLED â€” tengu_cold_compact gate removed from v2.1.132 binary; no longer patchable [RETIRED: tengu_cold_compact removed in v2.1.152]",
+  "description": "DISABLED \u00e2\u20ac\u201d tengu_cold_compact gate removed from v2.1.132 binary; no longer patchable [RETIRED: tengu_cold_compact removed in v2.1.152]",
   "type": "js_replace",
   "validate_js": true,
   "scan_signatures": false,
@@ -19,5 +19,6 @@
     "tengu_cold_compact"
   ],
   "version_last_tested": "2.1.119",
-  "retired": true
+  "retired": true,
+  "category": "infrastructure"
 }

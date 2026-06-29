@@ -16,5 +16,6 @@
   "scan_signatures": true,
   "anchor_strings": [
     "not on your org's approved channels list"
-  ]
+  ],
+  "category": "infrastructure"
 }

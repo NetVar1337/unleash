@@ -26,5 +26,6 @@
     "env.CLAUDE_CODE_SKIP_FAST_MODE_ORG_CHECK",
     "env.CLAUDE_CODE_SKIP_FAST_MODE_NETWORK_ERRORS",
     "env.CLAUDE_CODE_ALWAYS_ENABLE_EFFORT"
-  ]
+  ],
+  "category": "permissions"
 }

@@ -16,5 +16,6 @@
   "scan_signatures": true,
   "anchor_strings": [
     "maxTurns:200,model:\"inherit\",permissionMode:\"bubble\""
-  ]
+  ],
+  "category": "ratelimit"
 }

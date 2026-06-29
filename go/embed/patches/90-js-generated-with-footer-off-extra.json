@@ -25,5 +25,6 @@
   "anchor_strings": [
     "Generated with [Claude Code]"
   ],
-  "version_last_tested": "2.1.119"
+  "version_last_tested": "2.1.119",
+  "category": "attribution"
 }

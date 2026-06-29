@@ -7,8 +7,8 @@
   "patches": [
     {
       "search": "bypassPermissions mode is being disabled by feature gate (async check)",
-      "replace": "bypassPermissions mode gate check skipped by operator authorization    ",
-      "applied_marker": "gate check skipped by operator authorization",
+      "replace": "vpcc: gate check skipped, operator-authorized",
+      "applied_marker": "vpcc: gate check skipped",
       "description": "Replace kill switch log message",
       "required": false,
       "count": 0
@@ -18,5 +18,6 @@
     "bypass_permissions_disabled",
     "feature gate (async check)"
   ],
-  "version_first_seen": "2.1.195"
+  "version_first_seen": "2.1.195",
+  "category": "permissions"
 }

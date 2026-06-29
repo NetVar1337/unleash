@@ -111,13 +111,13 @@ func RunVerify() int {
 	}
 
 	if systemic {
-		fmt.Printf("%s%s %d patch(es) not applied, %d applied%s  — run %svpcc patch%s to apply\n",
+		fmt.Printf("%s%s %d patch(es) not applied, %d applied%s  — run %sunleash patch%s to apply\n",
 			console.R, console.CROSS, optionalMissing, applied, console.X, console.B, console.X)
 		return 1
 	}
 
 	if optionalMissing > 0 {
-		fmt.Printf("%s%s %d patch(es) verified%s  %s(%d optional not applied — run 'vpcc patch' if unexpected)%s\n",
+		fmt.Printf("%s%s %d patch(es) verified%s  %s(%d optional not applied — run 'unleash patch' if unexpected)%s\n",
 			console.G, console.CHECK, applied, console.X,
 			console.Y, optionalMissing, console.X)
 	} else {

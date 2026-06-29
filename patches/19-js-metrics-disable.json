@@ -24,5 +24,6 @@
   "scan_signatures": true,
   "anchor_strings": [
     ")return{enabled:!1,hasError:!1};"
-  ]
+  ],
+  "category": "telemetry"
 }

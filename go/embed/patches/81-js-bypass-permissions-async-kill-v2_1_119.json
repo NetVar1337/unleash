@@ -17,5 +17,6 @@
   "anchor_strings": [
     "bypassPermissions mode is being disabled by feature gate (async check)"
   ],
-  "version_last_tested": "2.1.119"
+  "version_last_tested": "2.1.119",
+  "category": "permissions"
 }

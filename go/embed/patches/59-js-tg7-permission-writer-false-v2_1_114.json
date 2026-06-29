@@ -19,5 +19,6 @@
       "required": false,
       "description": "tg7 predicate always false (v2.1.114)"
     }
-  ]
+  ],
+  "category": "permissions"
 }

@@ -12,16 +12,16 @@ import (
 	"github.com/VoidChecksum/void-patcher-cc/internal/patches"
 )
 
-// CacheVersion should match the vpcc version to bust stale caches on upgrade.
-const CacheVersion = "2.4.0"
+// CacheVersion should match the unleash version to bust stale caches on upgrade.
+const CacheVersion = "1.0.0"
 
-// cacheDir returns the path to ~/.vpcc/cache/, creating it if needed.
+// cacheDir returns the path to ~/.unleash/cache/, creating it if needed.
 func cacheDir() (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
 	}
-	d := filepath.Join(home, ".vpcc", "cache")
+	d := filepath.Join(home, ".unleash", "cache")
 	if err := os.MkdirAll(d, 0o755); err != nil {
 		return "", err
 	}
@@ -64,7 +64,7 @@ func ScanCacheKey(targetPath, patchDir string) (string, int64, error) {
 	return targetSHA, maxMT, nil
 }
 
-// LoadCachedRows returns cached scan rows if (target sha, patch mtime, vpcc
+// LoadCachedRows returns cached scan rows if (target sha, patch mtime, unleash
 // version) all match. Returns nil if no valid cache exists or VPCC_NO_CACHE
 // is set.
 func LoadCachedRows(targetPath, patchDir string) []patches.ScanRow {

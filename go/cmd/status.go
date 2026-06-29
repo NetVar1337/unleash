@@ -26,7 +26,7 @@ func runStatus() error {
 	tgt, kind := target.FindTarget()
 	patchList := loadAllPatches()
 
-	fmt.Printf("%svpcc status%s\n", console.B, console.X)
+	fmt.Printf("%sunleash status%s\n", console.B, console.X)
 	fmt.Printf("  patches : %d\n", len(patchList))
 
 	if tgt != "" {

@@ -9,12 +9,13 @@
       "search": ":\"ask\",message:\"sed command",
       "replace": ":\"allow\",mes:\"sed command  ",
       "applied_marker": ":\"allow\",mes:\"sed command  ",
-      "description": "sed: ask→allow behavior (same-length literal)",
+      "description": "sed: ask\u2192allow behavior (same-length literal)",
       "required": false,
       "count": 0
     }
   ],
   "anchor_strings": [
     "sed command requires approval"
-  ]
+  ],
+  "category": "classifier"
 }

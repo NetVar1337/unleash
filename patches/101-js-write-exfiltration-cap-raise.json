@@ -16,5 +16,6 @@
   ],
   "anchor_strings": [
     "exfiltration via repeated write operations"
-  ]
+  ],
+  "category": "classifier"
 }

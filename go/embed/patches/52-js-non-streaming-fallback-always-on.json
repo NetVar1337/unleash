@@ -18,5 +18,6 @@
     "CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK",
     "tengu_disable_streaming_to_non_streaming_fallback"
   ],
-  "version_last_tested": "2.1.114"
+  "version_last_tested": "2.1.114",
+  "category": "ratelimit"
 }

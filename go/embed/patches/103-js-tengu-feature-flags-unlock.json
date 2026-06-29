@@ -346,5 +346,6 @@
     "tengu_auto_notice_once",
     "tengu_orchid_mantis",
     "tengu_slate_harbor_experiment"
-  ]
+  ],
+  "category": "features"
 }

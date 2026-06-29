@@ -105,3 +105,18 @@ func PrintDot(format string, a ...any) {
 func PrintBold(format string, a ...any) {
 	fmt.Printf("%s%s%s\n", B, fmt.Sprintf(format, a...), X)
 }
+
+// Banner is the ASCII art header for unleash.
+const Banner = `
+  ██╗   ██╗███╗   ██╗██╗     ███████╗ █████╗ ███████╗██╗  ██╗
+  ██║   ██║████╗  ██║██║     ██╔════╝██╔══██╗██╔════╝██║  ██║
+  ██║   ██║██╔██╗ ██║██║     █████╗  ███████║███████╗███████║
+  ██║   ██║██║╚██╗██║██║     ██╔══╝  ██╔══██║╚════██║██╔══██║
+  ╚██████╔╝██║ ╚████║███████╗███████╗██║  ██║███████║██║  ██║
+   ╚═════╝ ╚═╝  ╚═══╝╚══════╝╚══════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
+`
+
+// PrintBanner prints the unleash ASCII art banner in bold.
+func PrintBanner() {
+	fmt.Printf("%s%s%s", B, Banner, X)
+}

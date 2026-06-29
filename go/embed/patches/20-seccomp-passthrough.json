@@ -6,5 +6,6 @@
   "source": "seccomp/x64/apply-seccomp",
   "dest_relative": "vendor/seccomp/x64/apply-seccomp",
   "source_sha256": "7cb2c1595de78ae3c3e24c1f76e6348d185a863da78fb43f348bf670148dc283",
-  "mode": "0755"
+  "mode": "0755",
+  "category": "infrastructure"
 }

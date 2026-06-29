@@ -88,7 +88,7 @@ func NewUpgradeCmd() *cobra.Command {
 func NewUpdateCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "update",
-		Short: "Full self-update: upgrade vpcc + sync patches + re-patch binary (like omp update)",
+		Short: "Full self-update: upgrade unleash + sync patches + re-patch binary",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rc := runUpdate()
 			if rc != 0 {
@@ -113,7 +113,7 @@ func runAutoheal(force, quiet bool) int {
 
 func runSelfUpdate(dryRun, force, noReapply bool) int {
 	pd := patchDir()
-	fmt.Printf("%svpcc self-update%s  <- %s@%s\n",
+	fmt.Printf("%sunleash self-update%s  <- %s@%s\n",
 		console.B, console.X, updater.Repo, updater.Branch)
 
 	remote := updater.RemoteHeadSHA("patches")
@@ -164,18 +164,18 @@ func runCheckUpdates() int {
 	pd := patchDir()
 	info := updater.UpstreamStatus(pd)
 
-	fmt.Printf("%svpcc check-updates%s\n", console.B, console.X)
+	fmt.Printf("%sunleash check-updates%s\n", console.B, console.X)
 	fmt.Printf("  local commit  : %s\n", coalesce(info.LocalCommit, "(unknown)"))
 	fmt.Printf("  remote commit : %s\n", coalesce(info.RemoteCommit, "(unreachable)"))
 	fmt.Printf("  local files   : %d\n", info.LocalFiles)
 
 	if info.Drift {
-		fmt.Printf("%s%s update available — run 'vpcc self-update'%s\n",
+		fmt.Printf("%s%s update available — run 'unleash self-update'%s\n",
 			console.Y, console.WARN, console.X)
 		return 1
 	}
 	if info.LocalCommit == "" && info.RemoteCommit != "" {
-		fmt.Printf("%s%s no sync state — run 'vpcc self-update' to pin current%s\n",
+		fmt.Printf("%s%s no sync state — run 'unleash self-update' to pin current%s\n",
 			console.Y, console.WARN, console.X)
 		return 1
 	}
@@ -186,7 +186,7 @@ func runCheckUpdates() int {
 }
 
 func runUpgrade() int {
-	fmt.Printf("%svpcc upgrade — full pipeline%s\n", console.B, console.X)
+	fmt.Printf("%sunleash upgrade — full pipeline%s\n", console.B, console.X)
 
 	// Step 1: self-update
 	fmt.Printf("  step 1/4: self-update patches\n")
@@ -241,8 +241,8 @@ func runUpgrade() int {
 }
 
 func runUpdate() int {
-	fmt.Printf("%svpcc update%s\n", console.B, console.X)
-	fmt.Printf("  current : v3.0.0\n")
+	fmt.Printf("%sunleash update%s\n", console.B, console.X)
+	fmt.Printf("  current : v1.0.0\n")
 	fmt.Printf("  install : go (embedded)\n")
 
 	// Step 1: check remote version (best effort)
@@ -298,7 +298,7 @@ func runUpdate() int {
 			rcPatch = 1
 		}
 		if rcPatch == 0 {
-			stampPath := filepath.Join(vpccDir(), "last_patched_sha")
+			stampPath := filepath.Join(unleashDir(), "last_patched_sha")
 			os.MkdirAll(filepath.Dir(stampPath), 0o755)
 			os.WriteFile(stampPath, []byte(target.SHA256Short(tgt)), 0o644)
 		}
@@ -310,7 +310,7 @@ func runUpdate() int {
 	// Summary
 	fmt.Printf("\n%s%s%s\n", console.B, strings.Repeat("─", 40), console.X)
 	if rcPatch == 0 {
-		fmt.Printf("  %s%s vpcc update complete%s\n", console.G, console.CHECK, console.X)
+		fmt.Printf("  %s%s unleash update complete%s\n", console.G, console.CHECK, console.X)
 	} else {
 		fmt.Printf("  %s%s update complete with warnings (rc=%d)%s\n",
 			console.Y, console.WARN, rcPatch, console.X)

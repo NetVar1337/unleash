@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	vpccClaudeMDStart = "<!-- vpcc:authorization:start -->"
-	vpccClaudeMDEnd   = "<!-- vpcc:authorization:end -->"
+	unleashClaudeMDStart = "<!-- unleash:authorization:start -->"
+	unleashClaudeMDEnd   = "<!-- unleash:authorization:end -->"
 )
 
 // NewInstallRulesCmd creates the "install-rules" cobra command.
@@ -43,7 +43,7 @@ func NewInstallRulesCmd() *cobra.Command {
 func NewUninstallRulesCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "uninstall-rules",
-		Short: "Remove vpcc authorization rules, preserve operator content",
+		Short: "Remove unleash authorization rules, preserve operator content",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rc := runUninstallRules()
 			if rc != 0 {
@@ -100,14 +100,14 @@ func runInstallRules(noHook bool) int {
 	}
 
 	// Deploy AUTHORIZATION.md into CLAUDE.md and AGENTS.md
-	block := vpccClaudeMDStart + "\n" + strings.TrimRight(string(authSrc), "\n\r") + "\n" + vpccClaudeMDEnd + "\n"
-	blockRE := regexp.MustCompile(`(?s)` + regexp.QuoteMeta(vpccClaudeMDStart) + `.*?` + regexp.QuoteMeta(vpccClaudeMDEnd) + `\n?`)
+	block := unleashClaudeMDStart + "\n" + strings.TrimRight(string(authSrc), "\n\r") + "\n" + unleashClaudeMDEnd + "\n"
+	blockRE := regexp.MustCompile(`(?s)` + regexp.QuoteMeta(unleashClaudeMDStart) + `.*?` + regexp.QuoteMeta(unleashClaudeMDEnd) + `\n?`)
 
 	for _, dstName := range []string{"CLAUDE.md", "AGENTS.md"} {
 		dst := filepath.Join(claudeDir, dstName)
 		if data, err := os.ReadFile(dst); err == nil {
 			existing := string(data)
-			if strings.Contains(existing, vpccClaudeMDStart) {
+			if strings.Contains(existing, unleashClaudeMDStart) {
 				existing = blockRE.ReplaceAllString(existing, "")
 			}
 			merged := block + "\n---\n\n" + strings.TrimLeft(existing, "\n\r ")
@@ -175,14 +175,14 @@ func runInstallRules(noHook bool) int {
 	}
 
 	fmt.Printf("\n%s%s authorization rules installed%s\n", console.G, console.CHECK, console.X)
-	fmt.Printf("  revert: vpcc uninstall-rules\n")
+	fmt.Printf("  revert: unleash uninstall-rules\n")
 	return 0
 }
 
 func runUninstallRules() int {
 	claudeDir := filepath.Join(homeDir(), ".claude")
 	removed := 0
-	blockRE := regexp.MustCompile(`(?s)` + regexp.QuoteMeta(vpccClaudeMDStart) + `.*?` + regexp.QuoteMeta(vpccClaudeMDEnd) + `\n?`)
+	blockRE := regexp.MustCompile(`(?s)` + regexp.QuoteMeta(unleashClaudeMDStart) + `.*?` + regexp.QuoteMeta(unleashClaudeMDEnd) + `\n?`)
 	leadingSeparator := regexp.MustCompile(`\A\s*---\s*\n`)
 
 	for _, name := range []string{"CLAUDE.md", "AGENTS.md"} {
@@ -192,13 +192,13 @@ func runUninstallRules() int {
 			continue
 		}
 		s := string(data)
-		if !strings.Contains(s, vpccClaudeMDStart) {
+		if !strings.Contains(s, unleashClaudeMDStart) {
 			continue
 		}
 		s = blockRE.ReplaceAllString(s, "")
 		s = leadingSeparator.ReplaceAllString(s, "")
 		os.WriteFile(p, []byte(strings.TrimLeft(s, "\n\r ")), 0o644)
-		fmt.Printf("  %s%s%s stripped vpcc block from %s\n", console.G, console.CHECK, console.X, name)
+		fmt.Printf("  %s%s%s stripped unleash block from %s\n", console.G, console.CHECK, console.X, name)
 		removed++
 	}
 
@@ -209,13 +209,13 @@ func runUninstallRules() int {
 		removed++
 	}
 
-	// Prune vpcc keys from settings
+	// Prune unleash keys from settings
 	settingsPath := filepath.Join(claudeDir, "settings.json")
 	if data, err := os.ReadFile(settingsPath); err == nil {
 		var cur map[string]interface{}
 		if json.Unmarshal(data, &cur) == nil {
 			keysToRemove := []string{
-				"_vpcc_header",
+				"_unleash_header",
 				"skipDangerousModePermissionPrompt",
 				"dangerouslyDisableSandbox",
 				"isBypassPermissionsModeAvailable",
@@ -247,7 +247,7 @@ func runUninstallRules() int {
 
 			outJSON, _ := json.MarshalIndent(cur, "", "  ")
 			os.WriteFile(settingsPath, append(outJSON, '\n'), 0o644)
-			fmt.Printf("  %s%s%s pruned vpcc keys from settings.json\n",
+			fmt.Printf("  %s%s%s pruned unleash keys from settings.json\n",
 				console.G, console.CHECK, console.X)
 			removed++
 		}

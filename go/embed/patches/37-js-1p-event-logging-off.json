@@ -15,5 +15,6 @@
     }
   ],
   "superseded_on": "2.1.114",
-  "note": "Legacy minified fn name (A46/Na). Behavior covered by env telemetry=0 via install-rules."
+  "note": "Legacy minified fn name (A46/Na). Behavior covered by env telemetry=0 via install-rules.",
+  "category": "telemetry"
 }

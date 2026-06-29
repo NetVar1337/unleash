@@ -16,5 +16,6 @@
   "scan_signatures": true,
   "anchor_strings": [
     "autoCompactEnabled:!0,autoScrollEnabled:!0,showTurnDuration:!0"
-  ]
+  ],
+  "category": "features"
 }

@@ -16,5 +16,6 @@
   "scan_signatures": true,
   "anchor_strings": [
     "async sendRequest"
-  ]
+  ],
+  "category": "ratelimit"
 }

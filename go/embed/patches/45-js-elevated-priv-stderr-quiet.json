@@ -13,5 +13,6 @@
       "count": 0
     }
   ],
-  "scan_signatures": false
+  "scan_signatures": false,
+  "category": "infrastructure"
 }

@@ -16,5 +16,6 @@
   "scan_signatures": true,
   "anchor_strings": [
     "sessionTrustAccepted:!1,sessionPersistenceDisabled"
-  ]
+  ],
+  "category": "permissions"
 }

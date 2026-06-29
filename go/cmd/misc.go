@@ -106,17 +106,6 @@ func NewDashboardCmd() *cobra.Command {
 	return c
 }
 
-// NewTuiCmd creates the "tui" cobra command.
-func NewTuiCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "tui",
-		Short: "Interactive terminal UI — full vpcc control panel (curses)",
-		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("use vpcc dashboard")
-		},
-	}
-}
-
 func runBench() error {
 	tgt, kind := target.FindTarget()
 	if tgt == "" {
@@ -130,7 +119,7 @@ func runBench() error {
 	if info != nil {
 		sizeMB = info.Size() / 1024 / 1024
 	}
-	fmt.Printf("%svpcc bench — %s (%d MB)%s\n", console.B, filepath.Base(tgt), sizeMB, console.X)
+	fmt.Printf("%sunleash bench — %s (%d MB)%s\n", console.B, filepath.Base(tgt), sizeMB, console.X)
 
 	pd := patchDir()
 
@@ -177,14 +166,14 @@ func runBench() error {
 }
 
 func runInstallGuard() int {
-	vpccBin := findVPCCBin()
+	unleashBin := findUnleashBin()
 
 	switch runtime.GOOS {
 	case "windows":
-		taskName := "vpcc-autoheal"
+		taskName := "unleash-autoheal"
 		exec.Command("schtasks", "/Delete", "/TN", taskName, "/F").Run()
 		createCmd := exec.Command("schtasks", "/Create", "/TN", taskName,
-			"/TR", fmt.Sprintf(`"%s" guard`, vpccBin),
+			"/TR", fmt.Sprintf(`"%s" guard`, unleashBin),
 			"/SC", "HOURLY", "/MO", "6",
 			"/RL", "LIMITED", "/F")
 		out, err := createCmd.CombinedOutput()
@@ -199,14 +188,14 @@ func runInstallGuard() int {
 	case "darwin":
 		plistDir := filepath.Join(homeDir(), "Library", "LaunchAgents")
 		os.MkdirAll(plistDir, 0o755)
-		plistPath := filepath.Join(plistDir, "cc.voidchecksum.vpcc-guard.plist")
+		plistPath := filepath.Join(plistDir, "cc.voidchecksum.unleash-guard.plist")
 		home := homeDir()
 		plistContent := fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>cc.voidchecksum.vpcc-guard</string>
+    <string>cc.voidchecksum.unleash-guard</string>
     <key>ProgramArguments</key>
     <array>
         <string>%s</string>
@@ -217,14 +206,14 @@ func runInstallGuard() int {
     <key>RunAtLoad</key>
     <true/>
     <key>StandardOutPath</key>
-    <string>%s/.vpcc/guard.log</string>
+    <string>%s/.unleash/guard.log</string>
     <key>StandardErrorPath</key>
-    <string>%s/.vpcc/guard.log</string>
+    <string>%s/.unleash/guard.log</string>
     <key>Nice</key>
     <integer>10</integer>
 </dict>
 </plist>
-`, vpccBin, home, home)
+`, unleashBin, home, home)
 		os.WriteFile(plistPath, []byte(plistContent), 0o644)
 		exec.Command("launchctl", "unload", plistPath).Run()
 		exec.Command("launchctl", "load", plistPath).Run()
@@ -239,9 +228,9 @@ func runInstallGuard() int {
 		unitDir := filepath.Join(xdgConfig, "systemd", "user")
 		os.MkdirAll(unitDir, 0o755)
 
-		svc := filepath.Join(unitDir, "vpcc-guard.service")
+		svc := filepath.Join(unitDir, "unleash-guard.service")
 		os.WriteFile(svc, []byte(fmt.Sprintf(`[Unit]
-Description=vpcc guard — auto-patch Claude Code on update
+Description=unleash guard — auto-patch Claude Code on update
 Documentation=https://github.com/VoidChecksum/void-patcher-cc
 Wants=network-online.target
 After=network-online.target
@@ -253,11 +242,11 @@ Nice=10
 
 [Install]
 WantedBy=default.target
-`, vpccBin)), 0o644)
+`, unleashBin)), 0o644)
 
-		tmr := filepath.Join(unitDir, "vpcc-guard.timer")
+		tmr := filepath.Join(unitDir, "unleash-guard.timer")
 		os.WriteFile(tmr, []byte(`[Unit]
-Description=Run vpcc guard periodically
+Description=Run unleash guard periodically
 Documentation=https://github.com/VoidChecksum/void-patcher-cc
 
 [Timer]
@@ -265,26 +254,26 @@ OnBootSec=2min
 OnUnitActiveSec=6h
 RandomizedDelaySec=15min
 Persistent=true
-Unit=vpcc-guard.service
+Unit=unleash-guard.service
 
 [Install]
 WantedBy=timers.target
 `), 0o644)
 
 		exec.Command("systemctl", "--user", "daemon-reload").Run()
-		exec.Command("systemctl", "--user", "enable", "--now", "vpcc-guard.timer").Run()
-		fmt.Printf("%s%s systemd --user: vpcc-guard.timer (every 6h + boot)%s\n",
+		exec.Command("systemctl", "--user", "enable", "--now", "unleash-guard.timer").Run()
+		fmt.Printf("%s%s systemd --user: unleash-guard.timer (every 6h + boot)%s\n",
 			console.G, console.CHECK, console.X)
 	}
 
-	fmt.Printf("  vpcc guard runs automatically — Claude Code updates are patched within minutes\n")
+	fmt.Printf("  unleash guard runs automatically — Claude Code updates are patched within minutes\n")
 	return 0
 }
 
 func runUninstallGuard() error {
 	switch runtime.GOOS {
 	case "windows":
-		cmd := exec.Command("schtasks", "/Delete", "/TN", "vpcc-autoheal", "/F")
+		cmd := exec.Command("schtasks", "/Delete", "/TN", "unleash-autoheal", "/F")
 		if err := cmd.Run(); err == nil {
 			fmt.Printf("%s%s removed Windows scheduled task%s\n", console.G, console.CHECK, console.X)
 		} else {
@@ -292,7 +281,7 @@ func runUninstallGuard() error {
 		}
 
 	case "darwin":
-		plist := filepath.Join(homeDir(), "Library", "LaunchAgents", "cc.voidchecksum.vpcc-guard.plist")
+		plist := filepath.Join(homeDir(), "Library", "LaunchAgents", "cc.voidchecksum.unleash-guard.plist")
 		if _, err := os.Stat(plist); err == nil {
 			exec.Command("launchctl", "unload", plist).Run()
 			os.Remove(plist)
@@ -307,8 +296,8 @@ func runUninstallGuard() error {
 			xdgConfig = filepath.Join(homeDir(), ".config")
 		}
 		unitDir := filepath.Join(xdgConfig, "systemd", "user")
-		exec.Command("systemctl", "--user", "disable", "--now", "vpcc-guard.timer").Run()
-		for _, name := range []string{"vpcc-guard.service", "vpcc-guard.timer"} {
+		exec.Command("systemctl", "--user", "disable", "--now", "unleash-guard.timer").Run()
+		for _, name := range []string{"unleash-guard.service", "unleash-guard.timer"} {
 			os.Remove(filepath.Join(unitDir, name))
 		}
 		exec.Command("systemctl", "--user", "daemon-reload").Run()
@@ -316,7 +305,7 @@ func runUninstallGuard() error {
 	}
 
 	// Remove stamp file
-	os.Remove(filepath.Join(vpccDir(), "last_patched_sha"))
+	os.Remove(filepath.Join(unleashDir(), "last_patched_sha"))
 	return nil
 }
 
@@ -366,7 +355,7 @@ func runDashboard(interval int) error {
 		pd := patchDir()
 
 		var lines []string
-		lines = append(lines, fmt.Sprintf("%s%svpcc dashboard%s  %s%s%s",
+		lines = append(lines, fmt.Sprintf("%s%sunleash dashboard%s  %s%s%s",
 			clearScreen, console.B, console.X, dim, ts, console.X))
 		lines = append(lines, fmt.Sprintf("%s%s%s", dim, strings.Repeat("─", 60), console.X))
 
@@ -393,7 +382,7 @@ func runDashboard(interval int) error {
 			lines = append(lines, fmt.Sprintf("  %sformat%s   : %s", console.B, console.X, formatStr))
 
 			// Guard stamp
-			stampPath := filepath.Join(vpccDir(), "last_patched_sha")
+			stampPath := filepath.Join(unleashDir(), "last_patched_sha")
 			if data, err := os.ReadFile(stampPath); err == nil {
 				stampSHA := strings.TrimSpace(string(data))
 				stampInfo, _ := os.Stat(stampPath)
@@ -409,7 +398,7 @@ func runDashboard(interval int) error {
 						console.B, console.X, console.R, console.CROSS, console.X))
 				}
 			} else {
-				lines = append(lines, fmt.Sprintf("  %sguard%s    : %s%s no stamp — run 'vpcc patch'%s",
+				lines = append(lines, fmt.Sprintf("  %sguard%s    : %s%s no stamp — run 'unleash patch'%s",
 					console.B, console.X, console.Y, console.WARN, console.X))
 			}
 
@@ -459,7 +448,7 @@ func runDashboard(interval int) error {
 					}
 				}
 			} else {
-				lines = append(lines, fmt.Sprintf("\n  %spatches%s  : %s(run 'vpcc scan' to populate cache)%s",
+				lines = append(lines, fmt.Sprintf("\n  %spatches%s  : %s(run 'unleash scan' to populate cache)%s",
 					console.B, console.X, dim, console.X))
 			}
 
@@ -475,7 +464,7 @@ func runDashboard(interval int) error {
 			// Upstream
 			upInfo := updater.UpstreamStatus(pd)
 			if upInfo.Drift {
-				lines = append(lines, fmt.Sprintf("  %supstream%s : %sbehind — run 'vpcc self-update'%s",
+				lines = append(lines, fmt.Sprintf("  %supstream%s : %sbehind — run 'unleash self-update'%s",
 					console.B, console.X, console.Y, console.X))
 			} else if upInfo.RemoteCommit != "" {
 				lines = append(lines, fmt.Sprintf("  %supstream%s : %scurrent%s",
@@ -520,37 +509,37 @@ func humanAge(seconds float64) string {
 func detectGuardScheduler() string {
 	switch runtime.GOOS {
 	case "windows":
-		cmd := exec.Command("schtasks", "/Query", "/TN", "vpcc-autoheal", "/FO", "LIST")
+		cmd := exec.Command("schtasks", "/Query", "/TN", "unleash-autoheal", "/FO", "LIST")
 		if err := cmd.Run(); err == nil {
 			return fmt.Sprintf("%sWindows Task Scheduler active%s", console.G, console.X)
 		}
-		return fmt.Sprintf("%snot installed — run 'vpcc install-guard'%s", console.Y, console.X)
+		return fmt.Sprintf("%snot installed — run 'unleash install-guard'%s", console.Y, console.X)
 
 	case "darwin":
-		plist := filepath.Join(homeDir(), "Library", "LaunchAgents", "cc.voidchecksum.vpcc-guard.plist")
+		plist := filepath.Join(homeDir(), "Library", "LaunchAgents", "cc.voidchecksum.unleash-guard.plist")
 		if _, err := os.Stat(plist); err == nil {
 			return fmt.Sprintf("%smacOS launchd active%s", console.G, console.X)
 		}
-		return fmt.Sprintf("%snot installed — run 'vpcc install-guard'%s", console.Y, console.X)
+		return fmt.Sprintf("%snot installed — run 'unleash install-guard'%s", console.Y, console.X)
 
 	default:
-		cmd := exec.Command("systemctl", "--user", "is-active", "vpcc-guard.timer")
+		cmd := exec.Command("systemctl", "--user", "is-active", "unleash-guard.timer")
 		out, _ := cmd.Output()
 		if strings.TrimSpace(string(out)) == "active" {
 			return fmt.Sprintf("%ssystemd timer active%s", console.G, console.X)
 		}
-		return fmt.Sprintf("%snot installed — run 'vpcc install-guard'%s", console.Y, console.X)
+		return fmt.Sprintf("%snot installed — run 'unleash install-guard'%s", console.Y, console.X)
 	}
 }
 
-func findVPCCBin() string {
+func findUnleashBin() string {
 	exe, err := os.Executable()
 	if err == nil {
 		return exe
 	}
-	p, err := exec.LookPath("vpcc")
+	p, err := exec.LookPath("unleash")
 	if err == nil {
 		return p
 	}
-	return "vpcc"
+	return "unleash"
 }

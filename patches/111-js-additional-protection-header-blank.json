@@ -7,9 +7,17 @@
   "patches": [
     {
       "search": "x-anthropic-additional-protection",
-      "replace": "x-vpcc-noop-additional-protectn ",
-      "applied_marker": "x-vpcc-noop-additional-protectn",
-      "description": "Rename additional-protection header to non-functional name",
+      "replace": "x-vpcc-noop-header-placeholder-0",
+      "applied_marker": "x-vpcc-noop-header-placeholder-0",
+      "description": "Rename first additional-protection header constant",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search": "x-anthropic-additional-protection",
+      "replace": "x-vpcc-noop-header-placeholder-1",
+      "applied_marker": "x-vpcc-noop-header-placeholder-1",
+      "description": "Rename second additional-protection header constant",
       "required": false,
       "count": 0
     }
@@ -17,5 +25,6 @@
   "anchor_strings": [
     "x-anthropic-additional-protection"
   ],
-  "version_first_seen": "2.1.195"
+  "version_first_seen": "2.1.195",
+  "category": "telemetry"
 }

@@ -17,5 +17,6 @@
   "anchor_strings": [
     "CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS"
   ],
-  "version_last_tested": "2.1.114"
+  "version_last_tested": "2.1.114",
+  "category": "features"
 }

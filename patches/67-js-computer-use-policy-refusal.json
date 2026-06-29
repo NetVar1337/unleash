@@ -18,5 +18,6 @@
     "blocked by policy for computer use",
     "are automatically denied regardless of what the user has approved",
     "Do not try to directly subvert this block"
-  ]
+  ],
+  "category": "refusal"
 }

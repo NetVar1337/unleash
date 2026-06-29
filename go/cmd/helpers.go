@@ -62,14 +62,14 @@ func expandHome(path string) string {
 	return os.ExpandEnv(path)
 }
 
-func vpccDir() string {
-	return filepath.Join(homeDir(), ".vpcc")
+func unleashDir() string {
+	return filepath.Join(homeDir(), ".unleash")
 }
 
-// patchDir returns the override patch directory (~/.vpcc/patches/),
+// patchDir returns the override patch directory (~/.unleash/patches/),
 // falling back to a tmp dir if needed. The loader checks override dir first.
 func patchDir() string {
-	return filepath.Join(vpccDir(), "patches")
+	return filepath.Join(unleashDir(), "patches")
 }
 
 func preloadDirPath() string {

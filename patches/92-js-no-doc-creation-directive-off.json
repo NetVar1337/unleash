@@ -26,5 +26,6 @@
     "NEVER create documentation files",
     "NEVER proactively create documentation files"
   ],
-  "version_last_tested": "2.1.119"
+  "version_last_tested": "2.1.119",
+  "category": "attribution"
 }

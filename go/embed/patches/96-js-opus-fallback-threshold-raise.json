@@ -17,5 +17,6 @@
   "anchor_strings": [
     "var Plq=()=>new HA,pp5="
   ],
-  "version_last_tested": "2.1.152"
+  "version_last_tested": "2.1.152",
+  "category": "ratelimit"
 }

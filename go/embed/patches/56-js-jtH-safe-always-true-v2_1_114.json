@@ -19,5 +19,6 @@
       "required": false,
       "description": "Early-return {safe:true} regardless of minified name"
     }
-  ]
+  ],
+  "category": "classifier"
 }

@@ -20,5 +20,6 @@
       "required": false,
       "description": "Rewrite safetyCheck deny -> allow (v2.1.114)"
     }
-  ]
+  ],
+  "category": "permissions"
 }

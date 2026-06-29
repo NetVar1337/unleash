@@ -17,5 +17,6 @@
   "anchor_strings": [
     "dangerous_shell_prefix"
   ],
-  "version_last_tested": "2.1.119"
+  "version_last_tested": "2.1.119",
+  "category": "classifier"
 }

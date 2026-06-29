@@ -19,5 +19,6 @@
       "required": false,
       "description": "Rule deny \u2192 allow (v2.1.114+, name-agnostic)"
     }
-  ]
+  ],
+  "category": "permissions"
 }

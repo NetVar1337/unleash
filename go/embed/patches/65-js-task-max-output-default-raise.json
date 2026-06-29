@@ -18,5 +18,6 @@
     "160000,",
     "=32000"
   ],
-  "version_last_tested": "2.1.114"
+  "version_last_tested": "2.1.114",
+  "category": "ratelimit"
 }

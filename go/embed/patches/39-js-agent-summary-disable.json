@@ -16,5 +16,6 @@
   ],
   "anchor_strings": [
     "async function H"
-  ]
+  ],
+  "category": "telemetry"
 }

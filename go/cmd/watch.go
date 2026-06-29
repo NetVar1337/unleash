@@ -36,7 +36,7 @@ func runWatch(interval int) error {
 	}
 
 	dim := "\033[90m"
-	fmt.Printf("%svpcc watch — polling every %ds%s\n", console.B, interval, console.X)
+	fmt.Printf("%sunleash watch — polling every %ds%s\n", console.B, interval, console.X)
 	fmt.Printf("  target : %s\n", tgt)
 
 	lastSHA := target.SHA256Short(tgt)
@@ -89,7 +89,7 @@ func runWatch(interval int) error {
 			fmt.Printf("  autopilot rc=%d\n", rc)
 
 			// Update stamp
-			stampPath := filepath.Join(vpccDir(), "last_patched_sha")
+			stampPath := filepath.Join(unleashDir(), "last_patched_sha")
 			os.MkdirAll(filepath.Dir(stampPath), 0o755)
 			os.WriteFile(stampPath, []byte(target.SHA256Short(tgt)), 0o644)
 

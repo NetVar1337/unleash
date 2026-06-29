@@ -1,7 +1,7 @@
 {
   "id": "js-auto-background-agents-on",
   "retired": true,
-  "retired_reason": "tengu_auto_background_agents flag removed in CC 2.1.195 — feature now enabled by default upstream",
+  "retired_reason": "tengu_auto_background_agents flag removed in CC 2.1.195 \u2014 feature now enabled by default upstream",
   "description": "Flip kX1() auto-background-agents timeout default to 120000ms (enabled) without requiring env var or Statsig. Lets Claude spawn background tasks without explicit CLAUDE_AUTO_BACKGROUND_TASKS env.",
   "type": "js_replace",
   "validate_js": true,
@@ -19,5 +19,6 @@
   "anchor_strings": [
     "tengu_auto_background_agents"
   ],
-  "version_last_tested": "2.1.119"
+  "version_last_tested": "2.1.119",
+  "category": "features"
 }

@@ -8,7 +8,7 @@
       "search": "function um9(H,_,q){for(let K of H){",
       "replace": "function um9(H,_,q){return;       {",
       "applied_marker": "um9(H,_,q){return;",
-      "description": "Per-session plugin inventory telemetry — early return before the for-loop.",
+      "description": "Per-session plugin inventory telemetry \u2014 early return before the for-loop.",
       "required": false,
       "count": 0
     }
@@ -17,5 +17,6 @@
   "anchor_strings": [
     "tengu_plugin_enabled_for_session"
   ],
-  "version_last_tested": "2.1.132"
+  "version_last_tested": "2.1.132",
+  "category": "telemetry"
 }

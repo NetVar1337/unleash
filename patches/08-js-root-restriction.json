@@ -20,5 +20,6 @@
       "required": false
     }
   ],
-  "scan_signatures": false
+  "scan_signatures": false,
+  "category": "permissions"
 }

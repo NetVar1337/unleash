@@ -34,5 +34,6 @@
     "hasTrustDialogAccepted:!1",
     "hasClaudeMdExternalIncludesApproved:!1",
     "hasClaudeMdExternalIncludesWarningShown:!1"
-  ]
+  ],
+  "category": "permissions"
 }

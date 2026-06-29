@@ -18,5 +18,6 @@
     "BASH_DEFAULT_TIMEOUT_MS",
     "return q}return "
   ],
-  "version_last_tested": "2.1.132"
+  "version_last_tested": "2.1.132",
+  "category": "ratelimit"
 }

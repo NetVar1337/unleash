@@ -21,13 +21,13 @@ const (
 	Repo    = "VoidChecksum/void-patcher-cc"
 	Branch  = "main"
 	APIBase = "https://api.github.com/repos/" + Repo
-	UA      = "vpcc-updater/1.0"
+	UA      = "unleash-updater/1.0"
 )
 
 var (
-	// StateDir is ~/.vpcc
+	// StateDir is ~/.unleash
 	StateDir string
-	// StateFile is ~/.vpcc/state.json
+	// StateFile is ~/.unleash/state.json
 	StateFile string
 )
 
@@ -36,7 +36,7 @@ func init() {
 	if err != nil {
 		home = "."
 	}
-	StateDir = filepath.Join(home, ".vpcc")
+	StateDir = filepath.Join(home, ".unleash")
 	StateFile = filepath.Join(StateDir, "state.json")
 }
 
@@ -104,7 +104,7 @@ func DownloadTarball(sha string) ([]byte, error) {
 
 // ── state persistence ───────────────────────────────────────────────────────
 
-// LoadState reads ~/.vpcc/state.json into a map. Returns empty map on any error.
+// LoadState reads ~/.unleash/state.json into a map. Returns empty map on any error.
 func LoadState() map[string]interface{} {
 	data, err := os.ReadFile(StateFile)
 	if err != nil {
@@ -214,7 +214,7 @@ func SyncPatches(patchDir string, sha string) (int, string) {
 		}
 	}
 
-	// Stage into sibling .vpcc-new files, then atomic-rename as a group.
+	// Stage into sibling .unleash-new files, then atomic-rename as a group.
 	type stagedPair struct{ tmp, dst string }
 	var stagedPaths []stagedPair
 
@@ -230,7 +230,7 @@ func SyncPatches(patchDir string, sha string) (int, string) {
 		if cur, err := os.ReadFile(dst); err == nil && string(cur) == string(content) {
 			continue
 		}
-		tmp := filepath.Join(patchDir, "."+name+".vpcc-new")
+		tmp := filepath.Join(patchDir, "."+name+".unleash-new")
 		if err := os.WriteFile(tmp, content, 0o644); err != nil {
 			rollbackStaged()
 			return -1, fmt.Sprintf("stage failed: %v", err)
@@ -310,7 +310,7 @@ func Autoheal(cb AutohealCallbacks, patchDir string, force, quiet bool) int {
 
 	target, kind := cb.FindTarget()
 	if target == "" {
-		log("vpcc autoheal: Claude Code not installed — nothing to do")
+		log("unleash autoheal: Claude Code not installed — nothing to do")
 		return 0
 	}
 
@@ -333,20 +333,20 @@ func Autoheal(cb AutohealCallbacks, patchDir string, force, quiet bool) int {
 	patchDrifted := int64(curPMT) != int64(lastPMT)
 
 	if !binDrifted && !patchDrifted && !force {
-		log(fmt.Sprintf("vpcc autoheal: CC unchanged (%s), patches unchanged — skip", curSHA))
+		log(fmt.Sprintf("unleash autoheal: CC unchanged (%s), patches unchanged — skip", curSHA))
 		return 0
 	}
 
 	if binDrifted {
-		log(fmt.Sprintf("vpcc autoheal: CC drift detected (%s → %s)", lastSHA, curSHA))
+		log(fmt.Sprintf("unleash autoheal: CC drift detected (%s → %s)", lastSHA, curSHA))
 	} else if patchDrifted {
-		log(fmt.Sprintf("vpcc autoheal: patch updates detected (mtime %d → %d)", int64(lastPMT), int64(curPMT)))
+		log(fmt.Sprintf("unleash autoheal: patch updates detected (mtime %d → %d)", int64(lastPMT), int64(curPMT)))
 	}
 
 	// Step 1 — verify current patches against new binary.
 	rc := cb.CmdVerify()
 	if rc == 0 {
-		log("vpcc autoheal: patches still valid, updating state")
+		log("unleash autoheal: patches still valid, updating state")
 		SaveState(map[string]interface{}{
 			"last_cc_sha":      curSHA,
 			"last_cc_kind":     kind,
@@ -356,25 +356,25 @@ func Autoheal(cb AutohealCallbacks, patchDir string, force, quiet bool) int {
 	}
 
 	// Step 2 — patches broken, pull latest from GitHub.
-	log("vpcc autoheal: patches broken, syncing latest from GitHub")
+	log("unleash autoheal: patches broken, syncing latest from GitHub")
 	changed, shaOrErr := SyncPatches(patchDir, "")
 	if changed < 0 {
-		log(fmt.Sprintf("vpcc autoheal: sync failed — %s", shaOrErr))
+		log(fmt.Sprintf("unleash autoheal: sync failed — %s", shaOrErr))
 		return 3
 	}
 	if len(shaOrErr) >= 7 {
-		log(fmt.Sprintf("vpcc autoheal: synced %d file(s) @ %s", changed, shaOrErr[:7]))
+		log(fmt.Sprintf("unleash autoheal: synced %d file(s) @ %s", changed, shaOrErr[:7]))
 	} else {
-		log(fmt.Sprintf("vpcc autoheal: synced %d file(s) @ %s", changed, shaOrErr))
+		log(fmt.Sprintf("unleash autoheal: synced %d file(s) @ %s", changed, shaOrErr))
 	}
 
 	// Step 3 — re-apply patches.
 	rc = cb.CmdPatch()
 	if rc != 0 {
-		log("vpcc autoheal: re-patch failed — rolling back to pre-patch backup")
+		log("unleash autoheal: re-patch failed — rolling back to pre-patch backup")
 		if cb.CmdRollback != nil {
 			if err := cb.CmdRollback(); err != nil {
-				log(fmt.Sprintf("vpcc autoheal: rollback failed — %v", err))
+				log(fmt.Sprintf("unleash autoheal: rollback failed — %v", err))
 			}
 		}
 		return 3
@@ -383,10 +383,10 @@ func Autoheal(cb AutohealCallbacks, patchDir string, force, quiet bool) int {
 	// Step 4 — confirm verify passes after fresh patch.
 	rcV := cb.CmdVerify()
 	if rcV != 0 {
-		log("vpcc autoheal: post-patch verify failed — rolling back")
+		log("unleash autoheal: post-patch verify failed — rolling back")
 		if cb.CmdRollback != nil {
 			if err := cb.CmdRollback(); err != nil {
-				log(fmt.Sprintf("vpcc autoheal: rollback failed — %v", err))
+				log(fmt.Sprintf("unleash autoheal: rollback failed — %v", err))
 			}
 		}
 		return 3
@@ -404,7 +404,7 @@ func Autoheal(cb AutohealCallbacks, patchDir string, force, quiet bool) int {
 		"last_cc_kind":     kind,
 		"last_patch_mtime": int64(finalPMT),
 	})
-	log("vpcc autoheal: healed")
+	log("unleash autoheal: healed")
 	return 1
 }
 

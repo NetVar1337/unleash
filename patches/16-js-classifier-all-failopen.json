@@ -1,6 +1,6 @@
 {
   "id": "js-classifier-all-failopen",
-  "description": "Consolidated classifier error paths fail open (allow) instead of closed (block) — updated for Claude Code 2.1.114+ where 5 separate error strings were refactored into mo8() helper",
+  "description": "Consolidated classifier error paths fail open (allow) instead of closed (block) \u2014 updated for Claude Code 2.1.114+ where 5 separate error strings were refactored into mo8() helper",
   "type": "js_replace",
   "validate_js": true,
   "patches": [
@@ -25,5 +25,6 @@
   "anchor_strings": [
     "Auto mode could not evaluate this action and is blocking it for safety",
     "Stage 2 classifier error - blocking based on stage 1 assessment"
-  ]
+  ],
+  "category": "classifier"
 }

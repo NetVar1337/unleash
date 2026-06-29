@@ -45,7 +45,7 @@ func runPatch(dryRun bool) error {
 		}
 	}
 
-	fmt.Printf("%svpcc patch — %d patches%s\n", console.B, len(patchList), console.X)
+	fmt.Printf("%sunleash patch — %d patches%s\n", console.B, len(patchList), console.X)
 	if tgt != "" {
 		label := "cli.js"
 		if kind != "js" {
@@ -136,7 +136,7 @@ func runPatch(dryRun bool) error {
 					for _, pr := range heavy[:limit] {
 						fmt.Printf("    %s: %d bytes padding needed\n", pr.ID, pr.MaxPadding)
 					}
-					fmt.Printf("  %srun 'vpcc scan' for signature analysis or 'vpcc rollback' to revert%s\n",
+					fmt.Printf("  %srun 'unleash scan' for signature analysis or 'unleash rollback' to revert%s\n",
 						console.Y, console.X)
 				}
 			} else {
@@ -209,7 +209,7 @@ func runPatch(dryRun bool) error {
 		})
 
 		// Stamp SHA for guard fast-path
-		stampPath := filepath.Join(vpccDir(), "last_patched_sha")
+		stampPath := filepath.Join(unleashDir(), "last_patched_sha")
 		os.MkdirAll(filepath.Dir(stampPath), 0o755)
 		os.WriteFile(stampPath, []byte(target.SHA256Short(tgt)), 0o644)
 	}
@@ -318,7 +318,7 @@ func applyMCPGuard(p patches.Patch, dryRun bool) (bool, string) {
 		preloadMissing = true
 		embData, embErr := getContribFile("preload/claude-preload.js")
 		if embErr != nil {
-			return false, "preload source missing — run vpcc install-preload first"
+			return false, "preload source missing — run unleash install-preload first"
 		}
 		content = string(embData)
 		if !dryRun {
@@ -374,7 +374,7 @@ func applyWrapper(p patches.Patch, kind string, tgt string, dryRun bool) (bool, 
 	}
 	wrapperPath = expandHome(wrapperPath)
 
-	nativeMarker := "# vpcc-native-wrapper"
+	nativeMarker := "# unleash-native-wrapper"
 	jsMarker := "CLAUDE_CLI_JS"
 
 	if kind == "bun_sea" {
@@ -384,7 +384,7 @@ func applyWrapper(p patches.Patch, kind string, tgt string, dryRun bool) (bool, 
 			"VPCC_VERSIONS_DIR=\"$HOME/.local/share/claude/versions\"\n" +
 			"VPCC_NATIVE=\"$(ls -1 \"$VPCC_VERSIONS_DIR\" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n | tail -1)\"\n" +
 			"VPCC_NATIVE=\"$VPCC_VERSIONS_DIR/$VPCC_NATIVE\"\n" +
-			"if [[ ! -x \"${VPCC_NATIVE:-}\" ]]; then echo \"vpcc wrapper: native binary not found\" >&2; exit 1; fi\n" +
+			"if [[ ! -x \"${VPCC_NATIVE:-}\" ]]; then echo \"unleash wrapper: native binary not found\" >&2; exit 1; fi\n" +
 			"if [[ -f \"$VPCC_PRELOAD\" ]]; then\n" +
 			"    export BUN_OPTIONS=\"${BUN_OPTIONS:+$BUN_OPTIONS }--preload $VPCC_PRELOAD\"\n" +
 			"fi\n" +
@@ -423,7 +423,7 @@ func applyBinaryInstall(_ patches.Patch, kind string, _ bool) (bool, string) {
 	if kind == "bun_sea" {
 		return true, "no-op (N/A for native binary — seccomp is in Bun runtime, not VFS)"
 	}
-	return false, "npm layout binary_install not implemented in vpcc"
+	return false, "npm layout binary_install not implemented in unleash"
 }
 
 // ── deep merge ──────────────────────────────────────────────────────────────

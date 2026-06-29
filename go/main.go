@@ -9,15 +9,19 @@ import (
 	"github.com/VoidChecksum/void-patcher-cc/cmd"
 )
 
-const version = "3.0.0"
+const version = "1.0.0"
 
 func main() {
 	rootCmd := &cobra.Command{
-		Use:   "vpcc",
-		Short: "Void Patcher for Claude Code — regex-signature patches, cli.js + Bun SEA",
+		Use:   "unleash",
+		Short: "Unleash — binary patcher for Claude Code",
 		Version: version,
 		Run: func(c *cobra.Command, args []string) {
-			c.Help()
+			// Default: launch TUI when no subcommand given
+			p := cmd.NewTuiProgram()
+			if _, err := p.Run(); err != nil {
+				c.Help()
+			}
 		},
 	}
 

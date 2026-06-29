@@ -18,5 +18,6 @@
     "tengu-off-switch",
     "tengu_off_switch_query"
   ],
-  "version_first_seen": "2.1.195"
+  "version_first_seen": "2.1.195",
+  "category": "infrastructure"
 }

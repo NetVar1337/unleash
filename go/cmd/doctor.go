@@ -36,8 +36,8 @@ func runDoctor() int {
 	pd := patchDir()
 	nRetired := countRetired(pd)
 
-	fmt.Printf("%svpcc doctor%s\n", console.B, console.X)
-	fmt.Printf("  vpcc ver   : 3.0.0\n")
+	fmt.Printf("%sunleash doctor%s\n", console.B, console.X)
+	fmt.Printf("  version    : 1.0.0\n")
 	fmt.Printf("  patches    : %d\n", len(patchList))
 
 	if tgt == "" {
@@ -128,7 +128,7 @@ func runDoctor() int {
 	// Upstream
 	info2 := updater.UpstreamStatus(pd)
 	if info2.Drift {
-		fmt.Printf("  %supstream   : behind — run 'vpcc self-update'%s\n", console.Y, console.X)
+		fmt.Printf("  %supstream   : behind — run 'unleash self-update'%s\n", console.Y, console.X)
 	} else if info2.RemoteCommit != "" {
 		fmt.Printf("  %supstream   : current%s\n", console.G, console.X)
 	} else {

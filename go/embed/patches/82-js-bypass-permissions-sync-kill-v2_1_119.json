@@ -17,5 +17,6 @@
   "anchor_strings": [
     "isBypassPermissionsModeAvailable"
   ],
-  "version_last_tested": "2.1.132"
+  "version_last_tested": "2.1.132",
+  "category": "permissions"
 }

@@ -89,56 +89,100 @@ func AutoHealDrift(text string, patchDir string, verbose bool) HealResult {
 			continue
 		}
 
-		// Try exact anchor match first
+		// Try strategies in cascade: exact → n-gram → Levenshtein → structural → fuzzy
 		anchorOff := sc.FindAnchor(anchors, 400)
 		anchorMethod := "exact"
 
-		// If exact anchors fail, try fuzzy
 		if anchorOff == nil {
+			if verbose {
+				fmt.Printf("  %s: exact anchors failed, trying n-gram...\n", p.ID)
+			}
+			if noff, nconf := sc.FindAnchorNgram(anchors, 600); noff != nil && nconf > 0.2 {
+				anchorOff = noff
+				anchorMethod = "ngram"
+				if verbose {
+					fmt.Printf("  %s: n-gram hit @ 0x%x (conf %.2f)\n", p.ID, *noff, nconf)
+				}
+			}
+		}
+
+		if anchorOff == nil {
+			if verbose {
+				fmt.Printf("  %s: n-gram failed, trying Levenshtein...\n", p.ID)
+			}
+			if loff, lconf := sc.FindAnchorLevenshtein(anchors, 600); loff != nil && lconf > 0.2 {
+				anchorOff = loff
+				anchorMethod = "levenshtein"
+				if verbose {
+					fmt.Printf("  %s: Levenshtein hit @ 0x%x (conf %.2f)\n", p.ID, *loff, lconf)
+				}
+			}
+		}
+
+		if anchorOff == nil {
+			if verbose {
+				fmt.Printf("  %s: Levenshtein failed, trying structural...\n", p.ID)
+			}
+			if soff, sconf := sc.FindAnchorStructural(anchors, 600); soff != nil && sconf > 0.2 {
+				anchorOff = soff
+				anchorMethod = "structural"
+				if verbose {
+					fmt.Printf("  %s: structural hit @ 0x%x (conf %.2f)\n", p.ID, *soff, sconf)
+				}
+			}
+		}
+
+		if anchorOff == nil {
+			if verbose {
+				fmt.Printf("  %s: structural failed, trying fuzzy...\n", p.ID)
+			}
 			foff, fmethod, fconf := sc.FindAnchorFuzzy(anchors, 600)
 			if foff != nil && fconf > 0.0 {
 				anchorOff = foff
 				anchorMethod = fmethod
-
-				// Update anchor_strings to actual text found near the fuzzy offset.
-				newAnchors := make([]string, len(anchors))
-				for ai, oldA := range anchors {
-					tokens := extractLongTokens(oldA)
-					// Sort longest-first for best specificity
-					sort.Slice(tokens, func(i, j int) bool {
-						return len(tokens[i]) > len(tokens[j])
-					})
-					windowStart := *anchorOff - 200
-					if windowStart < 0 {
-						windowStart = 0
-					}
-					windowEnd := *anchorOff + len(oldA) + 800
-					if windowEnd > len(text) {
-						windowEnd = len(text)
-					}
-					window := text[windowStart:windowEnd]
-					bestAnchor := oldA
-					for _, tok := range tokens {
-						tokPos := strings.Index(window, tok)
-						if tokPos >= 0 {
-							// Extract context: 30 chars before token, token, 30 after
-							ctxStart := tokPos - 30
-							if ctxStart < 0 {
-								ctxStart = 0
-							}
-							ctxEnd := tokPos + len(tok) + 30
-							if ctxEnd > len(window) {
-								ctxEnd = len(window)
-							}
-							bestAnchor = strings.TrimSpace(window[ctxStart:ctxEnd])
-							break
-						}
-					}
-					newAnchors[ai] = bestAnchor
+				if verbose {
+					fmt.Printf("  %s: fuzzy hit (%s) @ 0x%x (conf %.2f)\n", p.ID, fmethod, *foff, fconf)
 				}
-				anchors = newAnchors
-				p.AnchorStrings = newAnchors
 			}
+		}
+
+		// When a non-exact strategy found the anchor, update anchor_strings
+		if anchorOff != nil && anchorMethod != "exact" {
+			newAnchors := make([]string, len(anchors))
+			for ai, oldA := range anchors {
+				tokens := extractLongTokens(oldA)
+				sort.Slice(tokens, func(i, j int) bool {
+					return len(tokens[i]) > len(tokens[j])
+				})
+				windowStart := *anchorOff - 200
+				if windowStart < 0 {
+					windowStart = 0
+				}
+				windowEnd := *anchorOff + len(oldA) + 800
+				if windowEnd > len(text) {
+					windowEnd = len(text)
+				}
+				window := text[windowStart:windowEnd]
+				bestAnchor := oldA
+				for _, tok := range tokens {
+					tokPos := strings.Index(window, tok)
+					if tokPos >= 0 {
+						ctxStart := tokPos - 30
+						if ctxStart < 0 {
+							ctxStart = 0
+						}
+						ctxEnd := tokPos + len(tok) + 30
+						if ctxEnd > len(window) {
+							ctxEnd = len(window)
+						}
+						bestAnchor = strings.TrimSpace(window[ctxStart:ctxEnd])
+						break
+					}
+				}
+				newAnchors[ai] = bestAnchor
+			}
+			anchors = newAnchors
+			p.AnchorStrings = newAnchors
 		}
 
 		if anchorOff == nil {
@@ -148,7 +192,7 @@ func AutoHealDrift(text string, patchDir string, verbose bool) HealResult {
 		}
 
 		// Derive new regex from the context window around the anchor
-		newRegex := sc.DeriveRegexWindow(*anchorOff, 80, 150, true)
+		newRegex := sc.DeriveRegexEnhanced(*anchorOff, 80, 150)
 		if newRegex == "" {
 			failed++
 			details = append(details, HealDetail{ID: p.ID, Action: "failed", Reason: "derive_regex returned empty"})

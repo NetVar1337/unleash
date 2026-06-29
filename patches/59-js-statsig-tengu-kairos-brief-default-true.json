@@ -17,5 +17,6 @@
   "anchor_strings": [
     "tengu_kairos_brief"
   ],
-  "version_last_tested": "2.1.114"
+  "version_last_tested": "2.1.114",
+  "category": "features"
 }

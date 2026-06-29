@@ -20,5 +20,6 @@
       "required": false,
       "description": "Replace AUP refusal sentence with authorization acknowledgement (v2.1.114)"
     }
-  ]
+  ],
+  "category": "refusal"
 }

@@ -16,5 +16,6 @@
   ],
   "anchor_strings": [
     "jq command contains dangerous flags"
-  ]
+  ],
+  "category": "classifier"
 }

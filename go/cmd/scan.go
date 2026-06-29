@@ -67,7 +67,7 @@ func runScan(verbose bool, exportPatch string, autoHeal bool) int {
 		scanner.SaveCachedRows(tgt, pd, rows)
 	}
 
-	fmt.Printf("%svpcc scan — %d js_replace patches%s\n", console.B, len(rows), console.X)
+	fmt.Printf("%sunleash scan — %d js_replace patches%s\n", console.B, len(rows), console.X)
 	fmt.Printf("  target : %s\n", tgt)
 	if text != "" {
 		if kind == "js" {

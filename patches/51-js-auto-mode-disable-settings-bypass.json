@@ -18,5 +18,6 @@
     ";return H.disableAutoMode===\"disable\"",
     ".disableAutoMode===\"disable\"}",
     "H.permissions"
-  ]
+  ],
+  "category": "permissions"
 }

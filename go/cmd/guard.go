@@ -32,7 +32,7 @@ func runGuard() int {
 		return 0 // no CC found, nothing to guard
 	}
 
-	stampPath := filepath.Join(vpccDir(), "last_patched_sha")
+	stampPath := filepath.Join(unleashDir(), "last_patched_sha")
 	curSHA := target.SHA256Short(tgt)
 
 	data, err := os.ReadFile(stampPath)
@@ -43,7 +43,7 @@ func runGuard() int {
 	}
 
 	// Binary changed — run full autopilot
-	fmt.Printf("%svpcc guard — CC binary changed (%s), running autopilot...%s\n",
+	fmt.Printf("%sunleash guard — CC binary changed (%s), running autopilot...%s\n",
 		console.B, curSHA, console.X)
 	target.Backup(tgt, kind)
 	rc := runAutopilot()

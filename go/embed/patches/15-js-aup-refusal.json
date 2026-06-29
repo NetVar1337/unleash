@@ -15,5 +15,6 @@
   "scan_signatures": true,
   "anchor_strings": [
     "Claude Code is unable to respond to this request, which appears to violate our Usage Policy"
-  ]
+  ],
+  "category": "refusal"
 }
