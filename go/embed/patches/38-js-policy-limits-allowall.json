@@ -1,0 +1,24 @@
+{
+  "id": "js-policy-limits-allowall",
+  "description": "N5(q) central capability gate always returns true. Unlocks 30+ server-gated features (allow_remote_sessions, allow_product_feedback, allow_remote_control, allow_quick_web_setup, etc.) regardless of enterprise/team policy_limits dict. Operator is sole admin — no org policy applies.",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": false,
+  "patches": [
+    {
+      "search": "function m7(H){let q=K77();if(!q){",
+      "replace": "function m7(H){return!0;if(!q){   ",
+      "applied_marker": "function m7(H){return!0;if(!q){   ",
+      "description": "policy limits always allow",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "anchor_strings": [
+    "function m7(H){",
+    "K77();if(!q){if(PZ1.has"
+  ],
+  "superseded_on": "2.1.114",
+  "note": "Legacy (<=2.1.112) symbol name. Equivalent behavior covered by v2.1.114 name-agnostic patches. Kept for backward compat.",
+  "version_last_tested": "2.1.152"
+}

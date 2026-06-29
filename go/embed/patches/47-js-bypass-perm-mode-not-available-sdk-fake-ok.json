@@ -1,0 +1,21 @@
+{
+  "id": "js-bypass-perm-mode-not-available-sdk-fake-ok",
+  "description": "Same as js-bypass-perm-mode-not-available-fake-ok but for the SDK/control-response code path (`!q.isBypassPermissionsModeAvailable`).",
+  "type": "js_replace",
+  "validate_js": true,
+  "patches": [
+    {
+      "search_regex": "!\\$\\.isBypassPermissionsModeAvailable\\)return K\\.enqueue\\(\\{type:\"control_response\",response:\\{subtype:\"error\"",
+      "replace": "!1&&!1)return K.enqueue({type:\"control_response\",response:{subtype:\"error\"",
+      "applied_marker": "!1&&!1)return K.enqueue({type:\"control_response\"",
+      "description": "Second of the two call sites for the 'not launched with --dangerously-skip-permissions' error.",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "scan_signatures": true,
+  "anchor_strings": [
+    "!$.isBypassPermissionsModeAvailable)return K.enqueue"
+  ],
+  "version_last_tested": "2.1.152"
+}

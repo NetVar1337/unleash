@@ -1,0 +1,14 @@
+{
+  "id": "js-always-enable-effort-on",
+  "description": "RETIRED — forcing extended thinking always-on caused 5-10 minute delays on every request. Smart routing handles effort level automatically.",
+  "type": "js_replace",
+  "retired": true,
+  "retired_reason": "Forces 'high effort' extended thinking on every request regardless of complexity. With CLAUDE_CODE_SMART_ROUTING=1, Claude already escalates effort when needed. Users who want always-on thinking can set CLAUDE_CODE_ALWAYS_ENABLE_EFFORT=1 manually.",
+  "validate_js": false,
+  "patches": [],
+  "scan_signatures": false,
+  "anchor_strings": [
+    "CLAUDE_CODE_ALWAYS_ENABLE_EFFORT"
+  ],
+  "version_last_tested": "2.1.119"
+}

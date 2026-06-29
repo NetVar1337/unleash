@@ -1,0 +1,5 @@
+{
+  "id": "mcp-guard",
+  "description": "Disable MCP servers using npx @latest — prevents startup hangs",
+  "type": "mcp_guard"
+}

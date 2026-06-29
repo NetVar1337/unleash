@@ -1,0 +1,21 @@
+{
+  "id": "js-experimental-betas-always-on",
+  "description": "Ignore CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS env so experimental anthropic-beta headers (context management, JSON tools) are always sent.",
+  "type": "js_replace",
+  "validate_js": true,
+  "patches": [
+    {
+      "search_regex": "\\|\\|[A-Za-z_$][\\w$]*===\"anthropicAws\"\\|\\|[A-Za-z_$][\\w$]*===\"foundry\"\\}function\\ [A-Za-z_$][\\w$]*\\(\\)\\{return\\ [A-Za-z_$][\\w$]*\\(\\)\\&\\&![A-Za-z_$][\\w$]*\\(process\\.[A-Za-z_$][\\w$]*\\.CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS\\)\\}function\\ [A-Za-z_$][\\w$]*\\(\\)\\{[A-Za-z_$][\\w$]*\\(![A-Za-z_$][\\w$]*\\(\\)\\)return!1;[A-Za-z_$][\\w$]*\\(![A-Za-z_$][\\w$]*\\(\\)\\)return!1;[A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*=[A-Za-z_$][\\w$]*\\(\\);return\\ [A-Za-z_$][\\w$]*===\"firstParty\"\\|\\|[A-Za-z_$][\\w$]*===\"anthropicAws\"\\}func",
+      "replace": "!!1&&!SH(process.env.CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS)&&(f||A)",
+      "applied_marker": "!!1&&!SH(process.env.CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS)",
+      "description": "Experimental beta features are the first to get Opus 4.7 / Sonnet 4.6 optimisations. Disabling them is a performance/fea",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "scan_signatures": true,
+  "anchor_strings": [
+    "CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS"
+  ],
+  "version_last_tested": "2.1.114"
+}

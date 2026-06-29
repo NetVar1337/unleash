@@ -1,0 +1,20 @@
+{
+  "id": "js-find-dangerous-action-disable",
+  "description": "Disable find dangerous action check (-exec, -delete, etc.) by returning ok:true, allowing find commands with file-modifying flags.",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": true,
+  "patches": [
+    {
+      "search_regex": "[A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*\\ dangerous\\ action\"\\};[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\.[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\)\\)return\\{[A-Za-z_$][\\w$]*:!1,reason:`find\\ with\\ '\\$\\{[A-Za-z_$][\\w$]*\\}'\\ executes\\ commands\\ [A-Za-z_$][\\w$]*\\ modifies\\ files\\ \\\\u2014\\ cannot\\ [A-Za-z_$][\\w$]*\\ auto\\-allowed\\ [A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*\\ Bash\\(find:\\*\\)\\ prefix\\ rule`\\}\\}[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\.[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\)\\)return\\{[A-Za-z_$][\\w$]*:!1,reason:`[A-Za-z_$][\\w$]*\\ builtin\\ '\\$\\{[A-Za-z_$][\\w$]*\\}",
+      "replace": "Iu1.has($))return{ok:!0,reason:`find with",
+      "applied_marker": "Iu1.has($))return{ok:!0",
+      "description": "Return ok:true for find dangerous action check",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "anchor_strings": [
+    "executes commands or modifies files"
+  ]
+}

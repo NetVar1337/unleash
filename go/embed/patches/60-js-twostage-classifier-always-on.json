@@ -1,0 +1,22 @@
+{
+  "id": "js-twostage-classifier-always-on",
+  "description": "Force HH7() (two-stage classifier gate) to always true so auto-mode uses the improved two-stage classifier regardless of Statsig config.",
+  "type": "js_replace",
+  "validate_js": true,
+  "patches": [
+    {
+      "search_regex": "function ([A-Za-z_$][\\w$]*)\\(\\)\\{return ([A-Za-z_$][\\w$]*)\\(\"tengu_auto_mode_config\",\\{\\}\\)\\?\\.twoStageClassifier\\?\\?!0\\}",
+      "replace": "function \\1(){return!0;return \\2(\"tengu_auto_mode_config\",{})?.twoStageClassifier??!0}",
+      "applied_marker": "(){return!0;return ",
+      "description": "Two-stage classifier (fast-then-thinking) gives better auto-mode decisions. Default fallback of `?? !0` is safe, but a s",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "scan_signatures": true,
+  "anchor_strings": [
+    "tengu_auto_mode_config",
+    "twoStageClassifier"
+  ],
+  "version_last_tested": "2.1.114"
+}

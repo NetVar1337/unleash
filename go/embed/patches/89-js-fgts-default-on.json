@@ -1,0 +1,21 @@
+{
+  "id": "js-fgts-default-on",
+  "description": "Flip tengu_fgts (fine-grained tool streaming) default to true \u2014 enables eager_input_streaming on supported tools for faster responses. Normally gated by Statsig or CLAUDE_CODE_ENABLE_FINE_GRAINED_TOOL_STREAMING env.",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": true,
+  "patches": [
+    {
+      "search_regex": "rict===!0\\&\\&\\$\\.model\\&\\&[A-Za-z_$][\\w$]*\\(\\$\\.model\\)\\)[A-Za-z_$][\\w$]*\\.strict=!0;[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\(\\)===\"firstParty\"\\&\\&[A-Za-z_$][\\w$]*\\(\\)\\&\\&\\([A-Za-z_$][\\w$]*\\$\\(\"tengu_fgts\",!1\\)\\|\\|[A-Za-z_$][\\w$]*\\(process\\.[A-Za-z_$][\\w$]*\\.CLAUDE_CODE_ENABLE_FINE_GRAINED_TOOL_STREAMING\\)\\)\\)[A-Za-z_$][\\w$]*\\.eager_input_streaming=!0;[A-Za-z_$][\\w$]*\\.[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*,[A-Za-z_$][\\w$]*\\)\\}[A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*=\\{name:[A-Za-z_$][\\w$]*\\.name,description:",
+      "replace": "k$(\"tengu_fgts\",!0)",
+      "applied_marker": "tengu_fgts\",!0)",
+      "description": "fgts default true",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "anchor_strings": [
+    "tengu_fgts"
+  ],
+  "version_last_tested": "2.1.119"
+}

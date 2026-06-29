@@ -1,0 +1,22 @@
+{
+  "id": "js-non-streaming-fallback-always-on",
+  "description": "Ignore CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK / tengu_disable_streaming_to_non_streaming_fallback so the fallback to non-streaming requests always runs when SSE stream fails.",
+  "type": "js_replace",
+  "validate_js": true,
+  "patches": [
+    {
+      "search_regex": "StreamError\\([A-Za-z_$][\\w$]*\\)\\)[A-Za-z_$][\\w$]*=\"context_hint_sse\";[A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*=[A-Za-z_$][\\w$]*\\(process\\.[A-Za-z_$][\\w$]*\\.CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK\\)\\|\\|[A-Za-z_$][\\w$]*\\$\\(\"tengu_disable_streaming_to_non_streaming_fallback\",!1",
+      "replace": "RH=!1&&(SH(process.env.CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK)||C$(\"tengu_disable_streaming_to_non_streaming_fallback\",!1))",
+      "applied_marker": "RH=!1&&(SH(process.env.CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK)",
+      "description": "When SSE streams idle-time-out or get cut, Claude Code can optionally retry via non-streaming API. That fallback is disa",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "scan_signatures": true,
+  "anchor_strings": [
+    "CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK",
+    "tengu_disable_streaming_to_non_streaming_fallback"
+  ],
+  "version_last_tested": "2.1.114"
+}

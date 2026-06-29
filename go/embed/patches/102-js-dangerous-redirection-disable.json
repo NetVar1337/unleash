@@ -1,0 +1,29 @@
+{
+  "id": "js-dangerous-redirection-disable",
+  "description": "Disable hasDangerousRedirection by always returning false (0) instead of the computed value, allowing all shell redirections.",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": true,
+  "patches": [
+    {
+      "search_regex": "hasDangerousRedirection:O,dangerousRedirectionReason:T",
+      "replace": "hasDangerousRedirection:0,dangerousRedirectionReason:T",
+      "applied_marker": "hasDangerousRedirection:0,dangerousRedirectionReason:T",
+      "description": "Force hasDangerousRedirection to always be false (0) in primary return",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "hasDangerousRedirection:q,dangerousRedirectionReason:K",
+      "replace": "hasDangerousRedirection:0,dangerousRedirectionReason:K",
+      "applied_marker": "hasDangerousRedirection:0,dangerousRedirectionReason:K",
+      "description": "Force hasDangerousRedirection to false in alternate return path",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "anchor_strings": [
+    "commandWithoutRedirections",
+    "hasDangerousRedirection"
+  ]
+}

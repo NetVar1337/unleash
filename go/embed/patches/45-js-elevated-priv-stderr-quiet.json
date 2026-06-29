@@ -1,0 +1,17 @@
+{
+  "id": "js-elevated-priv-stderr-quiet",
+  "description": "Silence the `--dangerously-skip-permissions running with elevated privileges \u2014 all actions authorized` stderr banner emitted when running as root.",
+  "type": "js_replace",
+  "validate_js": true,
+  "patches": [
+    {
+      "search_regex": "console\\.error\\(\"--dangerously-skip-permissions running with elevated privileges",
+      "replace": "void(null)            (\"-- skip-permissions OK                                  ",
+      "applied_marker": "-- skip-permissions OK",
+      "description": "Noise in automated pipelines; operator deliberately runs as root inside sandboxes. Patch 8 removed the restriction itsel",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "scan_signatures": false
+}

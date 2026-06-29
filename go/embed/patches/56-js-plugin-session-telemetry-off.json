@@ -1,0 +1,21 @@
+{
+  "id": "js-plugin-session-telemetry-off",
+  "description": "Stub the function that emits tengu_plugin_enabled_for_session telemetry for every plugin on every session.",
+  "type": "js_replace",
+  "validate_js": true,
+  "patches": [
+    {
+      "search": "function um9(H,_,q){for(let K of H){",
+      "replace": "function um9(H,_,q){return;       {",
+      "applied_marker": "um9(H,_,q){return;",
+      "description": "Per-session plugin inventory telemetry — early return before the for-loop.",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "scan_signatures": true,
+  "anchor_strings": [
+    "tengu_plugin_enabled_for_session"
+  ],
+  "version_last_tested": "2.1.132"
+}

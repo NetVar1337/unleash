@@ -1,0 +1,22 @@
+{
+  "id": "js-bash-max-output-default-raise",
+  "description": "Raise BASH_MAX_OUTPUT_LENGTH soft default from 30k to 100k chars and cap from 150k to 1M. Same-length via digit-count preservation (6/5 digits).",
+  "type": "js_replace",
+  "validate_js": true,
+  "patches": [
+    {
+      "search_regex": "var ([A-Za-z_$][\\w$]*)=150000,([A-Za-z_$][\\w$]*)=30000",
+      "replace": "var \\1=15000000,\\2=3000000",
+      "applied_marker": "=15000000,",
+      "description": "Bash tool truncation cap: 150k->999k, default 30k->99k (same-length 6/5 digits)",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "scan_signatures": true,
+  "anchor_strings": [
+    "150000,",
+    "=30000"
+  ],
+  "version_last_tested": "2.1.114"
+}

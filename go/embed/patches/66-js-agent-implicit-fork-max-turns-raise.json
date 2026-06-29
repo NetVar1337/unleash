@@ -1,0 +1,20 @@
+{
+  "id": "js-agent-implicit-fork-max-turns-raise",
+  "description": "Raise implicit-fork subagent maxTurns from 200 to 999. Same-length (3 digits).",
+  "type": "js_replace",
+  "validate_js": true,
+  "patches": [
+    {
+      "search_regex": "maxTurns:200,model:\"inherit\",permissionMode:\"bubble\"",
+      "replace": "maxTurns:999,model:\"inherit\",permissionMode:\"bubble\"",
+      "applied_marker": "maxTurns:999,model:\"inherit\"",
+      "description": "Implicit-fork subagent turn limit: 200 -> 999 (same-length 3 digits)",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "scan_signatures": true,
+  "anchor_strings": [
+    "maxTurns:200,model:\"inherit\",permissionMode:\"bubble\""
+  ]
+}

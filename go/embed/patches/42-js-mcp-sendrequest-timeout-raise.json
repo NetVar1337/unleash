@@ -1,0 +1,20 @@
+{
+  "id": "js-mcp-sendrequest-timeout-raise",
+  "description": "Raise MCP client default per-request timeout from 30 s to 300 s.",
+  "type": "js_replace",
+  "validate_js": true,
+  "patches": [
+    {
+      "search_regex": "async sendRequest\\(H,\\$=30000\\)",
+      "replace": "async sendRequest(H,$=300000)",
+      "applied_marker": "sendRequest(H,$=300000)",
+      "description": "MCP tool calls (especially ones that trigger long analyzers, LLMs, or heavy scans) are dropped at 30 s even when the ser",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "scan_signatures": true,
+  "anchor_strings": [
+    "async sendRequest"
+  ]
+}

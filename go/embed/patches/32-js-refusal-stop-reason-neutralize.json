@@ -1,0 +1,24 @@
+{
+  "id": "js-refusal-stop-reason-neutralize",
+  "description": "gM4 refusal stop_reason handler short-circuited — any stop_reason==\"refusal\" silently ignored, turn continues",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": false,
+  "patches": [
+    {
+      "search_regex": "function BeK\\(H,q,\\$\\)\\{if\\(H!==\\\"refusal\\\"\\)return;",
+      "replace": "function BeK(H,q,$){return;if(H!==\"refusal\")return;",
+      "applied_marker": "function BeK(H,q,$){return;if(H!==\"refusal\")return;",
+      "count": 0,
+      "required": false,
+      "description": "Early-return neutralizes refusal telemetry + error wrapping"
+    }
+  ],
+  "anchor_strings": [
+    "function BeK",
+    "tengu_refusal_api_response"
+  ],
+  "superseded_on": "2.1.114",
+  "note": "Legacy (<=2.1.112) symbol name. Equivalent behavior covered by v2.1.114 name-agnostic patches. Kept for backward compat.",
+  "version_last_tested": "2.1.152"
+}

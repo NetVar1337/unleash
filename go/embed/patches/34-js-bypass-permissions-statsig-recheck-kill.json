@@ -1,0 +1,24 @@
+{
+  "id": "js-bypass-permissions-statsig-recheck-kill",
+  "description": "iY7() async Statsig recheck can call WK(1,\"bypass_permissions_disabled\") mid-session, process-exiting the CLI when Anthropic flips tengu_disable_bypass_permissions_mode server-side. Short-circuit to no-op.",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": false,
+  "patches": [
+    {
+      "search_regex": "async function xG8\\(H,q\\)\\{if\\(ipq\\)return;if\\(ipq=!0,!H\\.isBypassPermissionsModeAvailable\\)return;if\\(!await IJ6\\(\\)\\)return;q\\(\\(K\\)=>GEH\\(K\\)\\)\\}function",
+      "replace": "async function xG8(H,q){return;if(ipq)return;if(ipq=!0,!H.isBypassPermissionsModeAvailable)return;if(!1)return;q(()=>{})}function",
+      "applied_marker": "async function xG8(H,q){return;if(ipq)return;",
+      "count": 0,
+      "required": false,
+      "description": "Neutralize async bypass-kill Statsig recheck"
+    }
+  ],
+  "anchor_strings": [
+    "async function xG8",
+    "ipq=!0,!H.isBypassPermissionsModeAvailable"
+  ],
+  "superseded_on": "2.1.114",
+  "note": "Legacy (<=2.1.112) symbol name. Equivalent behavior covered by v2.1.114 name-agnostic patches. Kept for backward compat.",
+  "version_last_tested": "2.1.152"
+}

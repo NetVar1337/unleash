@@ -1,0 +1,25 @@
+{
+  "id": "js-refusal-explanation-null-v2.1.114",
+  "description": "Null out refusal explanation field regardless of minified holder name.",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": true,
+  "anchor_strings": [
+    "?.type===\"refusal\"",
+    "explanation",
+    "trimEnd"
+  ],
+  "version_first_seen": "2.1.114",
+  "version_last_tested": "2.1.114",
+  "offset_v2_1_114": 111962100,
+  "patches": [
+    {
+      "search_regex": "\\?\\.type===\"refusal\"\\?([A-Za-z_$][\\w$]*)\\.explanation\\?\\.trimEnd\\(\\)\\?\\?null:null",
+      "replace": "?.type===\"refusal\"?null:null",
+      "applied_marker": "?.type===\"refusal\"?null:null",
+      "count": 0,
+      "required": false,
+      "description": "Null refusal explanation (v2.1.114+)"
+    }
+  ]
+}

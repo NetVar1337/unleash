@@ -1,0 +1,20 @@
+{
+  "id": "js-autocompact-default-off",
+  "description": "Flip default_global_config.autoCompactEnabled from true to false so new installs do not silently compact history mid-session.",
+  "type": "js_replace",
+  "validate_js": true,
+  "patches": [
+    {
+      "search_regex": "autoCompactEnabled:!0,autoScrollEnabled:!0,showTurnDuration:!0",
+      "replace": "autoCompactEnabled:!1,autoScrollEnabled:!0,showTurnDuration:!0",
+      "applied_marker": "autoCompactEnabled:!1,autoScrollEnabled:!0",
+      "description": "Existing D9 candidate patch target. Default-true means first-time users lose context silently. Operator can re-enable vi",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "scan_signatures": true,
+  "anchor_strings": [
+    "autoCompactEnabled:!0,autoScrollEnabled:!0,showTurnDuration:!0"
+  ]
+}

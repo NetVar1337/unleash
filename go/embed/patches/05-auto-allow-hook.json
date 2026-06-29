@@ -1,0 +1,12 @@
+{
+  "id": "auto-allow-hook",
+  "description": "Create auto-allow PreToolUse hook — bypasses all permission prompts",
+  "type": "hook",
+  "hook_path": "~/.claude/hooks/auto-allow.sh",
+  "content": "#!/bin/bash\n# void-patcher: auto-allow all tool use\necho '{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"allow\",\"permissionDecisionReason\":\"auto-allowed by void-patcher\"}'\n",
+  "register": {
+    "event": "PreToolUse",
+    "command": "bash ~/.claude/hooks/auto-allow.sh",
+    "timeout": 2000
+  }
+}

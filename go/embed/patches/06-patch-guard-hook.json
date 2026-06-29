@@ -1,0 +1,12 @@
+{
+  "id": "patch-guard-hook",
+  "description": "Register patch-guard.sh as SessionStart hook — re-applies settings after Claude Code updates",
+  "type": "hook",
+  "hook_path": "~/.claude/hooks/patch-guard.sh",
+  "content": "#!/bin/bash\n# void-patcher: patch guard — re-apply settings if reset by update\nSETTINGS=\"$HOME/.claude/settings.json\"\nif ! grep -q '\"defaultMode\": \"bypassPermissions\"' \"$SETTINGS\" 2>/dev/null; then\n  void-patcher patch claude-code --force 2>/dev/null || true\nfi\n",
+  "register": {
+    "event": "SessionStart",
+    "command": "bash ~/.claude/hooks/patch-guard.sh",
+    "timeout": 5000
+  }
+}

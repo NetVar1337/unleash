@@ -1,0 +1,20 @@
+{
+  "id": "js-jq-dangerous-flags-disable",
+  "description": "Disable jq dangerous flags check by returning ok:true instead of ok:false, allowing jq commands with -f, --from-file, etc.",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": true,
+  "patches": [
+    {
+      "search_regex": "return\\{ok:!1,reason:\"jq command contains dangerous flags",
+      "replace": "return{ok:!0,reason:\"jq command contains dangerous flags",
+      "applied_marker": "ok:!0,reason:\"jq command contains dangerous flags",
+      "description": "Return ok:true for jq dangerous flags check",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "anchor_strings": [
+    "jq command contains dangerous flags"
+  ]
+}

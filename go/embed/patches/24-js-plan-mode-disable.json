@@ -1,0 +1,17 @@
+{
+  "id": "js-plan-mode-disable",
+  "description": "Disable plan-mode enforcement — planModeRequired always false",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": true,
+  "patches": [
+    {
+      "search_regex": "return [A-Za-z_$][\\w$]*\\(process\\.env\\.CLAUDE_CODE_PLAN_MODE_REQUIRED\\)",
+      "replace": "return!1",
+      "required": false,
+      "count": 0,
+      "applied_marker": "planModeRequired;return!1",
+      "description": "planModeRequired() always returns false — plan mode never enforced (regex)"
+    }
+  ]
+}

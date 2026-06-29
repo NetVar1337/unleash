@@ -1,0 +1,23 @@
+{
+  "id": "js-session-memory-on",
+  "disabled": true,
+  "description": "DISABLED â€” tengu_session_memory gate removed from v2.1.132 binary; no longer patchable [RETIRED: tengu_session_memory removed in v2.1.152]",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": false,
+  "patches": [
+    {
+      "search_regex": "k\\$\\(\"tengu_session_memory\",!1\\)",
+      "replace": "k$(\"tengu_session_memory\",!0)",
+      "applied_marker": "tengu_session_memory\",!0)",
+      "description": "session_memory default true",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "anchor_strings": [
+    "tengu_session_memory"
+  ],
+  "version_last_tested": "2.1.119",
+  "retired": true
+}

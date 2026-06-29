@@ -1,0 +1,21 @@
+{
+  "id": "js-tengu-plugin-prematureread-off",
+  "description": "Drop the `tengu_plugin_settings_premature_read` event emitted on every uncached plugin settings read.",
+  "type": "js_replace",
+  "validate_js": true,
+  "patches": [
+    {
+      "search_regex": "\\{settings:[A-Za-z_$][\\w$]*\\}=[A-Za-z_$][\\w$]*\\(\\);return\\ [A-Za-z_$][\\w$]*\\|\\|\\{\\}\\}function\\ [A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\)\\{[A-Za-z_$][\\w$]*\\(![A-Za-z_$][\\w$]*\\(\\)\\)[A-Za-z_$][\\w$]*\\(\"tengu_plugin_settings_premature_read\",\\{[A-Za-z_$][\\w$]*:[A-Za-z_$][\\w$]*\\}\\);[A-Za-z_$][\\w$]*\\{settings:\\$\\}=[A-Za-z_$][\\w$]*\\(\\);return\\(\\$\\|\\|\\{\\}\\)\\[[A-Za-z_$][\\w$]*\\]\\}function\\ [A-Za-z_$][\\w$]*",
+      "replace": "if(!1&&!YG6())l(\"tengu_plugin_settings_premature_read\",{key:H})",
+      "applied_marker": "if(!1&&!YG6())l(\"tengu_plugin_settings_premature_read\"",
+      "description": "High-frequency telemetry event firing on every `ycH(key)` call during plugin-init races. Independent telemetry sink.",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "scan_signatures": true,
+  "anchor_strings": [
+    "tengu_plugin_settings_premature_read"
+  ],
+  "version_last_tested": "2.1.114"
+}

@@ -1,0 +1,70 @@
+{
+  "$schema": "https://claude.ai/settings/v1.json",
+  "_vpcc_header": "Deployed by `vpcc install-rules`. Merge-only — existing keys are preserved unless they directly conflict with the vpcc policy. Remove this file to fully revert.",
+  "permissions": {
+    "defaultMode": "bypassPermissions",
+    "allow": [
+      "Bash",
+      "Read",
+      "Write",
+      "Edit",
+      "Glob",
+      "Grep",
+      "WebFetch",
+      "WebSearch",
+      "Task",
+      "TodoWrite",
+      "BashOutput",
+      "KillShell",
+      "ExitPlanMode",
+      "NotebookEdit",
+      "SlashCommand",
+      "Skill",
+      "ToolSearch",
+      "mcp__*"
+    ],
+    "deny": [],
+    "ask": []
+  },
+  "skipDangerousModePermissionPrompt": true,
+  "dangerouslyDisableSandbox": true,
+  "isBypassPermissionsModeAvailable": true,
+  "bypassPermissionsWorkspaceTrustCheck": true,
+  "includeCoAuthoredBy": false,
+  "autoUpdaterStatus": "disabled",
+  "telemetry": {
+    "enabled": false,
+    "errorReporting": false
+  },
+  "env": {
+    "DISABLE_AUTOUPDATER": "1",
+    "DISABLE_TELEMETRY": "1",
+    "DISABLE_ERROR_REPORTING": "1",
+    "CLAUDE_CODE_ENABLE_TELEMETRY": "0",
+    "CLAUDE_CODE_PERMISSION_MODE": "bypassPermissions",
+    "CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS": "1",
+    "CLAUDE_CODE_USE_EXPERIMENTAL_FEATURES": "1",
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "CLAUDE_CODE_AUTO_BACKGROUND_TASKS": "1",
+    "CLAUDE_CODE_ENABLE_CFC": "1",
+    "CLAUDE_CODE_ENABLE_FINE_GRAINED_TOOL_STREAMING": "1",
+    "CLAUDE_CODE_ENABLE_TASKS": "1",
+    "CLAUDE_CODE_SMART_ROUTING": "1",
+    "CLAUDE_CODE_DISABLE_COMMAND_INJECTION_CHECK": "1",
+    "CLAUDE_CODE_DISABLE_POLICY_SKILLS": "1"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/vpcc-auto-allow.sh",
+            "timeout": 2000
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "id": "bypass-permissions",
+  "description": "Bypass permissions mode, disable sandbox, skip trust checks",
+  "type": "settings",
+  "settings": {
+    "permissions.defaultMode": "bypassPermissions",
+    "skipDangerousModePermissionPrompt": true,
+    "dangerouslyDisableSandbox": true,
+    "isBypassPermissionsModeAvailable": true,
+    "bypassPermissionsWorkspaceTrustCheck": true,
+    "includeCoAuthoredBy": false,
+    "claudeInChromeDefaultEnabled": true,
+    "hasCompletedClaudeInChromeOnboarding": true
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "id": "js-opus-fallback-threshold-raise",
+  "description": "Raise Opus fallback trigger from 3 to 9 retries before falling back to Sonnet. Triples tolerance for transient Opus failures.",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": true,
+  "patches": [
+    {
+      "search_regex": "\\)return\\ null;[A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*=[A-Za-z_$][\\w$]*\\*1000\\-Date\\.[A-Za-z_$][\\w$]*\\(\\);[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*<=0\\)return\\ null;return\\ Math\\.[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*,[A-Za-z_$][\\w$]*\\)\\}[A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*=\\(\\)=>[A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*,[A-Za-z_$][\\w$]*=10,[A-Za-z_$][\\w$]*=3000,[A-Za-z_$][\\w$]*=3,[A-Za-z_$][\\w$]*=2,[A-Za-z_$][\\w$]*=1000,[A-Za-z_$][\\w$]*=2,[A-Za-z_$][\\w$]*=500,[A-Za-z_$][\\w$]*=60000,[A-Za-z_$][\\w$]*,[A-Za-z_$][\\w$]*=300000,[A-Za-z_$][\\w$]*=21600000,[A-Za-z_$][\\w$]*=30000,[A-Za-z_$][\\w$]*,[A-Za-z_$][\\w$]*,[A-Za-z_$][\\w$]*=1800000,[A-Za-z_$][\\w$]*=20000,[A-Za-z_$][\\w$]*",
+      "replace": "Ot5=9,Tt5=2",
+      "applied_marker": "Ot5=9,Tt5=2",
+      "description": "Raise Opus fallback retry threshold from 3 to 9",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "anchor_strings": [
+    "var Plq=()=>new HA,pp5="
+  ],
+  "version_last_tested": "2.1.152"
+}

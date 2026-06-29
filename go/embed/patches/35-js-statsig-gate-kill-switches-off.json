@@ -1,0 +1,20 @@
+{
+  "id": "js-statsig-gate-kill-switches-off",
+  "description": "Tw() sync Statsig gate returns false for known kill-switch gates (tengu_disable_bypass_permissions_mode, tengu_log_datadog_events, tengu_kairos_cron, tengu_cold_compact). Defangs Anthropic's ability to remotely toggle these via Statsig. Other gate names fall through to the original logic.",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": true,
+  "patches": [
+    {
+      "search_regex": "[A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*,[A-Za-z_$][\\w$]*,[A-Za-z_$][\\w$]*,[A-Za-z_$][\\w$]*=\\([A-Za-z_$][\\w$]*,\\{profile:\\$=\"default\",logger:[A-Za-z_$][\\w$]*\\}=\\{\\}\\)=>\\{return\\ Boolean\\([A-Za-z_$][\\w$]*\\)\\&\\&typeof\\ [A-Za-z_$][\\w$]*===\"object\"\\&\\&typeof\\ [A-Za-z_$][\\w$]*\\.role_arn===\"string\"\\&\\&\\[\"[A-Za-z_$][\\w$]*",
+      "replace": "function Tw(q){if(q===\"tengu_disable_bypass_permissions_mode\"||q===\"tengu_log_datadog_events\"||q===\"tengu_kairos_cron\"||q===\"tengu_cold_compact\")return!1;let K=nk6();if(K&&q in K)return Boolean(K[q]);",
+      "applied_marker": "q===\"tengu_disable_bypass_permissions_mode\"||q===\"tengu_log_datadog_events\"",
+      "count": 0,
+      "required": false,
+      "description": "Allowlist known kill-switch gates to always return false"
+    }
+  ],
+  "anchor_strings": [
+    "return Boolean"
+  ]
+}

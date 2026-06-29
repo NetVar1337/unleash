@@ -1,0 +1,20 @@
+{
+  "id": "js-bypass-perm-mode-not-available-fake-ok",
+  "description": "Make runtime attempts to switch to `permissionMode: bypassPermissions` succeed even when the session was NOT launched with --dangerously-skip-permissions (i.e. remove the `isBypassPermissionsModeAvailable` gate at runtime-switch).",
+  "type": "js_replace",
+  "validate_js": true,
+  "patches": [
+    {
+      "search_regex": "rmissions\\ because\\ [A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*\\ disabled\\ [A-Za-z_$][\\w$]*\\ settings\\ [A-Za-z_$][\\w$]*\\ configuration\"\\};[A-Za-z_$][\\w$]*\\(!\\$\\.getState\\(\\)\\.toolPermissionContext\\.isBypassPermissionsModeAvailable\\)return\\{[A-Za-z_$][\\w$]*:!1,error:\"Cannot\\ [A-Za-z_$][\\w$]*\\ permission\\ mode\\ [A-Za-z_$][\\w$]*\\ bypassPermissions\\ because\\ [A-Za-z_$][\\w$]*\\ session\\ [A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*",
+      "replace": "!1&&!1)return{ok:!1,error:\"Cannot set permission mode to bypassPermissions because the session was not launched with --dangerously-skip-permissions\"}",
+      "applied_marker": "!1&&!1)return{ok:!1,error:\"Cannot set permission mode to bypassPermissions",
+      "description": "Four separate error sites emit `Cannot set permission mode to bypassPermissions because the session was not launched wit",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "scan_signatures": true,
+  "anchor_strings": [
+    ".toolPermissionContext.isBypassPermissionsModeAvailable)return{ok:!1,error:\"Cannot set permission mode to bypassPermissions because the session was not launched with --dangerously-skip-permissions\"}"
+  ]
+}

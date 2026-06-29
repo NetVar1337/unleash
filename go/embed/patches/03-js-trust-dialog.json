@@ -1,0 +1,38 @@
+{
+  "id": "js-trust-dialog",
+  "description": "Auto-accept trust dialog, onboarding, and external includes in cli.js",
+  "type": "js_replace",
+  "validate_js": true,
+  "patches": [
+    {
+      "search_regex": "hasTrustDialogAccepted:!1",
+      "replace": "hasTrustDialogAccepted:!0",
+      "applied_marker": "hasTrustDialogAccepted:!0",
+      "description": "Auto-accept workspace trust dialog (regex)",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "hasClaudeMdExternalIncludesApproved:!1",
+      "replace": "hasClaudeMdExternalIncludesApproved:!0",
+      "applied_marker": "hasClaudeMdExternalIncludesApproved:!0",
+      "description": "Auto-approve external CLAUDE.md includes (regex)",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "hasClaudeMdExternalIncludesWarningShown:!1",
+      "replace": "hasClaudeMdExternalIncludesWarningShown:!0",
+      "applied_marker": "hasClaudeMdExternalIncludesWarningShown:!0",
+      "description": "Skip external includes warning (regex)",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "scan_signatures": true,
+  "anchor_strings": [
+    "hasTrustDialogAccepted:!1",
+    "hasClaudeMdExternalIncludesApproved:!1",
+    "hasClaudeMdExternalIncludesWarningShown:!1"
+  ]
+}

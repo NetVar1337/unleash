@@ -1,0 +1,29 @@
+{
+  "id": "js-generated-with-footer-off-extra",
+  "description": "Patch 44 only neutralizes the first attribution template. Blank the other two 'Generated with [Claude Code]' template-literal sites \u2014 one in the PR body builder, one in the summary/memory-recalled footer \u2014 so all git artifacts are author-less.",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": true,
+  "patches": [
+    {
+      "search_regex": "[A-Za-z_$][\\w$]*:\"\",[A-Za-z_$][\\w$]*:\"\"\\}\\}[A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*=[A-Za-z_$][\\w$]*\\(\\),\\$=[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\)!==null\\?[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\):\"Claude\\ Opus\\ 4\\.7\",[A-Za-z_$][\\w$]*=`\\\\uD83E\\\\uDD16\\ Generated\\ with\\ \\[Claude\\ Code\\]\\(\\$\\{[A-Za-z_$][\\w$]*\\}\\)`,[A-Za-z_$][\\w$]*=``/\\*__void_coauth_off__\\*/\\ \\ \\ \\ \\ \\ \\ \\ \\ \\ \\ \\ \\ \\ \\ \\ \\ \\ \\ \\ \\ ,[A-Za-z_$][\\w$]*=[A-Za-z_$][\\w$]*\\(\\);[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\.attribution\\)return\\{commit:[A-Za-z_$][\\w$]*\\.attribution\\.commit\\?\\?[A-Za-z_$][\\w$]*,[A-Za-z_$][\\w$]*",
+      "replace": "let q=``/*vnof2*/                                        ,K=H();",
+      "applied_marker": "/*vnof2*/",
+      "description": "Blank 2nd PR body footer template",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "w=`\\\\uD83E\\\\uDD16 Generated with \\[Claude Code\\]\\(\\$\\{MLH\\}\\) \\(\\$\\{Y\\}% \\$\\{A\\}-shotted by \\$\\{M\\}\\$\\{D\\}\\)`;",
+      "replace": "w=``/*vnof3*/                                                                    ;",
+      "applied_marker": "/*vnof3*/",
+      "description": "Blank summary/memory-recalled footer template",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "anchor_strings": [
+    "Generated with [Claude Code]"
+  ],
+  "version_last_tested": "2.1.119"
+}

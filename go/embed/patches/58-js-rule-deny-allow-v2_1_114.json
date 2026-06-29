@@ -1,0 +1,23 @@
+{
+  "id": "js-rule-deny-allow-v2.1.114",
+  "description": "Flip sandbox rule deny \u2192 allow. Matches on the `?.type===\"rule\"` + `behavior:\"deny\"` body tokens regardless of holder var.",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": true,
+  "anchor_strings": [
+    "?.type===\"rule\"",
+    "behavior:\"deny\""
+  ],
+  "version_first_seen": "2.1.114",
+  "version_last_tested": "2.1.114",
+  "patches": [
+    {
+      "search_regex": "if\\(([A-Za-z_$][\\w$]*)\\?\\.type===\"rule\"\\)return\\{behavior:\"deny\",message:([A-Za-z_$][\\w$]*),decisionReason:\\1\\}",
+      "replace": "if(\\1?.type===\"rule\")return{behavior:\"allow\",message:\\2,decisionReason:\\1}",
+      "applied_marker": "?.type===\"rule\")return{behavior:\"allow\"",
+      "count": 0,
+      "required": false,
+      "description": "Rule deny \u2192 allow (v2.1.114+, name-agnostic)"
+    }
+  ]
+}

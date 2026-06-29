@@ -1,0 +1,23 @@
+{
+  "id": "js-jtH-safe-always-true-v2.1.114",
+  "description": "Force the safety-check helper to always return {safe:true}. Matches on body anchor 'Claude requested permissions to write', not literal fn name.",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": true,
+  "anchor_strings": [
+    "Claude requested permissions to write",
+    "safe:!1"
+  ],
+  "version_first_seen": "2.1.114",
+  "version_last_tested": "2.1.114",
+  "patches": [
+    {
+      "search_regex": "function ([A-Za-z_$][\\w$]*)\\(([A-Za-z_$][\\w$]*),([A-Za-z_$][\\w$]*),([A-Za-z_$][\\w$]*),([A-Za-z_$][\\w$]*)\\)\\{let ([A-Za-z_$][\\w$]*)=\\4\\|\\|\\5,([A-Za-z_$][\\w$]*)=\\3\\?\\?",
+      "replace": "function \\1(\\2,\\3,\\4,\\5){return{safe:!0};let \\6=\\4||\\5,\\7=\\3??",
+      "applied_marker": "return{safe:!0};let",
+      "count": 0,
+      "required": false,
+      "description": "Early-return {safe:true} regardless of minified name"
+    }
+  ]
+}

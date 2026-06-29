@@ -1,0 +1,22 @@
+{
+  "id": "js-bash-default-timeout-raise",
+  "description": "Raise BASH_DEFAULT_TIMEOUT_MS fallback from 120 s to 3600 s (1 h) when the env var is unset.",
+  "type": "js_replace",
+  "validate_js": true,
+  "patches": [
+    {
+      "search_regex": ",\"gunzip\",\"gunzip\\.[A-Za-z_$][\\w$]*\",\"expand\\-archive\"\\]\\)\\}\\);function\\ \\$[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*=process\\.[A-Za-z_$][\\w$]*\\)\\{[A-Za-z_$][\\w$]*\\ \\$=[A-Za-z_$][\\w$]*\\.BASH_DEFAULT_TIMEOUT_MS;[A-Za-z_$][\\w$]*\\(\\$\\)\\{[A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*=parseInt\\(\\$,10\\);[A-Za-z_$][\\w$]*\\(!isNaN\\([A-Za-z_$][\\w$]*\\)\\&\\&[A-Za-z_$][\\w$]*>0\\)return\\ [A-Za-z_$][\\w$]*\\}return\\ 120000\\}function\\ [A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*=process\\.[A-Za-z_$][\\w$]*\\)\\{[A-Za-z_$][\\w$]*\\ \\$=[A-Za-z_$][\\w$]*\\.BASH_MAX_TIMEOUT_MS;[A-Za-z_$][\\w$]*",
+      "replace": "\\g<1>3600e3}",
+      "applied_marker": "return 3600e3}",
+      "description": "Bash tool calls are killed at 120 s by default; raise to 3600 s for long-running tasks. Uses 3600e3 (scientific notation) for same byte length as 120000}.",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "scan_signatures": true,
+  "anchor_strings": [
+    "BASH_DEFAULT_TIMEOUT_MS",
+    "return q}return "
+  ],
+  "version_last_tested": "2.1.132"
+}

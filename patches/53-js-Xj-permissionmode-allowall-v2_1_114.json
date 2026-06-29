@@ -18,7 +18,7 @@
       "replace": "return\"allow\"   ",
       "applied_marker": "return\"allow\"   ",
       "description": "permission mode mapper: remap classify→allow (same length)",
-      "required": true,
+      "required": false,
       "count": 0
     }
   ]

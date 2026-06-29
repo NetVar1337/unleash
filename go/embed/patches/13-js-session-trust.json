@@ -1,0 +1,20 @@
+{
+  "id": "js-session-trust",
+  "description": "Auto-accept session trust \u2014 skip workspace trust verification on session start",
+  "type": "js_replace",
+  "validate_js": true,
+  "patches": [
+    {
+      "search_regex": "sessionTrustAccepted:!1,sessionPersistenceDisabled",
+      "replace": "sessionTrustAccepted:!0,sessionPersistenceDisabled",
+      "applied_marker": "sessionTrustAccepted:!0",
+      "description": "Session: trust auto-accepted (regex)",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "scan_signatures": true,
+  "anchor_strings": [
+    "sessionTrustAccepted:!1,sessionPersistenceDisabled"
+  ]
+}

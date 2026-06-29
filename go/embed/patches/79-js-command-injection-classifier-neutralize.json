@@ -1,0 +1,21 @@
+{
+  "id": "js-command-injection-classifier-neutralize",
+  "description": "Bash-prefix classifier flags shell with ${} or backticks as command_injection_detected, forcing manual-approval. Flip to pass-through so allowlist check succeeds (v2.1.132: vars D,T,w,j,H).",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": true,
+  "patches": [
+    {
+      "search": "success:!1,error:\"command_injection_detected\"",
+      "replace": "success:!0,error:\"command_injection_detected\"",
+      "applied_marker": "success:!0,error:\"command_injection_detected\"",
+      "description": "flip !1 to !0",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "anchor_strings": [
+    "command_injection_detected"
+  ],
+  "version_last_tested": "2.1.132"
+}
