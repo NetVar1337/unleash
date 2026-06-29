@@ -1,113 +1,102 @@
-name: upstream-watch
-
-# Monitors @anthropic-ai/claude-code for new releases.
-# On each new version: install it fresh, dry-run + verify every patch, open an
-# issue listing any patches whose signatures no longer match.
+name: Upstream Watch
 
 on:
   schedule:
-    - cron: "17 */6 * * *"   # every 6h
+    - cron: '0 */6 * * *'  # every 6 hours
   workflow_dispatch:
-    inputs:
-      force:
-        description: "Re-check even if version unchanged"
-        type: boolean
-        default: false
 
 permissions:
-  contents: read
+  contents: write
   issues: write
-
-concurrency:
-  group: upstream-watch
-  cancel-in-progress: false
 
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-go@v5
         with:
-          node-version: "22"
+          go-version: '1.22'
 
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-
-      - name: Resolve latest @anthropic-ai/claude-code version
-        id: ver
+      - name: Install Claude Code
         run: |
-          v=$(npm view @anthropic-ai/claude-code version)
-          echo "version=$v" >> "$GITHUB_OUTPUT"
-          echo "Latest upstream: $v"
+          curl -fsSL https://claude.ai/install.sh | bash
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Restore last-checked cache
-        id: cache
-        uses: actions/cache@v6
-        with:
-          path: .github/cache
-          key: upstream-version-${{ steps.ver.outputs.version }}
-
-      - name: Skip if already green (cache hit)
-        if: steps.cache.outputs.cache-hit == 'true' && inputs.force != true
+      - name: Get CC version
+        id: cc
         run: |
-          echo "Version ${{ steps.ver.outputs.version }} already validated."
-          echo "SKIP=1" >> "$GITHUB_ENV"
+          CC_VER=$(claude --version 2>/dev/null | head -1 | grep -oP '[\d.]+' || echo "unknown")
+          echo "version=$CC_VER" >> $GITHUB_OUTPUT
+          CC_BIN=$(which claude 2>/dev/null || echo "")
+          echo "binary=$CC_BIN" >> $GITHUB_OUTPUT
+          if [ -n "$CC_BIN" ]; then
+            CC_SHA=$(sha256sum "$CC_BIN" | cut -c1-12)
+            echo "sha=$CC_SHA" >> $GITHUB_OUTPUT
+          fi
 
-      - name: Install Claude Code globally
-        if: env.SKIP != '1'
-        run: npm install -g @anthropic-ai/claude-code@${{ steps.ver.outputs.version }}
+      - name: Copy assets and build unleash
+        run: |
+          cp -r patches go/embed/patches
+          cp -r contrib go/embed/contrib
+          cd go && go build -o ../unleash .
 
-      - name: Install vpcc
-        if: env.SKIP != '1'
-        run: pip install -e .
+      - name: Scan for drift
+        id: scan
+        run: |
+          ./unleash scan 2>&1 | tee scan-output.txt
+          DRIFT=$(grep -c "DRIFT\|drift" scan-output.txt || true)
+          echo "drift_count=$DRIFT" >> $GITHUB_OUTPUT
 
-      - name: Run upstream check
-        if: env.SKIP != '1'
-        id: check
-        run: python .github/scripts/upstream_check.py
+      - name: Auto-heal if drifted
+        if: steps.scan.outputs.drift_count != '0'
+        run: |
+          ./unleash scan --auto-heal 2>&1 | tee heal-output.txt
+
+          # Check if patches changed
+          if git diff --quiet patches/; then
+            echo "No patch changes after heal"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add patches/
+            git commit -m "fix(patches): auto-heal for Claude Code ${{ steps.cc.outputs.version }}
+
+          Binary SHA: ${{ steps.cc.outputs.sha }}
+          Drift detected and healed by upstream-watch workflow.
+
+          [automated]"
+            git push
+          fi
+
+      - name: Report unfixable drift
+        if: steps.scan.outputs.drift_count != '0'
+        run: |
+          # Re-scan after heal to check remaining drift
+          REMAINING=$(./unleash scan 2>&1 | grep -c "DRIFT" || true)
+          if [ "$REMAINING" -gt "0" ]; then
+            gh issue create \
+              --title "Signature drift: $REMAINING patches broken on CC ${{ steps.cc.outputs.version }}" \
+              --label "signature-drift" \
+              --body "## Upstream Watch drift report
+
+          - **Claude Code version**: \`${{ steps.cc.outputs.version }}\`
+          - **Binary SHA**: \`${{ steps.cc.outputs.sha }}\`
+          - **Unfixed patches**: $REMAINING
+
+          Auto-heal attempted but $REMAINING patches could not be recovered.
+          Manual RE of the binary is needed to update \`search_regex\` + \`anchor_strings\`.
+
+          <details>
+          <summary>Scan output</summary>
+
+          \`\`\`
+          $(./unleash scan --verbose 2>&1)
+          \`\`\`
+          </details>
+
+          *Generated by upstream-watch workflow*" || true
+          fi
         env:
-          CC_VERSION: ${{ steps.ver.outputs.version }}
-
-      - name: Mark version as validated
-        if: env.SKIP != '1' && steps.check.outputs.broken == '0'
-        run: |
-          mkdir -p .github/cache
-          echo "${{ steps.ver.outputs.version }}" > .github/cache/last-ok.txt
-
-      - name: Open or update breakage issue
-        if: env.SKIP != '1' && steps.check.outputs.broken != '0'
-        uses: actions/github-script@v9
-        env:
-          CC_VERSION: ${{ steps.ver.outputs.version }}
-          BROKEN: ${{ steps.check.outputs.broken }}
-          REPORT_PATH: upstream-report.md
-        with:
-          script: |
-            const fs = require('fs');
-            const body = fs.readFileSync(process.env.REPORT_PATH, 'utf8');
-            const title = `upstream: ${process.env.BROKEN} patch(es) broken in claude-code ${process.env.CC_VERSION}`;
-            const { data: issues } = await github.rest.issues.listForRepo({
-              owner: context.repo.owner,
-              repo:  context.repo.repo,
-              state: 'open',
-              labels: 'upstream-break',
-            });
-            const existing = issues.find(i => i.title.includes(process.env.CC_VERSION));
-            if (existing) {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo:  context.repo.repo,
-                issue_number: existing.number,
-                body: `Re-check at ${new Date().toISOString()}:\n\n${body}`,
-              });
-            } else {
-              await github.rest.issues.create({
-                owner: context.repo.owner,
-                repo:  context.repo.repo,
-                title, body,
-                labels: ['upstream-break', 'automated'],
-              });
-            }
+          GH_TOKEN: ${{ github.token }}

@@ -1,12 +1,21 @@
-# Python build/cache output
+# Go build output
+go/unleash
+go/unleash.exe
+go/unleash-*
+go/vpcc*
+
+# Node/npm
+node_modules/
+dist/
+*.tgz
+
+# Python legacy
 __pycache__/
 *.py[cod]
 *.egg-info/
-dist/
 build/
 .eggs/
 .pytest_cache/
-.coverage
 
 # Local/editor/agent state
 .vscode/

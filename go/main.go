@@ -9,7 +9,7 @@ import (
 	"github.com/VoidChecksum/unleash/cmd"
 )
 
-const version = "1.0.0"
+var version = "1.0.0"
 
 func main() {
 	rootCmd := &cobra.Command{
