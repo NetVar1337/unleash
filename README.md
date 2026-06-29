@@ -224,9 +224,9 @@ Go 1.24.2+ is required. Release workflows build all six platform targets for eac
 <!-- release-versions:start -->
 | Product | Latest release |
 |---|---|
-| Unleash | `v1.0.0` |
-| Unleash-GPT | `gpt-v1.0.0` |
-| Unleash-OMP | `omp-v1.0.0` |
+| Unleash | `v2.4.2` |
+| Unleash-GPT | `gpt-v1.0.1` |
+| Unleash-OMP | `omp-v1.0.1` |
 <!-- release-versions:end -->
 
 The npm packages are thin launchers with prebuilt platform binaries in `bin/`. Publishing is tag-driven: push `vX.Y.Z` to publish `unleash-cc@X.Y.Z`, `gpt-vX.Y.Z` to publish `unleash-gpt@X.Y.Z`, and `omp-vX.Y.Z` to publish `unleash-omp@X.Y.Z`.
