@@ -12,11 +12,11 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/VoidChecksum/void-patcher-cc/internal/console"
-	"github.com/VoidChecksum/void-patcher-cc/internal/patches"
-	"github.com/VoidChecksum/void-patcher-cc/internal/scanner"
-	"github.com/VoidChecksum/void-patcher-cc/internal/target"
-	"github.com/VoidChecksum/void-patcher-cc/internal/updater"
+	"github.com/VoidChecksum/unleash/internal/console"
+	"github.com/VoidChecksum/unleash/internal/patches"
+	"github.com/VoidChecksum/unleash/internal/scanner"
+	"github.com/VoidChecksum/unleash/internal/target"
+	"github.com/VoidChecksum/unleash/internal/updater"
 )
 
 // NewListCmd creates the "list" cobra command.
@@ -231,7 +231,7 @@ func runInstallGuard() int {
 		svc := filepath.Join(unitDir, "unleash-guard.service")
 		os.WriteFile(svc, []byte(fmt.Sprintf(`[Unit]
 Description=unleash guard — auto-patch Claude Code on update
-Documentation=https://github.com/VoidChecksum/void-patcher-cc
+Documentation=https://github.com/VoidChecksum/unleash
 Wants=network-online.target
 After=network-online.target
 
@@ -247,7 +247,7 @@ WantedBy=default.target
 		tmr := filepath.Join(unitDir, "unleash-guard.timer")
 		os.WriteFile(tmr, []byte(`[Unit]
 Description=Run unleash guard periodically
-Documentation=https://github.com/VoidChecksum/void-patcher-cc
+Documentation=https://github.com/VoidChecksum/unleash
 
 [Timer]
 OnBootSec=2min

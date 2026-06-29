@@ -12,10 +12,10 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 
-	"github.com/VoidChecksum/void-patcher-cc/internal/binary"
-	"github.com/VoidChecksum/void-patcher-cc/internal/patches"
-	"github.com/VoidChecksum/void-patcher-cc/internal/scanner"
-	"github.com/VoidChecksum/void-patcher-cc/internal/target"
+	"github.com/VoidChecksum/unleash/internal/binary"
+	"github.com/VoidChecksum/unleash/internal/patches"
+	"github.com/VoidChecksum/unleash/internal/scanner"
+	"github.com/VoidChecksum/unleash/internal/target"
 )
 
 // ── views ───────────────────────────────────────────────────────────────────

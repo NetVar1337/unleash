@@ -9,8 +9,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/VoidChecksum/void-patcher-cc/embed"
-	"github.com/VoidChecksum/void-patcher-cc/internal/console"
+	"github.com/VoidChecksum/unleash/embed"
+	"github.com/VoidChecksum/unleash/internal/console"
 )
 
 // LoadPatches loads all *.json patch files from a directory, skipping retired

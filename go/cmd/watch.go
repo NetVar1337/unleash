@@ -9,8 +9,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/VoidChecksum/void-patcher-cc/internal/console"
-	"github.com/VoidChecksum/void-patcher-cc/internal/target"
+	"github.com/VoidChecksum/unleash/internal/console"
+	"github.com/VoidChecksum/unleash/internal/target"
 )
 
 // NewWatchCmd creates the "watch" cobra command.

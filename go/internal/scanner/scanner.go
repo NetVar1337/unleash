@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/VoidChecksum/void-patcher-cc/internal/patches"
+	"github.com/VoidChecksum/unleash/internal/patches"
 )
 
 // Regex helpers

@@ -10,8 +10,8 @@ import (
 	"runtime"
 	"strings"
 
-	vpccembed "github.com/VoidChecksum/void-patcher-cc/embed"
-	"github.com/VoidChecksum/void-patcher-cc/internal/patches"
+	vpccembed "github.com/VoidChecksum/unleash/embed"
+	"github.com/VoidChecksum/unleash/internal/patches"
 )
 
 // ── string helpers ──────────────────────────────────────────────────────────

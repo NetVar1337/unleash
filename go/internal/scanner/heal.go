@@ -8,8 +8,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/VoidChecksum/void-patcher-cc/internal/binary"
-	"github.com/VoidChecksum/void-patcher-cc/internal/patches"
+	"github.com/VoidChecksum/unleash/internal/binary"
+	"github.com/VoidChecksum/unleash/internal/patches"
 )
 
 // HealDetail records what happened to a single patch during healing.

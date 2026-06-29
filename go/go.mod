@@ -1,4 +1,4 @@
-module github.com/VoidChecksum/void-patcher-cc
+module github.com/VoidChecksum/unleash
 
 go 1.26.4
 

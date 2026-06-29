@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/VoidChecksum/void-patcher-cc/cmd"
+	"github.com/VoidChecksum/unleash/cmd"
 )
 
 const version = "1.0.0"

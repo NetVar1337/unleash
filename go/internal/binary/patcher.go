@@ -11,7 +11,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/VoidChecksum/void-patcher-cc/internal/patches"
+	"github.com/VoidChecksum/unleash/internal/patches"
 )
 
 // PatchResult holds the result of an in-place patching attempt.

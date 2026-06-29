@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/VoidChecksum/void-patcher-cc/internal/patches"
+	"github.com/VoidChecksum/unleash/internal/patches"
 )
 
 // CacheVersion should match the unleash version to bust stale caches on upgrade.

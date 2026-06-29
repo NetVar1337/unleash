@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/VoidChecksum/void-patcher-cc/internal/patches"
+	"github.com/VoidChecksum/unleash/internal/patches"
 )
 
 // DiscoveredPattern represents a newly discovered patchable pattern in the binary.

@@ -8,11 +8,11 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/VoidChecksum/void-patcher-cc/internal/console"
-	"github.com/VoidChecksum/void-patcher-cc/internal/patches"
-	"github.com/VoidChecksum/void-patcher-cc/internal/scanner"
-	"github.com/VoidChecksum/void-patcher-cc/internal/target"
-	"github.com/VoidChecksum/void-patcher-cc/internal/updater"
+	"github.com/VoidChecksum/unleash/internal/console"
+	"github.com/VoidChecksum/unleash/internal/patches"
+	"github.com/VoidChecksum/unleash/internal/scanner"
+	"github.com/VoidChecksum/unleash/internal/target"
+	"github.com/VoidChecksum/unleash/internal/updater"
 )
 
 // NewDoctorCmd creates the "doctor" cobra command.

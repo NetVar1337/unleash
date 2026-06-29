@@ -7,9 +7,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/VoidChecksum/void-patcher-cc/internal/binary"
-	"github.com/VoidChecksum/void-patcher-cc/internal/console"
-	"github.com/VoidChecksum/void-patcher-cc/internal/target"
+	"github.com/VoidChecksum/unleash/internal/binary"
+	"github.com/VoidChecksum/unleash/internal/console"
+	"github.com/VoidChecksum/unleash/internal/target"
 )
 
 // NewVerifyCmd creates the "verify" cobra command.
