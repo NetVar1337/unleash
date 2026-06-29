@@ -224,7 +224,7 @@ Go 1.24.2+ is required. Release workflows build all six platform targets for eac
 <!-- release-versions:start -->
 | Product | Latest release |
 |---|---|
-| Unleash | `v2.4.2` |
+| Unleash | `cc-v0.0.1` |
 | Unleash-GPT | `gpt-v1.0.1` |
 | Unleash-OMP | `omp-v1.0.1` |
 <!-- release-versions:end -->
