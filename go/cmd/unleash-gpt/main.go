@@ -217,6 +217,19 @@ func runVerify(out interface{ Write([]byte) (int, error) }) error {
 }
 
 func loadCodexPatches() ([]codex.Patch, error) {
+	patches, err := loadCodexPatchesFromEmbedded()
+	if err != nil {
+		return nil, err
+	}
+	overrideDir := filepath.Join(codex.StateDir(""), "patches")
+	extra, err := loadCodexPatchesFromDir(overrideDir)
+	if err != nil {
+		return nil, err
+	}
+	return mergeCodexPatches(patches, extra), nil
+}
+
+func loadCodexPatchesFromEmbedded() ([]codex.Patch, error) {
 	entries, err := embeddedCodexPatches.ReadDir("codex-patches")
 	if err != nil {
 		return nil, err
@@ -237,6 +250,52 @@ func loadCodexPatches() ([]codex.Patch, error) {
 		out = append(out, p)
 	}
 	return out, nil
+}
+
+func loadCodexPatchesFromDir(dir string) ([]codex.Patch, error) {
+	entries, err := os.ReadDir(dir)
+	if os.IsNotExist(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	var out []codex.Patch
+	for _, e := range entries {
+		if e.IsDir() || filepath.Ext(e.Name()) != ".json" {
+			continue
+		}
+		data, err := os.ReadFile(filepath.Join(dir, e.Name()))
+		if err != nil {
+			return nil, err
+		}
+		var p codex.Patch
+		if err := json.Unmarshal(data, &p); err != nil {
+			return nil, fmt.Errorf("%s: %w", e.Name(), err)
+		}
+		out = append(out, p)
+	}
+	return out, nil
+}
+
+func mergeCodexPatches(base, extra []codex.Patch) []codex.Patch {
+	if len(extra) == 0 {
+		return base
+	}
+	seen := make(map[string]int, len(base)+len(extra))
+	merged := append([]codex.Patch(nil), base...)
+	for i, p := range merged {
+		seen[p.ID] = i
+	}
+	for _, p := range extra {
+		if idx, ok := seen[p.ID]; ok {
+			merged[idx] = p
+			continue
+		}
+		seen[p.ID] = len(merged)
+		merged = append(merged, p)
+	}
+	return merged
 }
 
 func containsAll(text string, needles []string) bool {

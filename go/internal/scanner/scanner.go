@@ -271,9 +271,24 @@ func (s *SigScanner) getWSText() string {
 	return *s.wsText
 }
 
+// cleanAnchors drops blank anchors before substring/fuzzy matching.
+func cleanAnchors(anchors []string) []string {
+	if len(anchors) == 0 {
+		return nil
+	}
+	out := make([]string, 0, len(anchors))
+	for _, a := range anchors {
+		if strings.TrimSpace(a) != "" {
+			out = append(out, a)
+		}
+	}
+	return out
+}
+
 // FindAnchor returns the first offset where ALL anchors appear within maxDist
 // bytes of the first anchor. Returns nil if not found.
 func (s *SigScanner) FindAnchor(anchors []string, maxDist int) *int {
+	anchors = cleanAnchors(anchors)
 	if len(anchors) == 0 {
 		return nil
 	}
@@ -305,6 +320,9 @@ func (s *SigScanner) FindAnchor(anchors []string, maxDist int) *int {
 
 // AllOccurrences returns all offsets where anchor appears in text.
 func (s *SigScanner) AllOccurrences(anchor string) []int {
+	if anchor == "" {
+		return nil
+	}
 	var offs []int
 	idx := 0
 	for {
@@ -325,19 +343,20 @@ func (s *SigScanner) AllOccurrences(anchor string) []int {
 // Strategies in order:
 //  1. exact       — plain substring                     (0.9)
 //  2. ws_norm     — whitespace-collapsed comparison     (0.7)
-//  2b. ngram      — n-gram cluster voting               (0.3–0.7)
+//     2b. ngram      — n-gram cluster voting               (0.3–0.7)
 //  3. ident_relax — 1-3 char idents replaced with .*?  (0.5)
 //  4. levenshtein — edit distance ≤ 3                   (0.35–0.5)
 //  5. structural  — delimiter fingerprint match         (0.35)
 func (s *SigScanner) FindAnchorFuzzy(anchors []string, maxDist int) (*int, string, float64) {
+	anchors = cleanAnchors(anchors)
+	if len(anchors) == 0 {
+		return nil, "none", 0.0
+	}
+
 	// Strategy 1: exact
 	off := s.FindAnchor(anchors, maxDist)
 	if off != nil {
 		return off, "anchor", 0.9
-	}
-
-	if len(anchors) == 0 {
-		return nil, "none", 0.0
 	}
 
 	// Strategy 2: whitespace-normalised
@@ -537,6 +556,7 @@ func (s *SigScanner) DeriveRegexWindow(offset, before, after int, softmin bool) 
 // Extracts 6-char n-grams from anchors, finds position clusters in text via
 // bucket voting. Returns (offset, confidence) or (nil, 0).
 func (s *SigScanner) FindAnchorNgram(anchors []string, maxDist int) (*int, float64) {
+	anchors = cleanAnchors(anchors)
 	if len(anchors) == 0 {
 		return nil, 0.0
 	}
@@ -600,6 +620,7 @@ func (s *SigScanner) FindAnchorNgram(anchors []string, maxDist int) (*int, float
 // Extracts long tokens as search seeds, then verifies surrounding windows
 // have Levenshtein distance ≤ 3 from the anchor.
 func (s *SigScanner) FindAnchorLevenshtein(anchors []string, maxDist int) (*int, float64) {
+	anchors = cleanAnchors(anchors)
 	if len(anchors) == 0 {
 		return nil, 0.0
 	}
@@ -611,7 +632,7 @@ func (s *SigScanner) FindAnchorLevenshtein(anchors []string, maxDist int) (*int,
 	if len(tokens) == 0 {
 		return nil, 0.0
 	}
-	bestDist := 4  // > max allowed distance
+	bestDist := 4 // > max allowed distance
 	bestOff := -1
 	anchorLen := len(anchor)
 	// Cap anchor length for Levenshtein to keep cost bounded
@@ -695,6 +716,7 @@ func (s *SigScanner) FindAnchorLevenshtein(anchors []string, maxDist int) (*int,
 // Extracts delimiters ({, }, (, ), ;, etc.) from anchors, then searches
 // for regions with matching structural patterns using long tokens as guides.
 func (s *SigScanner) FindAnchorStructural(anchors []string, maxDist int) (*int, float64) {
+	anchors = cleanAnchors(anchors)
 	if len(anchors) == 0 {
 		return nil, 0.0
 	}
@@ -800,7 +822,7 @@ func (s *SigScanner) BulkMarkerHits(patchList []patches.Patch) map[int]bool {
 //  1. Bulk marker pre-sweep (applied_marker strings)
 //  2. Exact anchor match (co-located within 400 bytes)
 //  3. Regex match (search_regex from first sub-patch)
-//  3b. Scattered anchors (all present anywhere in text)
+//     3b. Scattered anchors (all present anywhere in text)
 //  4. Fuzzy whitespace-normalized anchors
 //  5. Fuzzy identifier-agnostic anchors
 //  6. Keyword extraction (long tokens > 8 chars)
@@ -827,7 +849,7 @@ func (s *SigScanner) ScanPatches(patchList []patches.Patch) []patches.ScanRow {
 			continue
 		}
 
-		anchors := p.AnchorStrings
+		anchors := cleanAnchors(p.AnchorStrings)
 		var sigRegex string
 		var markers []string
 		subs := p.Patches

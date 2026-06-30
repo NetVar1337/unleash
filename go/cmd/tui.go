@@ -325,7 +325,7 @@ func (m *tuiModel) currentCategoryPatches() []int {
 	cat := categoryOrder[m.catIdx]
 	idxs := m.byCategory[cat]
 
-	if !m.searchMode || m.searchInput.Value() == "" {
+	if m.searchInput.Value() == "" {
 		return idxs
 	}
 
@@ -339,6 +339,20 @@ func (m *tuiModel) currentCategoryPatches() []int {
 		}
 	}
 	return filtered
+}
+
+func (m *tuiModel) clampPatchIndex() {
+	visPatches := m.currentCategoryPatches()
+	if len(visPatches) == 0 {
+		m.patchIdx = 0
+		return
+	}
+	if m.patchIdx >= len(visPatches) {
+		m.patchIdx = len(visPatches) - 1
+	}
+	if m.patchIdx < 0 {
+		m.patchIdx = 0
+	}
 }
 
 // ── tea.Model implementation ────────────────────────────────────────────────
@@ -366,9 +380,20 @@ func runScanAsync(targetPath, kind string, patchList []patches.Patch) tea.Cmd {
 			return scanDoneMsg{}
 		}
 		sc := scanner.NewSigScanner(text)
-		rows := sc.ScanPatches(patchList)
+		scannable := scannablePatches(patchList)
+		rows := sc.ScanPatches(scannable)
 		return scanDoneMsg{rows: rows}
 	}
+}
+
+func scannablePatches(patchList []patches.Patch) []patches.Patch {
+	scannable := make([]patches.Patch, 0, len(patchList))
+	for _, p := range patchList {
+		if p.Type == "js_replace" && !p.Disabled && p.ShouldScan() {
+			scannable = append(scannable, p)
+		}
+	}
+	return scannable
 }
 
 func runPatchAsync(targetPath, targetKind string, patchList []patches.Patch) tea.Cmd {
@@ -532,8 +557,10 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.scanRows = msg.rows
 		m.scanDone = true
 		m.buildScanViewport()
-		m.busy = false
-		m.busyMsg = ""
+		if m.busyMsg == "Scanning..." || m.busyMsg == "Re-scanning..." {
+			m.busy = false
+			m.busyMsg = ""
+		}
 		return m, nil
 
 	case updateCheckDoneMsg:
@@ -616,10 +643,12 @@ func (m tuiModel) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		case "enter":
 			m.searchMode = false
 			m.searchInput.Blur()
+			m.clampPatchIndex()
 			return m, nil
 		default:
 			var cmd tea.Cmd
 			m.searchInput, cmd = m.searchInput.Update(msg)
+			m.clampPatchIndex()
 			return m, cmd
 		}
 	}
@@ -716,9 +745,11 @@ func (m tuiModel) handlePatchMgrKey(key string) (tea.Model, tea.Cmd) {
 	case " ":
 		if m.patchFocus && len(visPatches) > 0 && m.patchIdx < len(visPatches) {
 			idx := visPatches[m.patchIdx]
-			m.toggleSet[idx] = !m.toggleSet[idx]
-			if !m.toggleSet[idx] {
-				delete(m.toggleSet, idx)
+			if m.patchStatus(idx) != "APPLIED" && m.patchStatus(idx) != "RETIRED" {
+				m.toggleSet[idx] = !m.toggleSet[idx]
+				if !m.toggleSet[idx] {
+					delete(m.toggleSet, idx)
+				}
 			}
 		}
 		return m, nil
@@ -727,7 +758,8 @@ func (m tuiModel) handlePatchMgrKey(key string) (tea.Model, tea.Cmd) {
 		// Select all in current category
 		for _, idx := range visPatches {
 			p := m.allPatches[idx]
-			if !p.Retired {
+			status := m.patchStatus(idx)
+			if !p.Retired && status != "APPLIED" && status != "RETIRED" {
 				m.toggleSet[idx] = true
 			}
 		}
@@ -743,7 +775,14 @@ func (m tuiModel) handlePatchMgrKey(key string) (tea.Model, tea.Cmd) {
 	case "/":
 		m.searchMode = true
 		m.searchInput.Focus()
+		m.patchIdx = 0
 		return m, textinput.Blink
+	case "c", "C":
+		if m.searchInput.Value() != "" {
+			m.searchInput.SetValue("")
+			m.patchIdx = 0
+		}
+		return m, nil
 
 	case "enter":
 		return m.applyToggled()
@@ -1204,7 +1243,7 @@ func (m tuiModel) viewPatchMgr() string {
 	toggleCount := len(m.toggleSet)
 	helpText := helpStyle.Render(
 		" ↑↓ navigate  Tab switch  Space toggle  Enter apply  " +
-			"a all  n none  / search  r rollback  q back",
+			"a all  n none  / search  c clear  r rollback  q back",
 	)
 	if toggleCount > 0 {
 		helpText = lipgloss.NewStyle().Foreground(accent).Render(

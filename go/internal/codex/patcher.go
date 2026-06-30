@@ -84,12 +84,27 @@ func ApplyPatches(path string, patchList []Patch, dryRun bool, home string) (Pat
 	if err != nil {
 		return result, err
 	}
-	tmp := path + ".unleash-gpt.tmp"
-	if err := os.WriteFile(tmp, updated, info.Mode()); err != nil {
+	tmp, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+".unleash-gpt-*")
+	if err != nil {
 		return result, err
 	}
-	if err := os.Rename(tmp, path); err != nil {
-		os.Remove(tmp)
+	tmpPath := tmp.Name()
+	if _, err := tmp.Write(updated); err != nil {
+		tmp.Close()
+		os.Remove(tmpPath)
+		return result, err
+	}
+	if err := tmp.Chmod(info.Mode()); err != nil {
+		tmp.Close()
+		os.Remove(tmpPath)
+		return result, err
+	}
+	if err := tmp.Close(); err != nil {
+		os.Remove(tmpPath)
+		return result, err
+	}
+	if err := os.Rename(tmpPath, path); err != nil {
+		os.Remove(tmpPath)
 		return result, err
 	}
 	return result, nil

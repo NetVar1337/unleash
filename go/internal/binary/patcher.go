@@ -10,19 +10,20 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/VoidChecksum/unleash/internal/patches"
 )
 
 // PatchResult holds the result of an in-place patching attempt.
 type PatchResult struct {
-	OK           bool              `json:"ok"`
-	Noop         bool              `json:"noop,omitempty"`
-	Err          string            `json:"err,omitempty"`
-	Applied      int               `json:"applied"`
-	Skipped      int               `json:"skipped"`
-	PerPatch     []PerPatchResult  `json:"per_patch,omitempty"`
-	SkippedHeavy []string          `json:"skipped_heavy,omitempty"`
+	OK           bool             `json:"ok"`
+	Noop         bool             `json:"noop,omitempty"`
+	Err          string           `json:"err,omitempty"`
+	Applied      int              `json:"applied"`
+	Skipped      int              `json:"skipped"`
+	PerPatch     []PerPatchResult `json:"per_patch,omitempty"`
+	SkippedHeavy []string         `json:"skipped_heavy,omitempty"`
 }
 
 // PerPatchResult tracks per-patch application stats.
@@ -316,17 +317,51 @@ func PatchBunSEAInplace(binaryPath string, patchList []patches.Patch) PatchResul
 
 // runWithTimeout runs a command with a timeout in seconds.
 func runWithTimeout(cmd *exec.Cmd, timeoutSec int) error {
-	// exec.Command handles context timeout via CommandContext, but for
-	// simplicity we use the stdlib approach with cmd.Run().
-	// The caller is responsible for setting a reasonable timeout via
-	// context if needed. For now, we just run it.
-	return cmd.Run()
+	if timeoutSec <= 0 {
+		return cmd.Run()
+	}
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+	done := make(chan error, 1)
+	go func() {
+		done <- cmd.Wait()
+	}()
+	select {
+	case err := <-done:
+		return err
+	case <-time.After(time.Duration(timeoutSec) * time.Second):
+		_ = cmd.Process.Kill()
+		<-done
+		return fmt.Errorf("command timed out after %ds", timeoutSec)
+	}
 }
 
 // runCaptureWithTimeout runs a command and captures combined stdout+stderr.
 func runCaptureWithTimeout(cmd *exec.Cmd, timeoutSec int) (string, error) {
-	out, err := cmd.CombinedOutput()
-	return string(out), err
+	if timeoutSec <= 0 {
+		out, err := cmd.CombinedOutput()
+		return string(out), err
+	}
+	type result struct {
+		out []byte
+		err error
+	}
+	done := make(chan result, 1)
+	go func() {
+		out, err := cmd.CombinedOutput()
+		done <- result{out: out, err: err}
+	}()
+	select {
+	case res := <-done:
+		return string(res.out), res.err
+	case <-time.After(time.Duration(timeoutSec) * time.Second):
+		if cmd.Process != nil {
+			_ = cmd.Process.Kill()
+		}
+		res := <-done
+		return string(res.out), fmt.Errorf("command timed out after %ds", timeoutSec)
+	}
 }
 
 // truncate returns s truncated to maxLen characters.

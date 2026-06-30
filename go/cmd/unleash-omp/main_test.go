@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/VoidChecksum/unleash/internal/omp"
 )
 
 func TestHelpListsUnleashOMPCommands(t *testing.T) {
@@ -67,5 +69,32 @@ func TestBundledOMPPatchesCoverPolicyAndTelemetry(t *testing.T) {
 	}
 	if total < 6 {
 		t.Fatalf("bundled OMP subpatches = %d, want at least 6", total)
+	}
+}
+
+func TestOMPPatchDirMergesAndOverridesBundledPatches(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "01-extra.json"), []byte(`{"id":"extra-omp","patches":[{"search":"a","replace":"b"}]}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "02-override.json"), []byte(`{"id":"bundled","patches":[{"search":"new","replace":"old"}]}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	base := []omp.Patch{{ID: "bundled", Patches: []omp.SubPatch{{Search: "old", Replace: "new"}}}}
+	extra, err := loadOMPPatchesFromDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	merged := mergeOMPPatches(base, extra)
+	ids := map[string]omp.Patch{}
+	for _, p := range merged {
+		ids[p.ID] = p
+	}
+	if _, ok := ids["extra-omp"]; !ok {
+		t.Fatalf("extra patch missing from merged set: %#v", ids)
+	}
+	if ids["bundled"].Patches[0].Search != "new" {
+		t.Fatalf("override did not replace bundled patch: %#v", ids["bundled"])
 	}
 }

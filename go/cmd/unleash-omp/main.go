@@ -203,6 +203,19 @@ func runVerify(out interface{ Write([]byte) (int, error) }) error {
 }
 
 func loadOMPPatches() ([]omp.Patch, error) {
+	patches, err := loadOMPPatchesFromEmbedded()
+	if err != nil {
+		return nil, err
+	}
+	overrideDir := filepath.Join(omp.StateDir(""), "patches")
+	extra, err := loadOMPPatchesFromDir(overrideDir)
+	if err != nil {
+		return nil, err
+	}
+	return mergeOMPPatches(patches, extra), nil
+}
+
+func loadOMPPatchesFromEmbedded() ([]omp.Patch, error) {
 	entries, err := embeddedOMPPatches.ReadDir("omp-patches")
 	if err != nil {
 		return nil, err
@@ -223,4 +236,50 @@ func loadOMPPatches() ([]omp.Patch, error) {
 		out = append(out, p)
 	}
 	return out, nil
+}
+
+func loadOMPPatchesFromDir(dir string) ([]omp.Patch, error) {
+	entries, err := os.ReadDir(dir)
+	if os.IsNotExist(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	var out []omp.Patch
+	for _, e := range entries {
+		if e.IsDir() || filepath.Ext(e.Name()) != ".json" {
+			continue
+		}
+		data, err := os.ReadFile(filepath.Join(dir, e.Name()))
+		if err != nil {
+			return nil, err
+		}
+		var p omp.Patch
+		if err := json.Unmarshal(data, &p); err != nil {
+			return nil, fmt.Errorf("%s: %w", e.Name(), err)
+		}
+		out = append(out, p)
+	}
+	return out, nil
+}
+
+func mergeOMPPatches(base, extra []omp.Patch) []omp.Patch {
+	if len(extra) == 0 {
+		return base
+	}
+	seen := make(map[string]int, len(base)+len(extra))
+	merged := append([]omp.Patch(nil), base...)
+	for i, p := range merged {
+		seen[p.ID] = i
+	}
+	for _, p := range extra {
+		if idx, ok := seen[p.ID]; ok {
+			merged[idx] = p
+			continue
+		}
+		seen[p.ID] = len(merged)
+		merged = append(merged, p)
+	}
+	return merged
 }

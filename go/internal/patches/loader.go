@@ -88,7 +88,7 @@ func LoadPatchesForScan(patchDir string, respectScanFlag bool) ([]Patch, error) 
 		if p.Type != "js_replace" {
 			continue
 		}
-		if p.Retired {
+		if p.Retired || p.Disabled {
 			continue
 		}
 		if respectScanFlag && !p.ShouldScan() {
@@ -197,7 +197,7 @@ func loadPatchesForScanFromFS(fsys fs.FS, root string, respectScanFlag bool) ([]
 		if p.Type != "js_replace" {
 			continue
 		}
-		if p.Retired {
+		if p.Retired || p.Disabled {
 			continue
 		}
 		if respectScanFlag && !p.ShouldScan() {
