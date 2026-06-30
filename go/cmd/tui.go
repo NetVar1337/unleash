@@ -353,13 +353,13 @@ func runScanAsync(targetPath, kind string, patchList []patches.Patch) tea.Cmd {
 	}
 }
 
-func runPatchAsync(targetPath string, patchList []patches.Patch) tea.Cmd {
+func runPatchAsync(targetPath, targetKind string, patchList []patches.Patch) tea.Cmd {
 	return func() tea.Msg {
-		return patchDoneMsg{result: applySelectedPatches(targetPath, patchList)}
+		return patchDoneMsg{result: applySelectedPatches(targetPath, targetKind, patchList)}
 	}
 }
 
-func applySelectedPatches(targetPath string, patchList []patches.Patch) binary.PatchResult {
+func applySelectedPatches(targetPath, targetKind string, patchList []patches.Patch) binary.PatchResult {
 	var jsPatches, metaPatches []patches.Patch
 	for _, p := range patchList {
 		if p.Type == "js_replace" {
@@ -369,12 +369,14 @@ func applySelectedPatches(targetPath string, patchList []patches.Patch) binary.P
 		}
 	}
 
-	result := binary.PatchResult{OK: true}
+	result := binary.PatchResult{OK: true, Noop: true}
 	if len(jsPatches) > 0 {
 		if targetPath == "" {
 			result.Skipped += len(jsPatches)
+		} else if targetKind != "bun_sea" {
+			result.Skipped += len(jsPatches)
 		} else {
-			_, err := target.Backup(targetPath, "bun_sea")
+			_, err := target.Backup(targetPath, targetKind)
 			if err != nil {
 				return binary.PatchResult{Err: err.Error()}
 			}
@@ -386,30 +388,31 @@ func applySelectedPatches(targetPath string, patchList []patches.Patch) binary.P
 			result.Skipped += jsResult.Skipped
 			result.PerPatch = append(result.PerPatch, jsResult.PerPatch...)
 			result.SkippedHeavy = append(result.SkippedHeavy, jsResult.SkippedHeavy...)
-			result.Noop = jsResult.Noop && len(metaPatches) == 0
+			result.Noop = jsResult.Noop
 		}
 	}
 
 	for _, p := range metaPatches {
-		success, msg := applyMetaPatch(p, targetPath, false)
+		success, msg := applyMetaPatch(p, targetPath, targetKind, false)
 		if !success {
 			return binary.PatchResult{Err: fmt.Sprintf("%s: %s", p.ID, msg)}
 		}
 		result.Applied++
+		result.Noop = false
 	}
 	return result
 }
 
-func applyMetaPatch(p patches.Patch, targetPath string, dryRun bool) (bool, string) {
+func applyMetaPatch(p patches.Patch, targetPath, targetKind string, dryRun bool) (bool, string) {
 	switch p.Type {
 	case "settings", "hook":
 		return applySettings(p, dryRun)
 	case "mcp_guard":
 		return applyMCPGuard(p, dryRun)
 	case "wrapper":
-		return applyWrapper(p, "bun_sea", targetPath, dryRun)
+		return applyWrapper(p, targetKind, targetPath, dryRun)
 	case "binary_install":
-		return applyBinaryInstall(p, "bun_sea", dryRun)
+		return applyBinaryInstall(p, targetKind, dryRun)
 	default:
 		return false, fmt.Sprintf("type=%s (unknown)", p.Type)
 	}
@@ -422,8 +425,8 @@ func runDoctorAsync(targetPath, kind string) tea.Cmd {
 		pd := patchDir()
 		nRetired := countRetired(pd)
 
-		sb.WriteString(fmt.Sprintf("unleash doctor\n"))
-		sb.WriteString(fmt.Sprintf("  version    : 3.0.0\n"))
+		sb.WriteString("unleash doctor\n")
+		sb.WriteString("  version    : 1.0.0\n")
 		sb.WriteString(fmt.Sprintf("  patches    : %d\n", len(patchList)))
 
 		if targetPath == "" {
@@ -500,15 +503,17 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		m.scanViewport.Width = msg.Width - 4
-		m.scanViewport.Height = msg.Height - 8
-		m.doctorViewport.Width = msg.Width - 4
-		m.doctorViewport.Height = msg.Height - 8
+		m.resizeViewports()
+		m.buildScanViewport()
+		if m.doctorOutput != "" {
+			m.doctorViewport.SetContent(m.doctorOutput)
+		}
 		return m, nil
 
 	case scanDoneMsg:
 		m.scanRows = msg.rows
 		m.scanDone = true
+		m.buildScanViewport()
 		m.busy = false
 		m.busyMsg = ""
 		return m, nil
@@ -606,9 +611,9 @@ func (m tuiModel) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case viewPatchMgr:
 		return m.handlePatchMgrKey(key)
 	case viewScan:
-		return m.handleScanKey(key)
+		return m.handleScanKey(msg)
 	case viewDoctor:
-		return m.handleDoctorKey(key)
+		return m.handleDoctorKey(msg)
 	}
 
 	return m, nil
@@ -758,62 +763,107 @@ func (m tuiModel) applyToggled() (tea.Model, tea.Cmd) {
 	m.busy = true
 	m.busyMsg = fmt.Sprintf("Applying %d patches...", len(toApply))
 	m.toggleSet = make(map[int]bool)
-	return m, runPatchAsync(m.targetPath, toApply)
+	return m, runPatchAsync(m.targetPath, m.targetKind, toApply)
 }
 
-func (m tuiModel) handleScanKey(key string) (tea.Model, tea.Cmd) {
-	switch key {
+func (m tuiModel) handleScanKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
 	case "q", "esc":
 		m.view = viewDashboard
 		return m, nil
-	case "r":
+	case "r", "R":
 		m.busy = true
 		m.busyMsg = "Re-scanning..."
 		m.scanDone = false
 		return m, runScanAsync(m.targetPath, m.targetKind, m.allPatches)
 	default:
 		var cmd tea.Cmd
-		m.scanViewport, cmd = m.scanViewport.Update(msg2key(key))
+		m.scanViewport, cmd = m.scanViewport.Update(msg)
 		return m, cmd
 	}
 }
 
-func (m tuiModel) handleDoctorKey(key string) (tea.Model, tea.Cmd) {
-	switch key {
+func (m tuiModel) handleDoctorKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
 	case "q", "esc":
 		m.view = viewDashboard
 		return m, nil
 	default:
 		var cmd tea.Cmd
-		m.doctorViewport, cmd = m.doctorViewport.Update(msg2key(key))
+		m.doctorViewport, cmd = m.doctorViewport.Update(msg)
 		return m, cmd
 	}
 }
 
-// msg2key wraps a key string back into a tea.KeyMsg for viewport forwarding.
-func msg2key(key string) tea.KeyMsg {
-	return tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(key)}
+func (m *tuiModel) resizeViewports() {
+	w := m.width - 6
+	if w < 20 {
+		w = 20
+	}
+	h := m.height - 9
+	if h < 3 {
+		h = 3
+	}
+	m.scanViewport.Width = w
+	m.scanViewport.Height = h
+	m.doctorViewport.Width = w
+	m.doctorViewport.Height = h
 }
 
 func (m *tuiModel) buildScanViewport() {
 	if len(m.scanRows) == 0 {
 		m.scanViewport.SetContent("  No scan results available.")
+		m.scanViewport.GotoTop()
 		return
 	}
 
 	var sb strings.Builder
+	hdr := fmt.Sprintf("  %-40s  %-10s  %6s  %-12s  %s",
+		"PATCH ID", "STATUS", "CONF", "METHOD", "OFFSET")
+	sb.WriteString(lipgloss.NewStyle().Bold(true).Foreground(white).Render(hdr))
+	sb.WriteString("\n")
+
 	for _, r := range m.scanRows {
-		status := r.Status
 		conf := fmt.Sprintf("%.0f%%", r.Confidence*100)
-		offset := "n/a"
+		offset := "—"
 		if r.AnchorOffset != nil {
 			offset = fmt.Sprintf("0x%x", *r.AnchorOffset)
 		}
 
-		sb.WriteString(fmt.Sprintf("  %-40s  %-10s  %6s  %-12s  %s\n",
-			r.ID, status, conf, r.Method, offset))
+		var styledStatus string
+		switch r.Status {
+		case "applied":
+			styledStatus = statusApplied.Render(padRight(r.Status, 10))
+		case "ok":
+			styledStatus = statusAvailable.Render(padRight(r.Status, 10))
+		case "drift":
+			styledStatus = statusDrift.Render(padRight(r.Status, 10))
+		case "retired":
+			styledStatus = statusRetired.Render(padRight(r.Status, 10))
+		default:
+			styledStatus = mutedStyle.Render(padRight(r.Status, 10))
+		}
+
+		var styledMethod string
+		switch {
+		case r.Method == "marker" || r.Method == "anchor":
+			styledMethod = lipgloss.NewStyle().Foreground(green).Render(padRight(r.Method, 12))
+		case r.Method == "scattered" || r.Method == "fuzzy_ws" || r.Method == "fuzzy_ident":
+			styledMethod = lipgloss.NewStyle().Foreground(yellow).Render(padRight(r.Method, 12))
+		default:
+			styledMethod = mutedStyle.Render(padRight(r.Method, 12))
+		}
+
+		id := r.ID
+		if len(id) > 40 {
+			id = id[:39] + "…"
+		}
+
+		sb.WriteString(fmt.Sprintf("  %-40s  %s  %6s  %s  %s\n",
+			id, styledStatus, conf, styledMethod, offset))
 	}
-	m.scanViewport.SetContent(sb.String())
+	m.scanViewport.SetContent(strings.TrimRight(sb.String(), "\n"))
+	m.scanViewport.GotoTop()
 }
 
 // ── View ────────────────────────────────────────────────────────────────────
@@ -1159,63 +1209,6 @@ func (m tuiModel) viewScan() string {
 			helpStyle.Render("  r rescan  q back") + "\n"
 	}
 
-	w := m.width - 4
-	if w < 80 {
-		w = 80
-	}
-
-	// Header
-	hdr := fmt.Sprintf("  %-40s  %-10s  %6s  %-12s  %s",
-		"PATCH ID", "STATUS", "CONF", "METHOD", "OFFSET")
-	hdrLine := lipgloss.NewStyle().Bold(true).Foreground(white).Render(hdr)
-
-	// Rows
-	var rows []string
-	for _, r := range m.scanRows {
-		conf := fmt.Sprintf("%.0f%%", r.Confidence*100)
-		offset := "—"
-		if r.AnchorOffset != nil {
-			offset = fmt.Sprintf("0x%x", *r.AnchorOffset)
-		}
-
-		var styledStatus string
-		switch r.Status {
-		case "applied":
-			styledStatus = statusApplied.Render(padRight(r.Status, 10))
-		case "ok":
-			styledStatus = statusAvailable.Render(padRight(r.Status, 10))
-		case "drift":
-			styledStatus = statusDrift.Render(padRight(r.Status, 10))
-		case "retired":
-			styledStatus = statusRetired.Render(padRight(r.Status, 10))
-		default:
-			styledStatus = mutedStyle.Render(padRight(r.Status, 10))
-		}
-
-		// Color the method
-		var styledMethod string
-		switch {
-		case r.Method == "marker" || r.Method == "anchor":
-			styledMethod = lipgloss.NewStyle().Foreground(green).Render(padRight(r.Method, 12))
-		case r.Method == "scattered" || r.Method == "fuzzy_ws" || r.Method == "fuzzy_ident":
-			styledMethod = lipgloss.NewStyle().Foreground(yellow).Render(padRight(r.Method, 12))
-		default:
-			styledMethod = mutedStyle.Render(padRight(r.Method, 12))
-		}
-
-		id := r.ID
-		if len(id) > 40 {
-			id = id[:39] + "…"
-		}
-
-		row := fmt.Sprintf("  %-40s  %s  %6s  %s  %s",
-			id, styledStatus, conf, styledMethod, offset)
-		rows = append(rows, row)
-	}
-
-	content := hdrLine + "\n" + strings.Join(rows, "\n")
-
-	// Stats summary
 	applied, drift, ok := 0, 0, 0
 	for _, r := range m.scanRows {
 		switch r.Status {
@@ -1233,12 +1226,17 @@ func (m tuiModel) viewScan() string {
 		statusDrift.Render("⚠"), drift,
 		len(m.scanRows))
 
+	w := m.width - 4
+	if w < 60 {
+		w = 60
+	}
+
 	panel := borderStyle.
 		Width(w).
-		Render(content)
+		Render(m.scanViewport.View())
 
 	return title + "\n\n" + summary + "\n\n" + panel + "\n\n" +
-		helpStyle.Render("  r rescan  q back") + "\n"
+		helpStyle.Render("  ↑↓/PgUp/PgDn scroll  r rescan  q back") + "\n"
 }
 
 // ── Doctor view ─────────────────────────────────────────────────────────────
@@ -1264,10 +1262,10 @@ func (m tuiModel) viewDoctor() string {
 	panel := borderStyle.
 		Width(w).
 		Padding(1, 1).
-		Render(m.doctorOutput)
+		Render(m.doctorViewport.View())
 
 	return title + "\n\n" + panel + "\n\n" +
-		helpStyle.Render("  ↑↓ scroll  q back") + "\n"
+		helpStyle.Render("  ↑↓/PgUp/PgDn scroll  q back") + "\n"
 }
 
 // ── Cobra command ───────────────────────────────────────────────────────────

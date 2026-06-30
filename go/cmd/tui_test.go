@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	tea "github.com/charmbracelet/bubbletea"
+
 	"github.com/VoidChecksum/unleash/internal/patches"
 )
 
@@ -22,7 +24,7 @@ func TestRunPatchAsyncAppliesSettingsWithoutBinaryTarget(t *testing.T) {
 		},
 	}
 
-	msg := runPatchAsync("", patchList)()
+	msg := runPatchAsync("", "", patchList)()
 	done, ok := msg.(patchDoneMsg)
 	if !ok {
 		t.Fatalf("runPatchAsync returned %T, want patchDoneMsg", msg)
@@ -101,5 +103,51 @@ func TestApplyToggledAllowsSettingsPatchWithoutBinaryTarget(t *testing.T) {
 	next := updated.(tuiModel)
 	if !next.busy {
 		t.Fatalf("applyToggled did not enter busy state")
+	}
+}
+
+func TestRunPatchAsyncSkipsJSPatchesForPlainJSTarget(t *testing.T) {
+	msg := runPatchAsync("cli.js", "js", []patches.Patch{
+		{
+			ID:   "js-only",
+			Type: "js_replace",
+		},
+	})()
+	done, ok := msg.(patchDoneMsg)
+	if !ok {
+		t.Fatalf("runPatchAsync returned %T, want patchDoneMsg", msg)
+	}
+	if !done.result.OK {
+		t.Fatalf("js target skip failed: %s", done.result.Err)
+	}
+	if done.result.Applied != 0 || done.result.Skipped != 1 {
+		t.Fatalf("result = applied %d skipped %d, want applied 0 skipped 1", done.result.Applied, done.result.Skipped)
+	}
+}
+
+func TestScanViewportReceivesRealKeyMessages(t *testing.T) {
+	rows := make([]patches.ScanRow, 20)
+	for i := range rows {
+		rows[i] = patches.ScanRow{
+			ID:         "patch",
+			Status:     "ok",
+			Confidence: 1,
+			Method:     "anchor",
+		}
+	}
+	m := tuiModel{
+		width:    100,
+		height:   12,
+		view:     viewScan,
+		scanDone: true,
+		scanRows: rows,
+	}
+	m.resizeViewports()
+	m.buildScanViewport()
+
+	updated, _ := m.handleScanKey(tea.KeyMsg{Type: tea.KeyDown})
+	next := updated.(tuiModel)
+	if next.scanViewport.YOffset == 0 {
+		t.Fatalf("scan viewport did not scroll on KeyDown")
 	}
 }

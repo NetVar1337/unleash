@@ -122,11 +122,19 @@ func codexCandidates(env map[string]string) []candidate {
 	)
 
 	roots := npmRoots(home, appdata)
+	exes := []string{exeName()}
+	if exes[0] != "codex.exe" {
+		exes = append(exes, "codex.exe")
+	}
 	for _, root := range roots {
 		for _, pkg := range platformPackages() {
-			out = append(out, candidate{filepath.Join(root, "@openai", pkg.name, "vendor", pkg.triple, "bin", exeName()), "npm"})
+			for _, exe := range exes {
+				out = append(out, candidate{filepath.Join(root, "@openai", pkg.name, "vendor", pkg.triple, "bin", exe), "npm"})
+			}
 		}
-		out = append(out, candidate{filepath.Join(root, "@openai", "codex", "vendor", targetTriple(), "bin", exeName()), "npm"})
+		for _, exe := range exes {
+			out = append(out, candidate{filepath.Join(root, "@openai", "codex", "vendor", targetTriple(), "bin", exe), "npm"})
+		}
 	}
 
 	return out
