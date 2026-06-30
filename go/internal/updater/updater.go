@@ -479,22 +479,30 @@ func maxPatchMtime(dir string) float64 {
 
 // ── upstream status ─────────────────────────────────────────────────────────
 
-// UpstreamInfo holds the result of comparing local vs remote patch commits.
+// UpstreamInfo holds the result of comparing local patch sync state with remote HEAD.
 type UpstreamInfo struct {
-	LocalCommit  string `json:"local_commit"`
-	RemoteCommit string `json:"remote_commit"`
-	Drift        bool   `json:"drift"`
-	LocalFiles   int    `json:"local_files"`
+	LocalCommit     string `json:"local_commit"`
+	RemoteCommit    string `json:"remote_commit"`
+	Drift           bool   `json:"drift"`
+	UpdateAvailable bool   `json:"update_available"`
+	StateMissing    bool   `json:"state_missing"`
+	LocalFiles      int    `json:"local_files"`
 }
 
 // UpstreamStatus compares local patches commit vs remote HEAD.
 func UpstreamStatus(patchDir string) UpstreamInfo {
+	return UpstreamStatusWithRemote(patchDir, RemoteHeadSHA("patches"))
+}
+
+// UpstreamStatusWithRemote compares local patch sync state with a supplied remote SHA.
+// It is split out so callers and tests can avoid a second network request after
+// already resolving the remote commit.
+func UpstreamStatusWithRemote(patchDir, remote string) UpstreamInfo {
 	state := LoadState()
 	var local string
 	if v, ok := state["patches_commit"].(string); ok {
 		local = v
 	}
-	remote := RemoteHeadSHA("patches")
 
 	count := 0
 	entries, _ := os.ReadDir(patchDir)
@@ -504,10 +512,14 @@ func UpstreamStatus(patchDir string) UpstreamInfo {
 		}
 	}
 
+	stateMissing := remote != "" && local == ""
+	drift := remote != "" && local != "" && local != remote
 	return UpstreamInfo{
-		LocalCommit:  local,
-		RemoteCommit: remote,
-		Drift:        remote != "" && local != "" && local != remote,
-		LocalFiles:   count,
+		LocalCommit:     local,
+		RemoteCommit:    remote,
+		Drift:           drift,
+		UpdateAvailable: stateMissing || drift,
+		StateMissing:    stateMissing,
+		LocalFiles:      count,
 	}
 }

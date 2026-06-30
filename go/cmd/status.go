@@ -9,6 +9,7 @@ import (
 
 	"github.com/VoidChecksum/unleash/internal/console"
 	"github.com/VoidChecksum/unleash/internal/target"
+	"github.com/VoidChecksum/unleash/internal/updater"
 )
 
 // NewStatusCmd creates the "status" cobra command.
@@ -59,5 +60,14 @@ func runStatus() error {
 	bdir := target.BackupDir()
 	baks := countBackups(bdir)
 	fmt.Printf("  backups : %d  (%s)\n", baks, bdir)
+
+	info := updater.UpstreamStatus(patchDir())
+	if warning := updateWarning(info, "unleash update"); warning != "" {
+		fmt.Printf("  update  : %s\n", warning)
+	} else if info.RemoteCommit != "" {
+		fmt.Printf("  update  : %scurrent%s\n", console.G, console.X)
+	} else {
+		fmt.Printf("  update  : unreachable\n")
+	}
 	return nil
 }

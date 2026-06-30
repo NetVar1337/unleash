@@ -122,17 +122,20 @@ func runSelfUpdate(dryRun, force, noReapply bool) int {
 		return 2
 	}
 
-	state := updater.LoadState()
-	local := stateString(state, "patches_commit")
-	fmt.Printf("  local  : %s\n", coalesce(local, "(unknown)"))
+	info := updater.UpstreamStatusWithRemote(pd, remote)
+	fmt.Printf("  local  : %s\n", coalesce(info.LocalCommit, "(unknown)"))
 	fmt.Printf("  remote : %s\n", remote)
+	fmt.Printf("  files  : %d local patch file(s)\n", info.LocalFiles)
 
-	if local == remote && !force {
+	if warning := updateWarning(info, "unleash self-update"); warning != "" {
+		fmt.Printf("  %s\n", warning)
+	}
+	if !info.UpdateAvailable && !force {
 		fmt.Printf("%s%s already up to date%s\n", console.G, console.CHECK, console.X)
 		return 0
 	}
 	if dryRun {
-		fmt.Printf("%sdry-run: would sync%s\n", console.Y, console.X)
+		fmt.Printf("%sdry-run: would sync patches to %s%s\n", console.Y, shortSHA(remote), console.X)
 		return 0
 	}
 
@@ -144,12 +147,8 @@ func runSelfUpdate(dryRun, force, noReapply bool) int {
 		fmt.Printf("%s%s sync failed — %s%s\n", console.R, console.CROSS, shaOrErr, console.X)
 		return 2
 	}
-	shaShort := shaOrErr
-	if len(shaShort) > 7 {
-		shaShort = shaShort[:7]
-	}
 	fmt.Printf("%s%s synced%s  %d file(s) updated @ %s\n",
-		console.G, console.CHECK, console.X, changed, shaShort)
+		console.G, console.CHECK, console.X, changed, shortSHA(shaOrErr))
 
 	if changed > 0 && !noReapply {
 		fmt.Printf("\n%sre-applying patches%s\n", console.B, console.X)
@@ -169,18 +168,14 @@ func runCheckUpdates() int {
 	fmt.Printf("  remote commit : %s\n", coalesce(info.RemoteCommit, "(unreachable)"))
 	fmt.Printf("  local files   : %d\n", info.LocalFiles)
 
-	if info.Drift {
-		fmt.Printf("%s%s update available — run 'unleash self-update'%s\n",
-			console.Y, console.WARN, console.X)
-		return 1
-	}
-	if info.LocalCommit == "" && info.RemoteCommit != "" {
-		fmt.Printf("%s%s no sync state — run 'unleash self-update' to pin current%s\n",
-			console.Y, console.WARN, console.X)
+	if warning := updateWarning(info, "unleash self-update"); warning != "" {
+		fmt.Printf("%s\n", warning)
 		return 1
 	}
 	if info.RemoteCommit != "" {
 		fmt.Printf("%s%s up to date%s\n", console.G, console.CHECK, console.X)
+	} else {
+		fmt.Printf("%s%s update check unavailable%s\n", console.Y, console.WARN, console.X)
 	}
 	return 0
 }
@@ -247,12 +242,18 @@ func runUpdate() int {
 
 	// Step 1: check remote version (best effort)
 	fmt.Printf("\n  %s[1/4] checking for updates...%s\n", console.B, console.X)
-	// Go binary version checks are best-effort via patch commit comparison
+	// Go binary version checks are best-effort via patch commit comparison.
+	pd := patchDir()
 	remoteCommit := updater.RemoteHeadSHA("patches")
+	updateInfo := updater.UpstreamStatusWithRemote(pd, remoteCommit)
 	if remoteCommit != "" {
-		fmt.Printf("  remote patches : %s\n", remoteCommit[:minInt(7, len(remoteCommit))])
+		fmt.Printf("  local patches  : %s\n", coalesce(shortSHA(updateInfo.LocalCommit), "(unknown)"))
+		fmt.Printf("  remote patches : %s\n", shortSHA(remoteCommit))
+		if warning := updateWarning(updateInfo, "unleash update"); warning != "" {
+			fmt.Printf("  %s\n", warning)
+		}
 	} else {
-		fmt.Printf("  %s%s could not check remote — updating anyway%s\n",
+		fmt.Printf("  %s%s could not check remote — using local patches%s\n",
 			console.Y, console.WARN, console.X)
 	}
 
@@ -262,24 +263,19 @@ func runUpdate() int {
 
 	// Step 3: sync patches
 	fmt.Printf("\n  %s[3/4] syncing patches...%s\n", console.B, console.X)
-	pd := patchDir()
+	syncFailed := false
 	os.MkdirAll(pd, 0o755)
 	if remoteCommit != "" {
-		state := updater.LoadState()
-		localSHA := stateString(state, "patches_commit")
-		if localSHA == remoteCommit {
+		if !updateInfo.UpdateAvailable {
 			fmt.Printf("  %s%s patches already at latest (%s)%s\n",
-				console.G, console.CHECK, remoteCommit[:minInt(7, len(remoteCommit))], console.X)
+				console.G, console.CHECK, shortSHA(remoteCommit), console.X)
 		} else {
 			changed, shaOrErr := updater.SyncPatches(pd, remoteCommit)
 			if changed >= 0 {
-				shaShort := shaOrErr
-				if len(shaShort) > 7 {
-					shaShort = shaShort[:7]
-				}
 				fmt.Printf("  %s%s %d patch file(s) synced @ %s%s\n",
-					console.G, console.CHECK, changed, shaShort, console.X)
+					console.G, console.CHECK, changed, shortSHA(shaOrErr), console.X)
 			} else {
+				syncFailed = true
 				fmt.Printf("  %s%s patch sync failed: %s%s\n",
 					console.R, console.CROSS, shaOrErr, console.X)
 			}
@@ -309,6 +305,10 @@ func runUpdate() int {
 
 	// Summary
 	fmt.Printf("\n%s%s%s\n", console.B, strings.Repeat("─", 40), console.X)
+	if syncFailed {
+		fmt.Printf("  %s%s update failed during patch sync%s\n", console.R, console.CROSS, console.X)
+		return 2
+	}
 	if rcPatch == 0 {
 		fmt.Printf("  %s%s unleash update complete%s\n", console.G, console.CHECK, console.X)
 	} else {

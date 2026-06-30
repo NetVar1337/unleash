@@ -127,14 +127,13 @@ func runDoctor() int {
 
 	// Upstream
 	info2 := updater.UpstreamStatus(pd)
-	if info2.Drift {
-		fmt.Printf("  %supstream   : behind — run 'unleash self-update'%s\n", console.Y, console.X)
+	if warning := updateWarning(info2, "unleash update"); warning != "" {
+		fmt.Printf("  upstream   : %s\n", warning)
 	} else if info2.RemoteCommit != "" {
 		fmt.Printf("  %supstream   : current%s\n", console.G, console.X)
 	} else {
 		fmt.Printf("  upstream   : unreachable\n")
 	}
-
 
 	// Dependencies
 	fmt.Printf("\n%sdependencies%s\n", console.B, console.X)

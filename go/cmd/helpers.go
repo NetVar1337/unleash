@@ -11,7 +11,9 @@ import (
 	"strings"
 
 	vpccembed "github.com/VoidChecksum/unleash/embed"
+	"github.com/VoidChecksum/unleash/internal/console"
 	"github.com/VoidChecksum/unleash/internal/patches"
+	"github.com/VoidChecksum/unleash/internal/updater"
 )
 
 // ── string helpers ──────────────────────────────────────────────────────────
@@ -28,6 +30,29 @@ func coalesce(a, b string) string {
 		return a
 	}
 	return b
+}
+
+func shortSHA(s string) string {
+	if len(s) <= 7 {
+		return s
+	}
+	return s[:7]
+}
+
+func updateWarning(info updater.UpstreamInfo, command string) string {
+	if info.RemoteCommit == "" {
+		return ""
+	}
+	if info.StateMissing {
+		return fmt.Sprintf("%s%s update status unknown — run '%s' to sync%s",
+			console.Y, console.WARN, command, console.X)
+	}
+	if info.UpdateAvailable {
+		return fmt.Sprintf("%s%s update available: %s %s %s — run '%s'%s",
+			console.Y, console.WARN, shortSHA(info.LocalCommit), console.ARROW,
+			shortSHA(info.RemoteCommit), command, console.X)
+	}
+	return ""
 }
 
 func hexInt(v int) string {

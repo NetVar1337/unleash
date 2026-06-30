@@ -463,9 +463,9 @@ func runDashboard(interval int) error {
 
 			// Upstream
 			upInfo := updater.UpstreamStatus(pd)
-			if upInfo.Drift {
-				lines = append(lines, fmt.Sprintf("  %supstream%s : %sbehind — run 'unleash self-update'%s",
-					console.B, console.X, console.Y, console.X))
+			if warning := updateWarning(upInfo, "unleash update"); warning != "" {
+				lines = append(lines, fmt.Sprintf("  %supstream%s : %s",
+					console.B, console.X, warning))
 			} else if upInfo.RemoteCommit != "" {
 				lines = append(lines, fmt.Sprintf("  %supstream%s : %scurrent%s",
 					console.B, console.X, console.G, console.X))

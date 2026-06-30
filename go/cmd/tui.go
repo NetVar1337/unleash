@@ -18,6 +18,7 @@ import (
 	"github.com/VoidChecksum/unleash/internal/patches"
 	"github.com/VoidChecksum/unleash/internal/scanner"
 	"github.com/VoidChecksum/unleash/internal/target"
+	"github.com/VoidChecksum/unleash/internal/updater"
 )
 
 // ── views ───────────────────────────────────────────────────────────────────
@@ -135,6 +136,10 @@ type rollbackDoneMsg struct {
 	msg string
 }
 
+type updateCheckDoneMsg struct {
+	info updater.UpstreamInfo
+}
+
 // ── model ───────────────────────────────────────────────────────────────────
 
 type tuiModel struct {
@@ -172,6 +177,10 @@ type tuiModel struct {
 	doctorOutput   string
 	doctorDone     bool
 	doctorViewport viewport.Model
+
+	// upstream update check
+	updateInfo    updater.UpstreamInfo
+	updateChecked bool
 
 	// status bar messages
 	statusMsg string
@@ -335,7 +344,16 @@ func (m *tuiModel) currentCategoryPatches() []int {
 // ── tea.Model implementation ────────────────────────────────────────────────
 
 func (m tuiModel) Init() tea.Cmd {
-	return runScanAsync(m.targetPath, m.targetKind, m.allPatches)
+	return tea.Batch(
+		runScanAsync(m.targetPath, m.targetKind, m.allPatches),
+		runUpdateCheckAsync(),
+	)
+}
+
+func runUpdateCheckAsync() tea.Cmd {
+	return func() tea.Msg {
+		return updateCheckDoneMsg{info: updater.UpstreamStatus(patchDir())}
+	}
 }
 
 func runScanAsync(targetPath, kind string, patchList []patches.Patch) tea.Cmd {
@@ -516,6 +534,11 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.buildScanViewport()
 		m.busy = false
 		m.busyMsg = ""
+		return m, nil
+
+	case updateCheckDoneMsg:
+		m.updateInfo = msg.info
+		m.updateChecked = true
 		return m, nil
 
 	case patchDoneMsg:
@@ -947,6 +970,17 @@ func (m tuiModel) viewDashboard() string {
 		statusLines = append(statusLines,
 			fmt.Sprintf("  Patches     : %d total, %d applied, %d drift", total, applied, drift),
 		)
+		if m.updateChecked {
+			if warning := updateWarning(m.updateInfo, "unleash update"); warning != "" {
+				statusLines = append(statusLines, "  Update      : "+warning)
+			} else if m.updateInfo.RemoteCommit != "" {
+				statusLines = append(statusLines, "  Update      : "+statusApplied.Render("current"))
+			} else {
+				statusLines = append(statusLines, "  Update      : unreachable")
+			}
+		} else {
+			statusLines = append(statusLines, "  Update      : checking...")
+		}
 	} else {
 		statusLines = append(statusLines,
 			"  Target      : "+lipgloss.NewStyle().Foreground(red).Render("NOT FOUND"),
