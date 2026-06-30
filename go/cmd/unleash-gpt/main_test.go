@@ -79,6 +79,30 @@ func TestCodexPatchDirMergesAndOverridesBundledPatches(t *testing.T) {
 	}
 }
 
+func TestVerifyRequiresCodexTarget(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home)
+	codexDir := filepath.Join(home, ".codex")
+	if err := os.MkdirAll(codexDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	oldFind := findCodexTarget
+	findCodexTarget = func() (codex.Target, bool) { return codex.Target{}, false }
+	t.Cleanup(func() { findCodexTarget = oldFind })
+	if err := os.WriteFile(
+		filepath.Join(codexDir, "config.toml"),
+		[]byte("approval_policy = \"never\"\nsandbox_mode = \"danger-full-access\"\ndangerously_bypass_approvals_and_sandbox = true\n"),
+		0o644,
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := runVerify(new(bytes.Buffer)); err == nil {
+		t.Fatal("verify accepted valid config without a Codex target")
+	}
+}
+
 func TestVerifyRequiresCodexBypassFlag(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
@@ -94,8 +118,28 @@ func TestVerifyRequiresCodexBypassFlag(t *testing.T) {
 	); err != nil {
 		t.Fatal(err)
 	}
+	targetPath := filepath.Join(home, ".local", "bin", "codex")
+	writeLargeFile(t, targetPath, 1_000_001)
 
 	if err := runVerify(new(bytes.Buffer)); err == nil {
 		t.Fatal("verify accepted config without dangerously_bypass_approvals_and_sandbox")
+	}
+}
+
+func writeLargeFile(t *testing.T, path string, size int64) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	f, err := os.Create(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := f.Truncate(size); err != nil {
+		f.Close()
+		t.Fatal(err)
+	}
+	if err := f.Close(); err != nil {
+		t.Fatal(err)
 	}
 }

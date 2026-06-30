@@ -3,18 +3,18 @@ package patches
 
 // Patch represents a top-level patch definition loaded from a JSON file.
 type Patch struct {
-	ID             string     `json:"id"`
-	Description    string     `json:"description"`
-	Type           string     `json:"type"`                      // "js_replace", "settings", "mcp_guard", "wrapper", "binary_install"
-	ValidateJS     bool       `json:"validate_js"`
-	ScanSignatures *bool      `json:"scan_signatures,omitempty"` // nil = default true
-	Retired        bool       `json:"retired,omitempty"`
-	Disabled       bool       `json:"disabled,omitempty"`
-	Patches        []SubPatch `json:"patches"`
-	AnchorStrings  []string   `json:"anchor_strings,omitempty"`
+	ID             string         `json:"id"`
+	Description    string         `json:"description"`
+	Type           string         `json:"type"` // "js_replace", "settings", "mcp_guard", "wrapper", "binary_install"
+	ValidateJS     bool           `json:"validate_js"`
+	ScanSignatures *bool          `json:"scan_signatures,omitempty"` // nil = default true
+	Retired        bool           `json:"retired,omitempty"`
+	Disabled       bool           `json:"disabled,omitempty"`
+	Patches        []SubPatch     `json:"patches"`
+	AnchorStrings  []string       `json:"anchor_strings,omitempty"`
 	Settings       map[string]any `json:"settings,omitempty"`
-	SettingsPath   string     `json:"settings_path,omitempty"`
-	Category     string     `json:"category,omitempty"`
+	SettingsPath   string         `json:"settings_path,omitempty"`
+	Category       string         `json:"category,omitempty"`
 
 	// File is the source path this patch was loaded from — used by autoheal.
 	// Corresponds to Python's __file annotation.
@@ -57,9 +57,9 @@ type ScanRow struct {
 	AnchorOffset *int     `json:"anchor_offset,omitempty"` // nil if not found
 	RegexHit     bool     `json:"regex_hit"`
 	MarkerHit    bool     `json:"marker_hit"`
-	Status       string   `json:"status"`     // "ok", "applied", "drift", "retired", "unclassified"
+	Status       string   `json:"status"` // "ok", "applied", "drift", "retired", "unclassified"
 	Confidence   float64  `json:"confidence"`
-	Method       string   `json:"method"`     // "marker", "anchor", "regex", "scattered", "fuzzy_ws", "fuzzy_ident", "keyword", "optional", "retired"
+	Method       string   `json:"method"` // "marker", "anchor", "regex", "scattered", "fuzzy_ws", "fuzzy_ident", "keyword", "optional", "retired"
 	AllOptional  bool     `json:"all_optional"`
 }
 

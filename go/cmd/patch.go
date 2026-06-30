@@ -102,9 +102,9 @@ func runPatch(dryRun bool) error {
 								continue
 							}
 							if sub.SearchRegex != "" {
-								appliedN += regexCountMatches(sr, eff)
+								appliedN += regexCountMatchesN(sr, eff, sub.EffectiveCount(0))
 							} else {
-								appliedN += bytesCount(eff, []byte(sr))
+								appliedN += bytesCountN(eff, []byte(sr), sub.EffectiveCount(0))
 							}
 						}
 						msg := "no-op (already applied)"
@@ -471,14 +471,30 @@ func bytesContains(data, sub []byte) bool {
 	return bytes.Contains(data, sub)
 }
 
-func bytesCount(data, sub []byte) int {
-	return bytes.Count(data, sub)
+func bytesCountN(data, sub []byte, count int) int {
+	if count <= 0 {
+		return bytes.Count(data, sub)
+	}
+	total := 0
+	pos := 0
+	for total < count {
+		idx := bytes.Index(data[pos:], sub)
+		if idx < 0 {
+			break
+		}
+		total++
+		pos += idx + len(sub)
+	}
+	return total
 }
 
-func regexCountMatches(pattern string, data []byte) int {
+func regexCountMatchesN(pattern string, data []byte, count int) int {
 	re, err := regexp.Compile(pattern)
 	if err != nil {
 		return 0
 	}
-	return len(re.FindAll(data, -1))
+	if count <= 0 {
+		return len(re.FindAll(data, -1))
+	}
+	return len(re.FindAll(data, count))
 }

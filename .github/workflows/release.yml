@@ -119,72 +119,10 @@ jobs:
       - name: Prepare npm package
         run: |
           VERSION="${GITHUB_REF_NAME#cc-v}"
-          mkdir -p npm-pkg/bin
-
-          # Copy all binaries
-          cp artifacts/unleash-linux-amd64 npm-pkg/bin/unleash-linux-x64
-          cp artifacts/unleash-linux-arm64 npm-pkg/bin/unleash-linux-arm64
-          cp artifacts/unleash-darwin-amd64 npm-pkg/bin/unleash-darwin-x64
-          cp artifacts/unleash-darwin-arm64 npm-pkg/bin/unleash-darwin-arm64
-          cp artifacts/unleash-windows-amd64.exe npm-pkg/bin/unleash-win32-x64.exe
-          cp artifacts/unleash-windows-arm64.exe npm-pkg/bin/unleash-win32-arm64.exe
-          chmod +x npm-pkg/bin/unleash-*
-
-          # Generate package.json
-          cat > npm-pkg/package.json << EOF
-          {
-            "name": "unleash-cc",
-            "version": "$VERSION",
-            "description": "Unleash Claude Code — 113 patches, zero refusals, zero telemetry, 42 feature gates unlocked",
-            "license": "GPL-3.0-or-later",
-            "repository": {
-              "type": "git",
-              "url": "https://github.com/VoidChecksum/unleash"
-            },
-            "homepage": "https://github.com/VoidChecksum/unleash",
-            "author": "VoidChecksum",
-            "keywords": [
-              "claude-code", "binary-patching", "bun-sea",
-              "reverse-engineering", "permission-bypass",
-              "telemetry-removal", "feature-unlock"
-            ],
-            "bin": {
-              "unleash": "bin/run.js"
-            },
-            "os": ["darwin", "linux", "win32"],
-            "cpu": ["x64", "arm64"],
-            "files": ["bin/"]
-          }
-          EOF
-
-          # Generate bin/run.js launcher
-          cat > npm-pkg/bin/run.js << 'RUNJS'
-          #!/usr/bin/env node
-          const { execFileSync } = require("child_process");
-          const path = require("path");
-          const os = require("os");
-
-          const platform = os.platform();
-          const arch = os.arch();
-
-          let bin;
-          if (platform === "win32") {
-            bin = arch === "arm64" ? "unleash-win32-arm64.exe" : "unleash-win32-x64.exe";
-          } else if (platform === "darwin") {
-            bin = arch === "arm64" ? "unleash-darwin-arm64" : "unleash-darwin-x64";
-          } else {
-            bin = arch === "arm64" ? "unleash-linux-arm64" : "unleash-linux-x64";
-          }
-
-          const binPath = path.join(__dirname, bin);
-          try {
-            execFileSync(binPath, process.argv.slice(2), { stdio: "inherit" });
-          } catch (e) {
-            process.exit(e.status || 1);
-          }
-          RUNJS
-
-          chmod +x npm-pkg/bin/run.js
+          node scripts/package-npm.mjs \
+            artifacts npm-pkg unleash-cc unleash unleash "$VERSION" \
+            "Unleash Claude Code — 113 patches, zero refusals, zero telemetry, 42 feature gates unlocked" \
+            "claude-code,binary-patching,bun-sea,reverse-engineering,permission-bypass,telemetry-removal,feature-unlock"
 
       - name: Publish to npm
         working-directory: npm-pkg

@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.2'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Check embedded assets
+        run: node scripts/sync-assets.mjs --check
+
+      - name: Test Go packages
+        run: cd go && go test ./...
+
+      - name: Test release packaging script
+        run: node --test scripts/package-npm.test.mjs

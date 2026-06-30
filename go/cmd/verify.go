@@ -9,6 +9,7 @@ import (
 
 	"github.com/VoidChecksum/unleash/internal/binary"
 	"github.com/VoidChecksum/unleash/internal/console"
+	"github.com/VoidChecksum/unleash/internal/patches"
 	"github.com/VoidChecksum/unleash/internal/target"
 )
 
@@ -30,6 +31,10 @@ func NewVerifyCmd() *cobra.Command {
 // RunVerify checks applied markers. Returns exit code.
 func RunVerify() int {
 	tgt, kind := target.FindTarget()
+	return runVerifyPatches(tgt, kind, loadAllPatches())
+}
+
+func runVerifyPatches(tgt, kind string, patchList []patches.Patch) int {
 	if tgt == "" {
 		fmt.Printf("%sclaude-code not found%s\n", console.R, console.X)
 		return 2
@@ -61,7 +66,7 @@ func RunVerify() int {
 	optionalMissing := 0
 	applied := 0
 
-	for _, p := range loadAllPatches() {
+	for _, p := range patchList {
 		if p.Retired {
 			continue
 		}
@@ -102,6 +107,10 @@ func RunVerify() int {
 		}
 	}
 
+	if requiredMissing > 0 {
+		fmt.Printf("%s%s %d required patch(es) missing%s\n", console.R, console.CROSS, requiredMissing, console.X)
+		return 1
+	}
 	if optionalMissing > 0 {
 		fmt.Printf("%s%s %d patch(es) verified%s  %s(%d optional not applied — run 'unleash patch' if unexpected)%s\n",
 			console.G, console.CHECK, applied, console.X,

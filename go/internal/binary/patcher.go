@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/VoidChecksum/unleash/internal/bytepatch"
 	"github.com/VoidChecksum/unleash/internal/patches"
 )
 
@@ -71,98 +72,10 @@ func PatchBunSEAInplace(binaryPath string, patchList []patches.Patch) PatchResul
 
 		effLo, effHi := FindActiveBundleBounds(data, bunLo, bunHi)
 
-		appliedTotal := 0
-		skippedTotal := 0
-		var perPatch []PerPatchResult
-
-		for _, p := range attemptPatches {
-			appliedN := 0
-			skippedN := 0
-			maxPadding := 0
-
-			for _, sub := range p.Patches {
-				searchRegex := sub.SearchRegex
-				search := sub.Search
-				replace := sub.Replace
-				marker := sub.AppliedMarker
-
-				// Check if already applied via marker
-				if marker != "" {
-					markerBytes := []byte(marker)
-					if bytes.Index(data[effLo:effHi], markerBytes) >= 0 {
-						continue
-					}
-				}
-
-				if searchRegex != "" {
-					re, err := regexp.Compile("(?s)" + searchRegex)
-					if err != nil {
-						skippedN++
-						continue
-					}
-					sectionView := make([]byte, effHi-effLo)
-					copy(sectionView, data[effLo:effHi])
-					loc := re.FindSubmatchIndex(sectionView)
-					if loc != nil {
-						mb := sectionView[loc[0]:loc[1]]
-						// Expand backreferences in replacement template
-						rb := re.Expand(nil, []byte(replace), sectionView, loc)
-
-						if len(rb) > len(mb) {
-							skippedN++
-							continue
-						}
-						if len(rb) < len(mb) {
-							padding := len(mb) - len(rb)
-							padBytes := make([]byte, padding)
-							for i := range padBytes {
-								padBytes[i] = ' '
-							}
-							rb = append(rb, padBytes...)
-							if padding > maxPadding {
-								maxPadding = padding
-							}
-						}
-						absStart := effLo + loc[0]
-						copy(data[absStart:absStart+len(mb)], rb)
-						appliedN++
-					}
-				} else if search != "" {
-					sb := []byte(search)
-					rb := []byte(replace)
-					if len(rb) > len(sb) {
-						skippedN++
-						continue
-					}
-					if len(rb) < len(sb) {
-						padding := len(sb) - len(rb)
-						padBytes := make([]byte, padding)
-						for i := range padBytes {
-							padBytes[i] = ' '
-						}
-						rb = append(rb, padBytes...)
-						if padding > maxPadding {
-							maxPadding = padding
-						}
-					}
-					// First occurrence only within effective region
-					j := bytes.Index(data[effLo:effHi], sb)
-					if j >= 0 {
-						copy(data[effLo+j:effLo+j+len(sb)], rb)
-						appliedN++
-					}
-				}
-			}
-
-			perPatch = append(perPatch, PerPatchResult{
-				ID:         p.ID,
-				Applied:    appliedN,
-				Skipped:    skippedN,
-				MaxPadding: maxPadding,
-			})
-			appliedTotal += appliedN
-			skippedTotal += skippedN
-		}
+		applyResult := applyJSPatchesToRegion(data, effLo, effHi, attemptPatches)
+		appliedTotal := applyResult.Applied
+		skippedTotal := applyResult.Skipped
+		perPatch := applyResult.PerPatch
 
 		if int64(len(data)) != originalSize {
 			return PatchResult{
@@ -313,6 +226,108 @@ func PatchBunSEAInplace(binaryPath string, patchList []patches.Patch) PatchResul
 	}
 
 	return result
+}
+
+// applyJSPatchesToRegion applies JS subpatches in-place within [effLo, effHi).
+func applyJSPatchesToRegion(data []byte, effLo, effHi int, patchList []patches.Patch) PatchResult {
+	appliedTotal := 0
+	skippedTotal := 0
+	var perPatch []PerPatchResult
+	region := data[effLo:effHi]
+
+	for _, p := range patchList {
+		appliedN := 0
+		skippedN := 0
+		maxPadding := 0
+
+		for _, sub := range p.Patches {
+			if sub.AppliedMarker != "" && bytes.Contains(region, []byte(sub.AppliedMarker)) {
+				continue
+			}
+			if sub.SearchRegex != "" {
+				applied, skipped, padding := applyRegexSubPatch(region, sub)
+				appliedN += applied
+				skippedN += skipped
+				if padding > maxPadding {
+					maxPadding = padding
+				}
+				continue
+			}
+			if sub.Search == "" {
+				continue
+			}
+			search := []byte(sub.Search)
+			replace := []byte(sub.Replace)
+			if len(replace) > len(search) {
+				skippedN++
+				continue
+			}
+			padding := len(search) - len(replace)
+			padded := append([]byte(nil), replace...)
+			if padding > 0 {
+				padded = append(padded, bytes.Repeat([]byte(" "), padding)...)
+				if padding > maxPadding {
+					maxPadding = padding
+				}
+			}
+			appliedN += bytepatch.ReplaceBytes(region, search, padded, sub.EffectiveCount(0))
+		}
+
+		perPatch = append(perPatch, PerPatchResult{ID: p.ID, Applied: appliedN, Skipped: skippedN, MaxPadding: maxPadding})
+		appliedTotal += appliedN
+		skippedTotal += skippedN
+	}
+	return PatchResult{OK: true, Applied: appliedTotal, Skipped: skippedTotal, PerPatch: perPatch}
+}
+
+func applyRegexSubPatch(region []byte, sub patches.SubPatch) (applied int, skipped int, maxPadding int) {
+	re, err := regexp.Compile("(?s)" + sub.SearchRegex)
+	if err != nil {
+		return 0, 1, 0
+	}
+	count := sub.EffectiveCount(0)
+	pos := 0
+	if count <= 0 {
+		count = -1
+	}
+	for count != 0 {
+		loc := re.FindSubmatchIndex(region[pos:])
+		if loc == nil {
+			break
+		}
+		start := pos + loc[0]
+		end := pos + loc[1]
+		match := region[start:end]
+		expandedLoc := append([]int(nil), loc...)
+		for i := range expandedLoc {
+			if expandedLoc[i] >= 0 {
+				expandedLoc[i] += pos
+			}
+		}
+		replacement := re.Expand(nil, []byte(sub.Replace), region, expandedLoc)
+		if len(replacement) > len(match) {
+			skipped++
+			pos = end
+			if count > 0 {
+				count--
+			}
+			continue
+		}
+		padding := len(match) - len(replacement)
+		if padding > 0 {
+			replacement = append(replacement, bytes.Repeat([]byte(" "), padding)...)
+			if padding > maxPadding {
+				maxPadding = padding
+			}
+		}
+		copy(region[start:end], replacement)
+		applied++
+		pos = end
+		if count > 0 {
+			count--
+		}
+	}
+	return applied, skipped, maxPadding
 }
 
 // runWithTimeout runs a command with a timeout in seconds.

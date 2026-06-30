@@ -2,7 +2,6 @@ package main
 
 import (
 	"embed"
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,12 +10,15 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/VoidChecksum/unleash/internal/omp"
+	"github.com/VoidChecksum/unleash/internal/productcli"
 )
 
 var version = "dev"
 
 //go:embed omp-patches/*.json
 var embeddedOMPPatches embed.FS
+
+var findOMPTarget = omp.FindTarget
 
 func main() {
 	if err := newRootCmd().Execute(); err != nil {
@@ -46,7 +48,7 @@ func newSetupCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			out := cmd.OutOrStdout()
 			fmt.Fprintln(out, "unleash-omp setup")
-			t, ok := omp.FindTarget()
+			t, ok := findOMPTarget()
 			if !ok {
 				fmt.Fprintln(out, "OMP not found. Install with: bun install -g @oh-my-pi/pi-coding-agent")
 			} else {
@@ -89,7 +91,7 @@ func newStatusCmd() *cobra.Command {
 		Short: "Show OMP target and Unleash-OMP state",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			out := cmd.OutOrStdout()
-			if t, ok := omp.FindTarget(); ok {
+			if t, ok := findOMPTarget(); ok {
 				version, _ := omp.DetectVersion()
 				fmt.Fprintf(out, "target: %s\nkind: %s\nsha: %s\n", t.Path, t.Kind, omp.SHA256Short(t.Path))
 				if version != "" {
@@ -147,7 +149,7 @@ func newRollbackCmd() *cobra.Command {
 		Use:   "rollback",
 		Short: "Restore the newest OMP backup",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			t, ok := omp.FindTarget()
+			t, ok := findOMPTarget()
 			if !ok {
 				return fmt.Errorf("OMP target not found")
 			}
@@ -162,7 +164,7 @@ func newRollbackCmd() *cobra.Command {
 }
 
 func runPatch(out interface{ Write([]byte) (int, error) }, dryRun bool) error {
-	t, ok := omp.FindTarget()
+	t, ok := findOMPTarget()
 	if !ok {
 		fmt.Fprintln(out, "target: not found")
 		return nil
@@ -184,16 +186,17 @@ func runPatch(out interface{ Write([]byte) (int, error) }, dryRun bool) error {
 }
 
 func runVerify(out interface{ Write([]byte) (int, error) }) error {
-	if t, ok := omp.FindTarget(); ok {
-		fmt.Fprintf(out, "target: ok (%s)\n", t.Path)
-	} else {
+	t, ok := findOMPTarget()
+	if !ok {
 		fmt.Fprintln(out, "target: not found")
+		return fmt.Errorf("OMP target not found")
 	}
+	fmt.Fprintf(out, "target: ok (%s)\n", t.Path)
 	configPath := filepath.Join(omp.AgentDir(""), "config.yml")
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		fmt.Fprintln(out, "config: missing")
-		return nil
+		return fmt.Errorf("OMP config missing")
 	}
 	if strings.Contains(string(data), "approvalMode: yolo") {
 		fmt.Fprintln(out, "config: ok")
@@ -216,70 +219,13 @@ func loadOMPPatches() ([]omp.Patch, error) {
 }
 
 func loadOMPPatchesFromEmbedded() ([]omp.Patch, error) {
-	entries, err := embeddedOMPPatches.ReadDir("omp-patches")
-	if err != nil {
-		return nil, err
-	}
-	var out []omp.Patch
-	for _, e := range entries {
-		if e.IsDir() || filepath.Ext(e.Name()) != ".json" {
-			continue
-		}
-		data, err := embeddedOMPPatches.ReadFile("omp-patches/" + e.Name())
-		if err != nil {
-			return nil, err
-		}
-		var p omp.Patch
-		if err := json.Unmarshal(data, &p); err != nil {
-			return nil, err
-		}
-		out = append(out, p)
-	}
-	return out, nil
+	return productcli.LoadPatchesFromFS(embeddedOMPPatches, "omp-patches")
 }
 
 func loadOMPPatchesFromDir(dir string) ([]omp.Patch, error) {
-	entries, err := os.ReadDir(dir)
-	if os.IsNotExist(err) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	var out []omp.Patch
-	for _, e := range entries {
-		if e.IsDir() || filepath.Ext(e.Name()) != ".json" {
-			continue
-		}
-		data, err := os.ReadFile(filepath.Join(dir, e.Name()))
-		if err != nil {
-			return nil, err
-		}
-		var p omp.Patch
-		if err := json.Unmarshal(data, &p); err != nil {
-			return nil, fmt.Errorf("%s: %w", e.Name(), err)
-		}
-		out = append(out, p)
-	}
-	return out, nil
+	return productcli.LoadPatchesFromDir(dir)
 }
 
 func mergeOMPPatches(base, extra []omp.Patch) []omp.Patch {
-	if len(extra) == 0 {
-		return base
-	}
-	seen := make(map[string]int, len(base)+len(extra))
-	merged := append([]omp.Patch(nil), base...)
-	for i, p := range merged {
-		seen[p.ID] = i
-	}
-	for _, p := range extra {
-		if idx, ok := seen[p.ID]; ok {
-			merged[idx] = p
-			continue
-		}
-		seen[p.ID] = len(merged)
-		merged = append(merged, p)
-	}
-	return merged
+	return productcli.MergePatches(base, extra)
 }

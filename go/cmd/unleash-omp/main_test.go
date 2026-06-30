@@ -30,6 +30,8 @@ func TestHelpListsUnleashOMPCommands(t *testing.T) {
 func TestVerifyReadsPIConfigDir(t *testing.T) {
 	configRoot := t.TempDir()
 	t.Setenv("PI_CONFIG_DIR", configRoot)
+	t.Setenv("HOME", configRoot)
+	t.Setenv("USERPROFILE", configRoot)
 	agentDir := filepath.Join(configRoot, "agent")
 	if err := os.MkdirAll(agentDir, 0o755); err != nil {
 		t.Fatal(err)
@@ -38,12 +40,36 @@ func TestVerifyReadsPIConfigDir(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	targetPath := filepath.Join(configRoot, ".bun", "install", "global", "node_modules", "@oh-my-pi", "pi-coding-agent", "dist", "cli.js")
+	writeLargeFile(t, targetPath, 1_000_001)
+
 	buf := new(bytes.Buffer)
 	if err := runVerify(buf); err != nil {
 		t.Fatal(err)
 	}
 	if !strings.Contains(buf.String(), "config: ok") {
 		t.Fatalf("verify did not read PI_CONFIG_DIR config:\n%s", buf.String())
+	}
+}
+
+func TestVerifyRequiresOMPTarget(t *testing.T) {
+	configRoot := t.TempDir()
+	t.Setenv("PI_CONFIG_DIR", configRoot)
+	t.Setenv("HOME", configRoot)
+	t.Setenv("USERPROFILE", configRoot)
+	oldFind := findOMPTarget
+	findOMPTarget = func() (omp.Target, bool) { return omp.Target{}, false }
+	t.Cleanup(func() { findOMPTarget = oldFind })
+	agentDir := filepath.Join(configRoot, "agent")
+	if err := os.MkdirAll(agentDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(agentDir, "config.yml"), []byte("tools:\n  approvalMode: yolo\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := runVerify(new(bytes.Buffer)); err == nil {
+		t.Fatal("verify accepted valid config without an OMP target")
 	}
 }
 
@@ -96,5 +122,23 @@ func TestOMPPatchDirMergesAndOverridesBundledPatches(t *testing.T) {
 	}
 	if ids["bundled"].Patches[0].Search != "new" {
 		t.Fatalf("override did not replace bundled patch: %#v", ids["bundled"])
+	}
+}
+
+func writeLargeFile(t *testing.T, path string, size int64) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	f, err := os.Create(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := f.Truncate(size); err != nil {
+		f.Close()
+		t.Fatal(err)
+	}
+	if err := f.Close(); err != nil {
+		t.Fatal(err)
 	}
 }

@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/VoidChecksum/unleash/embed"
-	"github.com/VoidChecksum/unleash/internal/console"
 )
 
 // LoadPatches loads all *.json patch files from a directory, skipping retired
@@ -34,16 +33,12 @@ func LoadPatches(patchDir string) ([]Patch, error) {
 		fpath := filepath.Join(patchDir, e.Name())
 		data, err := os.ReadFile(fpath)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s%s %s: read error — %v%s\n",
-				console.R, console.CROSS, e.Name(), err, console.X)
-			continue
+			return nil, fmt.Errorf("reading patch %s: %w", fpath, err)
 		}
 
 		var p Patch
 		if err := json.Unmarshal(data, &p); err != nil {
-			fmt.Fprintf(os.Stderr, "%s%s %s: invalid JSON — %v%s\n",
-				console.R, console.CROSS, e.Name(), err, console.X)
-			continue
+			return nil, fmt.Errorf("parsing patch %s: %w", fpath, err)
 		}
 
 		if p.Disabled || p.Retired {
@@ -77,12 +72,12 @@ func LoadPatchesForScan(patchDir string, respectScanFlag bool) ([]Patch, error) 
 		fpath := filepath.Join(patchDir, e.Name())
 		data, err := os.ReadFile(fpath)
 		if err != nil {
-			continue
+			return nil, fmt.Errorf("reading patch %s: %w", fpath, err)
 		}
 
 		var p Patch
 		if err := json.Unmarshal(data, &p); err != nil {
-			continue
+			return nil, fmt.Errorf("parsing patch %s: %w", fpath, err)
 		}
 
 		if p.Type != "js_replace" {
@@ -147,14 +142,12 @@ func loadPatchesFromFS(fsys fs.FS, root string) ([]Patch, error) {
 		fpath := root + "/" + e.Name()
 		data, err := fs.ReadFile(fsys, fpath)
 		if err != nil {
-			continue
+			return nil, fmt.Errorf("reading embedded patch %s: %w", fpath, err)
 		}
 
 		var p Patch
 		if err := json.Unmarshal(data, &p); err != nil {
-			fmt.Fprintf(os.Stderr, "%s%s %s: invalid JSON — %v%s\n",
-				console.R, console.CROSS, e.Name(), err, console.X)
-			continue
+			return nil, fmt.Errorf("parsing embedded patch %s: %w", fpath, err)
 		}
 
 		if p.Disabled || p.Retired {
@@ -186,12 +179,12 @@ func loadPatchesForScanFromFS(fsys fs.FS, root string, respectScanFlag bool) ([]
 		fpath := root + "/" + e.Name()
 		data, err := fs.ReadFile(fsys, fpath)
 		if err != nil {
-			continue
+			return nil, fmt.Errorf("reading embedded patch %s: %w", fpath, err)
 		}
 
 		var p Patch
 		if err := json.Unmarshal(data, &p); err != nil {
-			continue
+			return nil, fmt.Errorf("parsing embedded patch %s: %w", fpath, err)
 		}
 
 		if p.Type != "js_replace" {

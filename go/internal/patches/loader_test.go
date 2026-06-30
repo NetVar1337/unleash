@@ -26,6 +26,27 @@ func TestLoadPatchesForScanSkipsDisabledRetiredAndNonScannable(t *testing.T) {
 	}
 }
 
+func TestLoadPatchesReturnsInvalidJSONError(t *testing.T) {
+	dir := t.TempDir()
+	writePatchJSON(t, dir, "01-good.json", `{"id":"good","type":"js_replace","patches":[{"search":"a","replace":"b"}]}`)
+	writePatchJSON(t, dir, "02-bad.json", `{`)
+
+	_, err := LoadPatches(dir)
+	if err == nil {
+		t.Fatal("LoadPatches accepted invalid JSON")
+	}
+}
+
+func TestLoadPatchesForScanReturnsInvalidJSONError(t *testing.T) {
+	dir := t.TempDir()
+	writePatchJSON(t, dir, "01-bad.json", `{`)
+
+	_, err := LoadPatchesForScan(dir, true)
+	if err == nil {
+		t.Fatal("LoadPatchesForScan accepted invalid JSON")
+	}
+}
+
 func writePatchJSON(t *testing.T, dir, name, content string) {
 	t.Helper()
 	if err := os.WriteFile(filepath.Join(dir, name), []byte(content), 0o644); err != nil {

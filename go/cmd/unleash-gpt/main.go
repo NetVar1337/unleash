@@ -2,7 +2,6 @@ package main
 
 import (
 	"embed"
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,12 +10,15 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/VoidChecksum/unleash/internal/codex"
+	"github.com/VoidChecksum/unleash/internal/productcli"
 )
 
 var version = "dev"
 
 //go:embed codex-patches/*.json
 var embeddedCodexPatches embed.FS
+
+var findCodexTarget = codex.FindTarget
 
 func main() {
 	if err := newRootCmd().Execute(); err != nil {
@@ -54,7 +56,7 @@ func newSetupCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			out := cmd.OutOrStdout()
 			fmt.Fprintln(out, "unleash-gpt setup")
-			t, ok := codex.FindTarget()
+			t, ok := findCodexTarget()
 			if !ok {
 				fmt.Fprintln(out, "Codex CLI not found. Install with: npm install -g @openai/codex")
 			} else {
@@ -97,7 +99,7 @@ func newStatusCmd() *cobra.Command {
 		Short: "Show Codex target and Unleash-GPT state",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			out := cmd.OutOrStdout()
-			if t, ok := codex.FindTarget(); ok {
+			if t, ok := findCodexTarget(); ok {
 				version, _ := codex.DetectVersion(t.Path)
 				fmt.Fprintf(out, "target: %s\nkind: %s\nsha: %s\n", t.Path, t.Kind, codex.SHA256Short(t.Path))
 				if version != "" {
@@ -155,7 +157,7 @@ func newRollbackCmd() *cobra.Command {
 		Use:   "rollback",
 		Short: "Restore the newest Codex backup",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			t, ok := codex.FindTarget()
+			t, ok := findCodexTarget()
 			if !ok {
 				return fmt.Errorf("Codex target not found")
 			}
@@ -170,7 +172,7 @@ func newRollbackCmd() *cobra.Command {
 }
 
 func runPatch(out interface{ Write([]byte) (int, error) }, dryRun bool) error {
-	t, ok := codex.FindTarget()
+	t, ok := findCodexTarget()
 	if !ok {
 		fmt.Fprintln(out, "target: not found")
 		return nil
@@ -196,17 +198,18 @@ func runPatch(out interface{ Write([]byte) (int, error) }, dryRun bool) error {
 }
 
 func runVerify(out interface{ Write([]byte) (int, error) }) error {
-	if t, ok := codex.FindTarget(); ok {
-		fmt.Fprintf(out, "target: ok (%s)\n", t.Path)
-	} else {
+	t, ok := findCodexTarget()
+	if !ok {
 		fmt.Fprintln(out, "target: not found")
+		return fmt.Errorf("Codex target not found")
 	}
+	fmt.Fprintf(out, "target: ok (%s)\n", t.Path)
 	home, _ := os.UserHomeDir()
 	configPath := filepath.Join(home, ".codex", "config.toml")
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		fmt.Fprintln(out, "config: missing")
-		return nil
+		return fmt.Errorf("Codex config missing")
 	}
 	text := string(data)
 	if containsAll(text, []string{"approval_policy = \"never\"", "sandbox_mode = \"danger-full-access\"", "dangerously_bypass_approvals_and_sandbox = true"}) {
@@ -230,72 +233,15 @@ func loadCodexPatches() ([]codex.Patch, error) {
 }
 
 func loadCodexPatchesFromEmbedded() ([]codex.Patch, error) {
-	entries, err := embeddedCodexPatches.ReadDir("codex-patches")
-	if err != nil {
-		return nil, err
-	}
-	var out []codex.Patch
-	for _, e := range entries {
-		if e.IsDir() || filepath.Ext(e.Name()) != ".json" {
-			continue
-		}
-		data, err := embeddedCodexPatches.ReadFile("codex-patches/" + e.Name())
-		if err != nil {
-			return nil, err
-		}
-		var p codex.Patch
-		if err := json.Unmarshal(data, &p); err != nil {
-			return nil, err
-		}
-		out = append(out, p)
-	}
-	return out, nil
+	return productcli.LoadPatchesFromFS(embeddedCodexPatches, "codex-patches")
 }
 
 func loadCodexPatchesFromDir(dir string) ([]codex.Patch, error) {
-	entries, err := os.ReadDir(dir)
-	if os.IsNotExist(err) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	var out []codex.Patch
-	for _, e := range entries {
-		if e.IsDir() || filepath.Ext(e.Name()) != ".json" {
-			continue
-		}
-		data, err := os.ReadFile(filepath.Join(dir, e.Name()))
-		if err != nil {
-			return nil, err
-		}
-		var p codex.Patch
-		if err := json.Unmarshal(data, &p); err != nil {
-			return nil, fmt.Errorf("%s: %w", e.Name(), err)
-		}
-		out = append(out, p)
-	}
-	return out, nil
+	return productcli.LoadPatchesFromDir(dir)
 }
 
 func mergeCodexPatches(base, extra []codex.Patch) []codex.Patch {
-	if len(extra) == 0 {
-		return base
-	}
-	seen := make(map[string]int, len(base)+len(extra))
-	merged := append([]codex.Patch(nil), base...)
-	for i, p := range merged {
-		seen[p.ID] = i
-	}
-	for _, p := range extra {
-		if idx, ok := seen[p.ID]; ok {
-			merged[idx] = p
-			continue
-		}
-		seen[p.ID] = len(merged)
-		merged = append(merged, p)
-	}
-	return merged
+	return productcli.MergePatches(base, extra)
 }
 
 func containsAll(text string, needles []string) bool {
