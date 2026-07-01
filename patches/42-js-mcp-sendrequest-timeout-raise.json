@@ -1,21 +1,21 @@
 {
-  "id": "js-mcp-sendrequest-timeout-raise",
-  "description": "Raise MCP client default per-request timeout from 30 s to 300 s.",
-  "type": "js_replace",
-  "validate_js": true,
-  "patches": [
-    {
-      "search_regex": "async sendRequest\\(H,\\$=30000\\)",
-      "replace": "async sendRequest(H,$=300000)",
-      "applied_marker": "sendRequest(H,$=300000)",
-      "description": "MCP tool calls (especially ones that trigger long analyzers, LLMs, or heavy scans) are dropped at 30 s even when the ser",
-      "required": false,
-      "count": 0
-    }
-  ],
-  "scan_signatures": true,
   "anchor_strings": [
     "async sendRequest"
   ],
-  "category": "ratelimit"
+  "category": "ratelimit",
+  "description": "Raise MCP client default per-request timeout from 30 s to 300 s.",
+  "id": "js-mcp-sendrequest-timeout-raise",
+  "patches": [
+    {
+      "applied_marker": "sendRequest(H,$=300000)",
+      "count": 0,
+      "description": "MCP tool calls (especially ones that trigger long analyzers, LLMs, or heavy scans) are dropped at 30 s even when the ser",
+      "replace": "async sendRequest(H,$=300000)",
+      "required": false,
+      "search_regex": "tener_mask\\s*audio_set_listener_mask\\s*audio_get_listener_count\\s*audio_get_listener_info\\s*audio_system\\s*show_message\\s*show_message_async\\s*clickable_add\\s*clickable_add_ext\\s*clickable_change\\s*clickable_change_ext\\s*clickable_delete\\s*clickable_exis"
+    }
+  ],
+  "scan_signatures": true,
+  "type": "js_replace",
+  "validate_js": true
 }

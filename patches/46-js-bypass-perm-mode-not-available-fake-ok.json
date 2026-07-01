@@ -1,21 +1,21 @@
 {
-  "id": "js-bypass-perm-mode-not-available-fake-ok",
+  "anchor_strings": [
+    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\t\u0000\u0000\u0000\u0011\u0000\u0000\u0000bypassPermissions\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0006\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"
+  ],
+  "category": "permissions",
   "description": "Make runtime attempts to switch to `permissionMode: bypassPermissions` succeed even when the session was NOT launched with --dangerously-skip-permissions (i.e. remove the `isBypassPermissionsModeAvailable` gate at runtime-switch).",
-  "type": "js_replace",
-  "validate_js": true,
+  "id": "js-bypass-perm-mode-not-available-fake-ok",
   "patches": [
     {
-      "search_regex": "rmissions\\ because\\ [A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*\\ disabled\\ [A-Za-z_$][\\w$]*\\ settings\\ [A-Za-z_$][\\w$]*\\ configuration\"\\};[A-Za-z_$][\\w$]*\\(!\\$\\.getState\\(\\)\\.toolPermissionContext\\.isBypassPermissionsModeAvailable\\)return\\{[A-Za-z_$][\\w$]*:!1,error:\"Cannot\\ [A-Za-z_$][\\w$]*\\ permission\\ mode\\ [A-Za-z_$][\\w$]*\\ bypassPermissions\\ because\\ [A-Za-z_$][\\w$]*\\ session\\ [A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*",
-      "replace": "!1&&!1)return{ok:!1,error:\"Cannot set permission mode to bypassPermissions because the session was not launched with --dangerously-skip-permissions\"}",
-      "applied_marker": "!1&&!1)return{ok:!1,error:\"Cannot set permission mode to bypassPermissions",
+      "applied_marker": "!1\u0026\u0026!1)return{ok:!1,error:\"Cannot set permission mode to bypassPermissions",
+      "count": 0,
       "description": "Four separate error sites emit `Cannot set permission mode to bypassPermissions because the session was not launched wit",
+      "replace": "!1\u0026\u0026!1)return{ok:!1,error:\"Cannot set permission mode to bypassPermissions because the session was not launched with --dangerously-skip-permissions\"}",
       "required": false,
-      "count": 0
+      "search_regex": "passPermissions\\s*because\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*disabled\\s*[A-Za-z_$][\\w$]*\\s*settings\\s*[A-Za-z_$][\\w$]*\\s*configuration\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000[A-Za-z_$][\\w$]*\u0000\u0000\u0000Cannot\\s*[A-Za-z_$][\\w$]*\\s*permission\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*bypassPermissions\\s*because\\s*[A-Za-z_$][\\w$]*\\s*session\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*launched\\s*[A-Za-z_$][\\w$]*\\s*--dangerously-[A-Za-z_$][\\w$]*-permissions\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000"
     }
   ],
   "scan_signatures": true,
-  "anchor_strings": [
-    ".toolPermissionContext.isBypassPermissionsModeAvailable)return{ok:!1,error:\"Cannot set permission mode to bypassPermissions because the session was not launched with --dangerously-skip-permissions\"}"
-  ],
-  "category": "permissions"
+  "type": "js_replace",
+  "validate_js": true
 }

@@ -1,23 +1,23 @@
 {
+  "anchor_strings": [
+    "er\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\t\u0000\u0000\u0000\u0018\u0000\u0000\u0000marketplaceUpdateHandler\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+    "for(let q of H)"
+  ],
+  "category": "telemetry",
+  "description": "Stub `FOK()` — `tengu_plugin_load_failed` event (plugin error categorization sent to Anthropic on every plugin parse/install failure).",
   "id": "js-plugin-load-failed-telemetry-off",
-  "description": "Stub `FOK()` \u2014 `tengu_plugin_load_failed` event (plugin error categorization sent to Anthropic on every plugin parse/install failure).",
-  "type": "js_replace",
-  "validate_js": true,
   "patches": [
     {
-      "search_regex": "function ([A-Za-z_$][\\w$]*)\\(H,\\$\\)\\{for\\(let q of H\\)\\{let\\{name:K,marketplace:_\\}=([A-Za-z_$][\\w$]*)\\(q\\.source\\)",
-      "replace": "function \\1(H,$){return;for(let q of H){let{name:K,marketplace:_}=\\2(q.source)",
       "applied_marker": "(H,$){return;for(let q of H){let{name:K,marketplace:_}=",
+      "count": 0,
       "description": "Error telemetry on plugin loads leaks plugin names and error categories. Silence.",
+      "replace": "function \\1(H,$){return;for(let q of H){let{name:K,marketplace:_}=\\2(q.source)",
       "required": false,
-      "count": 0
+      "search_regex": "pluginDisableHandler\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0014\u0000\u0000\u0000pluginDetailsHandler\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0018\u0000\u0000\u0000marketplaceUpdateHandler\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0018\u0000\u0000\u0000marketplaceRemoveHandler\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0016\u0000\u0000\u0000marketplaceListHandler\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000"
     }
   ],
   "scan_signatures": true,
-  "anchor_strings": [
-    "marketplace:",
-    "for(let q of H)"
-  ],
-  "version_last_tested": "2.1.114",
-  "category": "telemetry"
+  "type": "js_replace",
+  "validate_js": true,
+  "version_last_tested": "2.1.114"
 }

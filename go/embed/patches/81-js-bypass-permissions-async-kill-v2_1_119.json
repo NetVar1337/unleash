@@ -1,22 +1,22 @@
 {
-  "id": "js-bypass-permissions-async-kill-v2_1_119",
+  "anchor_strings": [
+    "\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\t\u0000\u0000\u00002\u0000\u0000\u0000bypassPermissions mode is disabled by feature g"
+  ],
+  "category": "permissions",
   "description": "v2.1.119 symbol rename: async function that calls pK(1,'bypass_permissions_disabled') and process-exits when Anthropic flips tengu_disable_bypass_permissions_mode. Neutralize by turning body into early-return. Name-agnostic regex.",
-  "type": "js_replace",
-  "validate_js": true,
-  "scan_signatures": true,
+  "id": "js-bypass-permissions-async-kill-v2_1_119",
   "patches": [
     {
-      "search_regex": "\\ [A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\)\\{[A-Za-z_$][\\w$]*\\(![A-Za-z_$][\\w$]*\\.isBypassPermissionsModeAvailable\\)return;[A-Za-z_$][\\w$]*\\(!await\\ [A-Za-z_$][\\w$]*\\(\\)\\)return;[A-Za-z_$][\\w$]*\\(\"bypassPermissions\\ mode\\ [A-Za-z_$][\\w$]*\\ being\\ disabled\\ [A-Za-z_$][\\w$]*\\ feature\\ gate\\ \\(async\\ check\\)\",\\{level:\"warn\"\\}\\),[A-Za-z_$][\\w$]*\\(1,\"bypass_permissions_disabled\"\\)\\}function\\ [A-Za-z_$][\\w$]*\\(\\)\\{return\\(\\$[A-Za-z_$][\\w$]*\\(\\)",
-      "replace": "\\1return/*__void_bp119_async__*/;if(0);if(0)y(\"bypassPermissions mode is being disabled by feature gate (async check)\",",
       "applied_marker": "__void_bp119_async__",
+      "count": 0,
       "description": "async bypass-permissions-kill no-op",
+      "replace": "\\1return/*__void_bp119_async__*/;if(0);if(0)y(\"bypassPermissions mode is being disabled by feature gate (async check)\",",
       "required": false,
-      "count": 0
+      "search_regex": "bypassPermissions\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*disabled\\s*[A-Za-z_$][\\w$]*\\s*feature\\s*[A-Za-z_$][\\w$]*\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000@\u0000\u0000\u0000Bypass\\s*permissions\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*disabled\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*organization\\s*policy\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\\.\u0000\u0000\u0000bypassPermissions\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*disabled\\s*[A-Za-z_$][\\w$]*\\s*settings\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u00000\u0000\u0000\u0000Bypass"
     }
   ],
-  "anchor_strings": [
-    "bypassPermissions mode is being disabled by feature gate (async check)"
-  ],
-  "version_last_tested": "2.1.119",
-  "category": "permissions"
+  "scan_signatures": true,
+  "type": "js_replace",
+  "validate_js": true,
+  "version_last_tested": "2.1.119"
 }

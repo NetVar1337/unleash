@@ -1,21 +1,21 @@
 {
-  "id": "js-additional-protection",
-  "description": "Disable x-anthropic-additional-protection header \u2014 stops sending server-side content filter activation flag",
-  "type": "js_replace",
-  "validate_js": true,
-  "scan_signatures": true,
-  "patches": [
-    {
-      "search_regex": "process\\.env\\.CLAUDE_CODE_ADDITIONAL_PROTECTION(?!_VOID)",
-      "replace": "process.env.CLAUDE_CODE_ADDITIONAL_PROTECTION_VOID_DISABLED",
-      "required": false,
-      "count": 0,
-      "applied_marker": "CLAUDE_CODE_ADDITIONAL_PROTECTION_VOID_DISABLED",
-      "description": "Never send x-anthropic-additional-protection header \u2014 rewrite env var to nonexistent name (regex, idempotent via negative lookahead)"
-    }
-  ],
   "anchor_strings": [
     "process.env.CLAUDE_CODE_ADDITIONAL_PROTECTION"
   ],
-  "category": "telemetry"
+  "category": "telemetry",
+  "description": "Disable x-anthropic-additional-protection header — stops sending server-side content filter activation flag",
+  "id": "js-additional-protection",
+  "patches": [
+    {
+      "applied_marker": "CLAUDE_CODE_ADDITIONAL_PROTECTION_VOID_DISABLED",
+      "count": 0,
+      "description": "Never send x-anthropic-additional-protection header — rewrite env var to nonexistent name (regex, idempotent via negative lookahead)",
+      "replace": "process.env.CLAUDE_CODE_ADDITIONAL_PROTECTION_VOID_DISABLED",
+      "required": false,
+      "search_regex": "H_REFRESH_TOKEN\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u001b\u0000\u0000\u0000CLAUDE_CODE_OAUTH_CLIENT_ID\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u001d\u0000\u0000\u0000CLAUDE_CODE_OAUTH_401_WAIT_MS\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u001c\u0000\u0000\u0000CLAUDE_CODE_HFI_BEARER_TOKEN\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000[A-Za-z_$][\\w$]*\u0000\u0000\u0000CLAUDE_CODE_ENABLE_PROXY_AUTH_HELPER\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000"
+    }
+  ],
+  "scan_signatures": true,
+  "type": "js_replace",
+  "validate_js": true
 }

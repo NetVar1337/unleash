@@ -1,21 +1,21 @@
 {
-  "id": "js-chrome-subscription-require-skip",
-  "description": "Remove the Claude-in-Chrome subscription gate that shows 'chrome-requires-subscription' refusal overlay.",
-  "type": "js_replace",
-  "validate_js": true,
-  "patches": [
-    {
-      "search_regex": "\"chrome\\-extension\",compute:async\\(\\)=>\\{[A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*=[A-Za-z_$][\\w$]*\\(\\);[A-Za-z_$][\\w$]*\\(!\\$[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\)\\)return\\ null;[A-Za-z_$][\\w$]*\\(![A-Za-z_$][\\w$]*\\(\\)\\)return\\{[A-Za-z_$][\\w$]*:\"chrome\\-requires\\-subscription\",[A-Za-z_$][\\w$]*:[A-Za-z_$][\\w$]*\\.createElement\\([A-Za-z_$][\\w$]*,\\{color:\"error\"\\},\"Claude\\ [A-Za-z_$][\\w$]*\\ Chrome\\ requires\\ [A-Za-z_$][\\w$]*\\ claude\\.[A-Za-z_$][\\w$]*\\ subscription\"\\),priority:\"imme",
-      "replace": "if(!1  )return{key:\"chrome-requires-subscription\"",
-      "applied_marker": "if(!1  )return{key:\"chrome-requires-subscription\"",
-      "description": "`--chrome` mode refuses to start for non-Claude.ai-subscribed logins; operator uses Max plan via alternate auth. Gate re",
-      "required": false,
-      "count": 0
-    }
-  ],
-  "scan_signatures": true,
   "anchor_strings": [
     ")return{key:\"chrome-requires-subscription\""
   ],
-  "category": "subscription"
+  "category": "subscription",
+  "description": "Remove the Claude-in-Chrome subscription gate that shows 'chrome-requires-subscription' refusal overlay.",
+  "id": "js-chrome-subscription-require-skip",
+  "patches": [
+    {
+      "applied_marker": "if(!1  )return{key:\"chrome-requires-subscription\"",
+      "count": 0,
+      "description": "`--chrome` mode refuses to start for non-Claude.ai-subscribed logins; operator uses Max plan via alternate auth. Gate re",
+      "replace": "if(!1  )return{key:\"chrome-requires-subscription\"",
+      "required": false,
+      "search_regex": "eyAuth\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0012\u0000\u0000\u0000hasAnthropicApiKey\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0013\u0000\u0000\u0000handleOAuth401Error\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0018\u0000\u0000\u0000getSubscriptionTypeAsync\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0013\u0000\u0000\u0000getSubscriptionType\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0018\u0000\u0000\u0000getSub"
+    }
+  ],
+  "scan_signatures": true,
+  "type": "js_replace",
+  "validate_js": true
 }

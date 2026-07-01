@@ -1,21 +1,21 @@
 {
-  "id": "js-allow-skip-permissions",
+  "anchor_strings": [
+    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\t\u0000\u0000\u0000%\u0000\u0000\u0000allowDangerouslySkipPermissionsPassed\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\t\u0000\u0000\u0000#"
+  ],
+  "category": "permissions",
   "description": "Default allowDangerouslySkipPermissions to true (was false)",
-  "type": "js_replace",
-  "validate_js": true,
-  "scan_signatures": true,
+  "id": "js-allow-skip-permissions",
   "patches": [
     {
-      "search_regex": "allowDangerouslySkipPermissions:([A-Za-z_$][\\w$]*)=!1",
+      "applied_marker": "allowDangerouslySkipPermissions:",
+      "count": 0,
+      "description": "Flip default false→true; matches any minified param name. Already !0 in 2.1.104.",
       "replace": "allowDangerouslySkipPermissions:\\1=!0",
       "required": false,
-      "count": 0,
-      "applied_marker": "allowDangerouslySkipPermissions:",
-      "description": "Flip default false\u2192true; matches any minified param name. Already !0 in 2.1.104."
+      "search_regex": "[A-Za-z_$][\\w$]*\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0012\u0000\u0000\u0000githubActionInputs\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000%\u0000\u0000\u0000allowDangerouslySkipPermissionsPassed\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000#\u0000\u0000\u0000skipDangerousModePromptSetPreDialog\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0010\u0000\u0000\u0000systemPromptFlag\u0010\u0000\u0000\u0000\u0000\u0000"
     }
   ],
-  "anchor_strings": [
-    "allowDangerouslySkipPermissions:"
-  ],
-  "category": "permissions"
+  "scan_signatures": true,
+  "type": "js_replace",
+  "validate_js": true
 }

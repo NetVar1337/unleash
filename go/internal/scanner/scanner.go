@@ -908,17 +908,7 @@ func (s *SigScanner) ScanPatches(patchList []patches.Patch) []patches.ScanRow {
 
 		// 2. exact anchor_strings (co-located within max_dist)
 		regexHit := false
-		if status != "applied" && status != "ok" && len(anchors) > 0 {
-			anchorOff = s.FindAnchor(anchors, 400)
-			if anchorOff != nil {
-				status = "ok"
-				confidence = 0.9
-				method = "anchor"
-			}
-		}
-
-		// 3. search_regex — only if anchors didn't prove "ok"
-		if status != "applied" && status != "ok" && sigRegex != "" {
+		if status != "applied" && sigRegex != "" {
 			re, err := regexp.Compile("(?s)" + sigRegex)
 			if err == nil {
 				regexHit = re.MatchString(s.Text)
@@ -930,6 +920,18 @@ func (s *SigScanner) ScanPatches(patchList []patches.Patch) []patches.ScanRow {
 				if len(anchors) > 0 {
 					anchorOff = s.FindAnchor(anchors, 400)
 				}
+			}
+		}
+
+		// 3. exact anchor_strings (co-located within max_dist)
+		if status != "applied" && status != "ok" && len(anchors) > 0 {
+			anchorOff = s.FindAnchor(anchors, 400)
+			if anchorOff != nil {
+				if sigRegex == "" {
+					status = "ok"
+				}
+				confidence = 0.9
+				method = "anchor"
 			}
 		}
 
@@ -945,7 +947,9 @@ func (s *SigScanner) ScanPatches(patchList []patches.Patch) []patches.ScanRow {
 			if allPresent {
 				off := strings.Index(s.Text, anchors[0])
 				anchorOff = &off
-				status = "ok"
+				if sigRegex == "" {
+					status = "ok"
+				}
 				confidence = 0.7
 				method = "scattered"
 			}
@@ -956,7 +960,9 @@ func (s *SigScanner) ScanPatches(patchList []patches.Patch) []patches.ScanRow {
 			foff, fmethod, fconf := s.FindAnchorFuzzy(anchors, 600)
 			if foff != nil && fconf > 0.0 {
 				anchorOff = foff
-				status = "ok"
+				if sigRegex == "" {
+					status = "ok"
+				}
 				confidence = fconf
 				method = fmethod
 			}
@@ -967,7 +973,9 @@ func (s *SigScanner) ScanPatches(patchList []patches.Patch) []patches.ScanRow {
 			koff, kconf := s.KeywordSearch(anchors)
 			if koff != nil && kconf > 0.0 {
 				anchorOff = koff
-				status = "ok"
+				if sigRegex == "" {
+					status = "ok"
+				}
 				confidence = kconf
 				method = "keyword"
 			}

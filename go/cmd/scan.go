@@ -47,8 +47,12 @@ func runScan(verbose bool, exportPatch string, autoHeal bool) int {
 	var rows []patches.ScanRow
 	var text string
 	var sc *scanner.SigScanner
+	useCache := false
+	if entries, err := os.ReadDir(pd); err == nil && len(entries) > 0 {
+		useCache = true
+	}
 
-	if !needsText {
+	if !needsText && useCache {
 		rows = scanner.LoadCachedRows(tgt, pd)
 	}
 	if rows == nil {

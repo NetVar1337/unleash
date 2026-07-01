@@ -312,5 +312,6 @@ func LoadTextFromTarget(targetPath, kind string) (string, error) {
 		return "", fmt.Errorf(".bun section bounds exceed file size")
 	}
 
-	return string(data[off : off+size]), nil
+	effLo, effHi := binary.FindActiveBundleBounds(data, off, off+size)
+	return string(data[effLo:effHi]), nil
 }

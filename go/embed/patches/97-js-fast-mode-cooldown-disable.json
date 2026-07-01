@@ -1,21 +1,21 @@
 {
-  "id": "js-fast-mode-cooldown-disable",
-  "description": "Disable fast mode cooldown by changing status from 'cooldown' to 'active' and keeping tF6 flag enabled, preventing rate-limit-triggered fast mode suspension.",
-  "type": "js_replace",
-  "validate_js": true,
-  "scan_signatures": true,
-  "patches": [
-    {
-      "search_regex": "[A-Za-z_$][\\w$]*,\\ [A-Za-z_$][\\w$]*\\-enabling\\ fast\\ mode\"\\),[A-Za-z_$][\\w$]*=!0,[A-Za-z_$][\\w$]*\\.emit\\(\\);[A-Za-z_$][\\w$]*=\\{status:\"active\"\\}\\}return\\ [A-Za-z_$][\\w$]*\\}function\\ [A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*,\\$\\)\\{[A-Za-z_$][\\w$]*\\(![A-Za-z_$][\\w$]*\\(\\)\\)return;[A-Za-z_$][\\w$]*=\\{status:\"cooldown\",resetAt:[A-Za-z_$][\\w$]*,reason:\\$\\},[A-Za-z_$][\\w$]*=!1;[A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*=[A-Za-z_$][\\w$]*\\-Date\\.[A-Za-z_$][\\w$]*\\(\\);[A-Za-z_$][\\w$]*\\(`Fast\\ mode\\ cooldown\\ triggered\\ \\(\\$\\{\\$\\}\\),\\ duratio",
-      "replace": "MCH={status:\"active\"  ,resetAt:H,reason:_},tF6=!0",
-      "applied_marker": "MCH={status:\"active\"",
-      "description": "Change cooldown status to active and keep tF6 enabled",
-      "required": false,
-      "count": 0
-    }
-  ],
   "anchor_strings": [
     "function Ydq(H,_){if(!iK())return"
   ],
-  "category": "ratelimit"
+  "category": "ratelimit",
+  "description": "Disable fast mode cooldown by changing status from 'cooldown' to 'active' and keeping tF6 flag enabled, preventing rate-limit-triggered fast mode suspension.",
+  "id": "js-fast-mode-cooldown-disable",
+  "patches": [
+    {
+      "applied_marker": "MCH={status:\"active\"",
+      "count": 0,
+      "description": "Change cooldown status to active and keep tF6 enabled",
+      "replace": "MCH={status:\"active\"  ,resetAt:H,reason:_},tF6=!0",
+      "required": false,
+      "search_regex": "[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*for\\s*manual\\s*confirmation\\.\\)\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*every\\s*command\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*prefix\\.\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*command\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*prefix,\\s*return\\s*\"none\"\\.\\s*[A-Za-z_$][\\w$]*\\s*return\\s*[A-Za-z_$][\\w$]*\\s*prefix\\.\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*return\\s*[A-Za-z_$][\\w$]*\\s*other\\s*[A-Za-z_$][\\w$]*,\\s*markdown\\s*markers,\\s*[A-Za-z_$][\\w$]*\\s*other\\s*content\\s*[A-Za-z_$][\\w$]*\\s*formatting\\.\u0000\u0000\u0000"
+    }
+  ],
+  "scan_signatures": true,
+  "type": "js_replace",
+  "validate_js": true
 }

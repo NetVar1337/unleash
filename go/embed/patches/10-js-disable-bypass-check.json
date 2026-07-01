@@ -1,21 +1,21 @@
 {
-  "id": "js-disable-bypass-check",
-  "description": "Neutralize the operator disableBypassPermissionsMode check \u2014 prevents remote policy from disabling bypass mode. Same-length replacement so it applies to bytecode constants too.",
-  "type": "js_replace",
-  "validate_js": true,
-  "patches": [
-    {
-      "search_regex": "disableBypassPermissionsMode===\"disable\"",
-      "replace": "disableBypassPermissionsMode===\"_VOID_!\"",
-      "applied_marker": "disableBypassPermissionsMode===\"_VOID_!\"",
-      "count": 0,
-      "description": "Neutralize disableBypassPermissionsMode policy check (regex, all occurrences, same-length 40-char)",
-      "required": false
-    }
-  ],
-  "scan_signatures": true,
   "anchor_strings": [
     "disableBypassPermissionsMode===\"disable\""
   ],
-  "category": "permissions"
+  "category": "permissions",
+  "description": "Neutralize the operator disableBypassPermissionsMode check — prevents remote policy from disabling bypass mode. Same-length replacement so it applies to bytecode constants too.",
+  "id": "js-disable-bypass-check",
+  "patches": [
+    {
+      "applied_marker": "disableBypassPermissionsMode===\"_VOID_!\"",
+      "count": 0,
+      "description": "Neutralize disableBypassPermissionsMode policy check (regex, all occurrences, same-length 40-char)",
+      "replace": "disableBypassPermissionsMode===\"_VOID_!\"",
+      "required": false,
+      "search_regex": "[A-Za-z_$][\\w$]*\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u001e\u0000\u0000\u0000findOverlyBroadBashPermissions\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\"\u0000\u0000\u0000findDangerousClassifierPermissions\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\t\u0000\u0000\u0000\u0026\u0000\u0000\u0000createDisabledBypassPermissionsContext\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\t\u0000\u0000\u0000 \u0000\u0000\u0000checkAndDisableBypassP"
+    }
+  ],
+  "scan_signatures": true,
+  "type": "js_replace",
+  "validate_js": true
 }

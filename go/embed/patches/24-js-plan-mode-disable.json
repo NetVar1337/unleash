@@ -1,9 +1,9 @@
 {
   "id": "js-plan-mode-disable",
-  "description": "Disable plan-mode enforcement \u2014 planModeRequired always false",
+  "description": "Disable plan-mode enforcement — planModeRequired always false. [RETIRED: v2.1.197 moved the lookup out of the active patchable JS bundle; env-flags unsets CLAUDE_CODE_PLAN_MODE_REQUIRED instead]",
   "type": "js_replace",
   "validate_js": true,
-  "scan_signatures": true,
+  "scan_signatures": false,
   "patches": [
     {
       "search_regex": "return [A-Za-z_$][\\w$]*\\(process\\.env\\.CLAUDE_CODE_PLAN_MODE_REQUIRED\\)",
@@ -11,8 +11,10 @@
       "required": false,
       "count": 0,
       "applied_marker": "planModeRequired;return!1",
-      "description": "planModeRequired() always returns false \u2014 plan mode never enforced (regex)"
+      "description": "[retired historical signature] planModeRequired() always returns false — plan mode never enforced before v2.1.197 bytecode layout"
     }
   ],
+  "version_last_tested": "2.1.197",
+  "retired": true,
   "category": "refusal"
 }

@@ -1,25 +1,25 @@
 {
-  "id": "js-s5K-refusal-neutralize-v2.1.114",
-  "description": "Refusal stop_reason handler \u2014 short-circuit to silently ignore. Minifier-name-agnostic: matches any single-arg function whose body checks !==\"refusal\" and logs tengu_refusal_api_response.",
-  "type": "js_replace",
-  "validate_js": true,
-  "scan_signatures": true,
   "anchor_strings": [
     "tengu_refusal_api_response",
     "Claude Code is unable to respond"
   ],
-  "version_first_seen": "2.1.114",
-  "version_last_tested": "2.1.114",
+  "category": "refusal",
+  "description": "Refusal stop_reason handler — short-circuit to silently ignore. Minifier-name-agnostic: matches any single-arg function whose body checks !==\"refusal\" and logs tengu_refusal_api_response.",
+  "id": "js-s5K-refusal-neutralize-v2.1.114",
   "offset_v2_1_114": 111962083,
   "patches": [
     {
-      "search_regex": "function ([A-Za-z_$][\\w$]*)\\(([A-Za-z_$][\\w$]*),([A-Za-z_$][\\w$]*),([A-Za-z_$][\\w$]*)\\)\\{if\\(\\2!==\"refusal\"\\)return;",
-      "replace": "function \\1(\\2,\\3,\\4){return;if(\\2!==\"refusal\")return;",
       "applied_marker": "!==\"refusal\")return;",
       "count": 0,
+      "description": "Early-return refusal handler regardless of minified name (v2.1.114+)",
+      "replace": "function \\1(\\2,\\3,\\4){return;if(\\2!==\"refusal\")return;",
       "required": false,
-      "description": "Early-return refusal handler regardless of minified name (v2.1.114+)"
+      "search_regex": "\\s*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000\\s*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000\\s*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000\\s*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000\\s*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000\\s*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000\\s*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000\\.\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0015\u0000\u0000\u0000anthropic-dispatch-[A-Za-z_$][\\w$]*\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0003\u0000\u0000\u0000[A-Za-z_$][\\w$]*\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u00003\u000b\u0000\u0000\u003cpolicy_spec\u003e\\s*#\\s*Claude\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*command\\s*prefix\\s*[A-Za-z_$][\\w$]*"
     }
   ],
-  "category": "refusal"
+  "scan_signatures": true,
+  "type": "js_replace",
+  "validate_js": true,
+  "version_first_seen": "2.1.114",
+  "version_last_tested": "2.1.114"
 }

@@ -1,21 +1,21 @@
 {
-  "id": "js-autocompact-default-off",
+  "anchor_strings": [
+    "nel\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\t\u0000\u0000\u0000\u0012\u0000\u0000\u0000autoCompactEnabled\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\t\u0000\u0000\u0000\u0011\u0000\u0000\u0000"
+  ],
+  "category": "features",
   "description": "Flip default_global_config.autoCompactEnabled from true to false so new installs do not silently compact history mid-session.",
-  "type": "js_replace",
-  "validate_js": true,
+  "id": "js-autocompact-default-off",
   "patches": [
     {
-      "search_regex": "autoCompactEnabled:!0,autoScrollEnabled:!0,showTurnDuration:!0",
-      "replace": "autoCompactEnabled:!1,autoScrollEnabled:!0,showTurnDuration:!0",
       "applied_marker": "autoCompactEnabled:!1,autoScrollEnabled:!0",
+      "count": 0,
       "description": "Existing D9 candidate patch target. Default-true means first-time users lose context silently. Operator can re-enable vi",
+      "replace": "autoCompactEnabled:!1,autoScrollEnabled:!0,showTurnDuration:!0",
       "required": false,
-      "count": 0
+      "search_regex": "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0007\u0000\u0000\u0000verbose\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0015\u0000\u0000\u0000preferredNotifChannel\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0012\u0000\u0000\u0000autoCompactEnabled\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0011\u0000\u0000\u0000autoScrollEnabled\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0018\u0000\u0000\u0000fileCheckpointingEnabled\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000"
     }
   ],
   "scan_signatures": true,
-  "anchor_strings": [
-    "autoCompactEnabled:!0,autoScrollEnabled:!0,showTurnDuration:!0"
-  ],
-  "category": "features"
+  "type": "js_replace",
+  "validate_js": true
 }

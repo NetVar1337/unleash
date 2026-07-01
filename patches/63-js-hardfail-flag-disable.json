@@ -1,21 +1,21 @@
 {
-  "id": "js-hardfail-flag-disable",
+  "anchor_strings": [
+    "=\u003e{return process.argv.includes"
+  ],
+  "category": "ratelimit",
   "description": "Neutralize the `--hard-fail` CLI flag so process does not exit on first subagent error.",
-  "type": "js_replace",
-  "validate_js": true,
+  "id": "js-hardfail-flag-disable",
   "patches": [
     {
-      "search_regex": "[A-Za-z_$][\\w$]*\\$=[A-Za-z_$][\\w$]*\\(\\(\\)=>\\{[A-Za-z_$][\\w$]*\\(\\);[A-Za-z_$][\\w$]*\\$\\(\\);[A-Za-z_$][\\w$]*\\(\\);[A-Za-z_$][\\w$]*\\$\\(\\);[A-Za-z_$][\\w$]*\\(\\);[A-Za-z_$][\\w$]*\\$\\(\\);[A-Za-z_$][\\w$]*\\$\\(\\);[A-Za-z_$][\\w$]*\\(\\);[A-Za-z_$][\\w$]*\\$\\(\\);[A-Za-z_$][\\w$]*\\$=\\[\\];[A-Za-z_$][\\w$]*=\\[\\];[A-Za-z_$][\\w$]*=[A-Za-z_$][\\w$]*\\(\\(\\)=>\\{return\\ process\\.argv\\.includes\\(\"\\-\\-hard\\-fail\"\\)\\}\\)\\}\\);function\\ [A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\)\\{[A-Za-z_$][\\w$]*\\ \\$=\\[\\],[A-Za-z_$][\\w$]*=!1;async\\ function\\ [A-Za-z_$][\\w$]*\\(\\)\\{[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\)return;[A-Za-z_$][\\w$]*\\(\\$\\.length===0\\)return;[A-Za-z_$][\\w$]*=!0;while\\(\\$\\.[A-Za-z_$][\\w$]*",
-      "replace": "G25=O8(()=>{return !1&&process.argv.includes(\"--hard-fail\")})",
-      "applied_marker": "G25=O8(()=>{return !1&&process.argv.includes(\"--hard-fail\")",
+      "applied_marker": "G25=O8(()=\u003e{return !1\u0026\u0026process.argv.includes(\"--hard-fail\")",
+      "count": 0,
       "description": "`--hard-fail` is a hidden destructive flag that aborts on any soft error. Accidental set in CI can wipe a long session. ",
+      "replace": "G25=O8(()=\u003e{return !1\u0026\u0026process.argv.includes(\"--hard-fail\")})",
       "required": false,
-      "count": 0
+      "search_regex": "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\\s*\u0000\u0000\u0000[A-Za-z_$][\\w$]*\\.version\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u000f\u0000\u0000\u0000process\\.command\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0014\u0000\u0000\u0000process\\.command_args\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0017\u0000\u0000\u0000process\\.executable\\.[A-Za-z_$][\\w$]*\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0017\u0000\u0000\u0000process\\.executable\\.[A-Za-z_$][\\w$]*\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\\s*\u0000\u0000\u0000proces"
     }
   ],
   "scan_signatures": true,
-  "anchor_strings": [
-    "=>{return process.argv.includes"
-  ],
-  "category": "ratelimit"
+  "type": "js_replace",
+  "validate_js": true
 }

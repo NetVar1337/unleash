@@ -1,22 +1,22 @@
 {
-  "id": "js-experimental-betas-always-on",
-  "description": "Ignore CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS env so experimental anthropic-beta headers (context management, JSON tools) are always sent.",
-  "type": "js_replace",
-  "validate_js": true,
-  "patches": [
-    {
-      "search_regex": "\\|\\|[A-Za-z_$][\\w$]*===\"anthropicAws\"\\|\\|[A-Za-z_$][\\w$]*===\"foundry\"\\}function\\ [A-Za-z_$][\\w$]*\\(\\)\\{return\\ [A-Za-z_$][\\w$]*\\(\\)\\&\\&![A-Za-z_$][\\w$]*\\(process\\.[A-Za-z_$][\\w$]*\\.CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS\\)\\}function\\ [A-Za-z_$][\\w$]*\\(\\)\\{[A-Za-z_$][\\w$]*\\(![A-Za-z_$][\\w$]*\\(\\)\\)return!1;[A-Za-z_$][\\w$]*\\(![A-Za-z_$][\\w$]*\\(\\)\\)return!1;[A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*=[A-Za-z_$][\\w$]*\\(\\);return\\ [A-Za-z_$][\\w$]*===\"firstParty\"\\|\\|[A-Za-z_$][\\w$]*===\"anthropicAws\"\\}func",
-      "replace": "!!1&&!SH(process.env.CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS)&&(f||A)",
-      "applied_marker": "!!1&&!SH(process.env.CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS)",
-      "description": "Experimental beta features are the first to get Opus 4.7 / Sonnet 4.6 optimisations. Disabling them is a performance/fea",
-      "required": false,
-      "count": 0
-    }
-  ],
-  "scan_signatures": true,
   "anchor_strings": [
     "CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS"
   ],
-  "version_last_tested": "2.1.114",
-  "category": "features"
+  "category": "features",
+  "description": "Ignore CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS env so experimental anthropic-beta headers (context management, JSON tools) are always sent.",
+  "id": "js-experimental-betas-always-on",
+  "patches": [
+    {
+      "applied_marker": "!!1\u0026\u0026!SH(process.env.CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS)",
+      "count": 0,
+      "description": "Experimental beta features are the first to get Opus 4.7 / Sonnet 4.6 optimisations. Disabling them is a performance/fea",
+      "replace": "!!1\u0026\u0026!SH(process.env.CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS)\u0026\u0026(f||A)",
+      "required": false,
+      "search_regex": "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000#\u0000\u0000\u0000CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0026\u0000\u0000\u0000CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0018\u0000\u0000\u0000CLAUDE_CODE_DISABLE_CRON\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u001e\u0000\u0000\u0000CLAUDE_CODE_DISABLE_CLAUDE_MDS\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000"
+    }
+  ],
+  "scan_signatures": true,
+  "type": "js_replace",
+  "validate_js": true,
+  "version_last_tested": "2.1.114"
 }

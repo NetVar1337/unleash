@@ -39,9 +39,9 @@ type PerPatchResult struct {
 // ELF/MachO/PE layout. It writes to a temp file, verifies by running
 // --version, and performs an atomic rename on success.
 //
-// Retry logic: if verification fails and some patches needed >64 bytes of
-// space-padding, those are dropped and the binary is re-patched. A second
-// retry drops ALL padded patches.
+// Retry logic: if the full batch fails verification, recoverVerifiedSubset
+// adds patches one at a time and keeps only candidates whose cumulative set
+// verifies. Dropped patch IDs are reported through SkippedHeavy.
 func PatchBunSEAInplace(binaryPath string, patchList []patches.Patch) PatchResult {
 	info, err := os.Stat(binaryPath)
 	if err != nil {
@@ -169,63 +169,38 @@ func PatchBunSEAInplace(binaryPath string, patchList []patches.Patch) PatchResul
 		return result
 	}
 
-	perPatch0 := result.PerPatch
+	return recoverVerifiedSubset(patchList, attempt)
+}
 
-	// ── Retry 1: drop patches that needed >64 bytes of padding ──
-	heavyIDs := make(map[string]bool)
-	for _, pr := range perPatch0 {
-		if pr.MaxPadding > 64 {
-			heavyIDs[pr.ID] = true
-		}
-	}
-	if len(heavyIDs) > 0 {
-		var reduced1 []patches.Patch
-		for _, p := range patchList {
-			if !heavyIDs[p.ID] {
-				reduced1 = append(reduced1, p)
-			}
-		}
-		if len(reduced1) > 0 {
-			r1 := attempt(reduced1)
-			if r1.OK {
-				r1.SkippedHeavy = sortedKeys(heavyIDs)
-				return r1
-			}
-		}
-	}
+func recoverVerifiedSubset(patchList []patches.Patch, attempt func([]patches.Patch) PatchResult) PatchResult {
+	var selected []patches.Patch
+	dropped := make(map[string]bool)
+	var last PatchResult
 
-	// ── Retry 2: drop ALL patches that needed any padding (>0 bytes) ──
-	anyPadIDs := make(map[string]bool)
-	for _, pr := range perPatch0 {
-		if pr.MaxPadding > 0 {
-			anyPadIDs[pr.ID] = true
+	// Verification failures are rare but opaque: the only safe recovery is to
+	// re-run the target binary after each candidate and keep the passing set.
+	for _, p := range patchList {
+		candidate := append(append([]patches.Patch(nil), selected...), p)
+		result := attempt(candidate)
+		if result.OK {
+			selected = candidate
+			last = result
+			continue
 		}
-	}
-	// extraIDs = anyPadIDs - heavyIDs
-	hasExtra := false
-	for id := range anyPadIDs {
-		if !heavyIDs[id] {
-			hasExtra = true
-			break
+		if strings.Contains(result.Err, "verify failed") {
+			dropped[p.ID] = true
+			continue
 		}
-	}
-	if hasExtra {
-		var reduced2 []patches.Patch
-		for _, p := range patchList {
-			if !anyPadIDs[p.ID] {
-				reduced2 = append(reduced2, p)
-			}
-		}
-		if len(reduced2) > 0 {
-			r2 := attempt(reduced2)
-			if r2.OK {
-				r2.SkippedHeavy = sortedKeys(anyPadIDs)
-				return r2
-			}
-		}
+		return result
 	}
 
-	return result
+	if len(selected) == 0 {
+		return PatchResult{Err: "verify failed for every patch"}
+	}
+	last.Skipped += len(dropped)
+	// SkippedHeavy is legacy API naming; it now means "dropped during verify recovery".
+	last.SkippedHeavy = sortedKeys(dropped)
+	return last
 }
 
 // applyJSPatchesToRegion applies JS subpatches in-place within [effLo, effHi).
@@ -248,6 +223,9 @@ func applyJSPatchesToRegion(data []byte, effLo, effHi int, patchList []patches.P
 				applied, skipped, padding := applyRegexSubPatch(region, sub)
 				appliedN += applied
 				skippedN += skipped
+				if applied == 0 && skipped == 0 {
+					skippedN++
+				}
 				if padding > maxPadding {
 					maxPadding = padding
 				}
@@ -270,7 +248,11 @@ func applyJSPatchesToRegion(data []byte, effLo, effHi int, patchList []patches.P
 					maxPadding = padding
 				}
 			}
-			appliedN += bytepatch.ReplaceBytes(region, search, padded, sub.EffectiveCount(0))
+			changed := bytepatch.ReplaceBytes(region, search, padded, sub.EffectiveCount(0))
+			appliedN += changed
+			if changed == 0 {
+				skippedN++
+			}
 		}
 
 		perPatch = append(perPatch, PerPatchResult{ID: p.ID, Applied: appliedN, Skipped: skippedN, MaxPadding: maxPadding})

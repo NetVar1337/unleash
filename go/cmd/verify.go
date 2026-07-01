@@ -52,7 +52,8 @@ func runVerifyPatches(tgt, kind string, patchList []patches.Patch) int {
 			fmt.Printf("%sELF parse failed: %v%s\n", console.R, err, console.X)
 			return 2
 		}
-		text = string(data[bunOff : bunOff+bunSize])
+		effLo, effHi := binary.FindActiveBundleBounds(data, bunOff, bunOff+bunSize)
+		text = string(data[effLo:effHi])
 	} else {
 		data, err := os.ReadFile(tgt)
 		if err != nil {

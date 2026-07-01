@@ -1,23 +1,23 @@
 {
-  "id": "js-non-streaming-fallback-always-on",
+  "anchor_strings": [
+    "RESENCE_CHECK\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\t\u0000\u0000\u0000)\u0000\u0000\u0000CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\t\u0000\u0000\u0000(\u0000\u0000\u0000CLAUDE_",
+    "tengu_disable_streaming_to_non_streaming_fallback"
+  ],
+  "category": "ratelimit",
   "description": "Ignore CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK / tengu_disable_streaming_to_non_streaming_fallback so the fallback to non-streaming requests always runs when SSE stream fails.",
-  "type": "js_replace",
-  "validate_js": true,
+  "id": "js-non-streaming-fallback-always-on",
   "patches": [
     {
-      "search_regex": "StreamError\\([A-Za-z_$][\\w$]*\\)\\)[A-Za-z_$][\\w$]*=\"context_hint_sse\";[A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*=[A-Za-z_$][\\w$]*\\(process\\.[A-Za-z_$][\\w$]*\\.CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK\\)\\|\\|[A-Za-z_$][\\w$]*\\$\\(\"tengu_disable_streaming_to_non_streaming_fallback\",!1",
-      "replace": "RH=!1&&(SH(process.env.CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK)||C$(\"tengu_disable_streaming_to_non_streaming_fallback\",!1))",
-      "applied_marker": "RH=!1&&(SH(process.env.CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK)",
+      "applied_marker": "RH=!1\u0026\u0026(SH(process.env.CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK)",
+      "count": 0,
       "description": "When SSE streams idle-time-out or get cut, Claude Code can optionally retry via non-streaming API. That fallback is disa",
+      "replace": "RH=!1\u0026\u0026(SH(process.env.CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK)||C$(\"tengu_disable_streaming_to_non_streaming_fallback\",!1))",
       "required": false,
-      "count": 0
+      "search_regex": "CLAUDE_CODE_DISABLE_OFFICIAL_MARKETPLACE_AUTOINSTALL\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000/\u0000\u0000\u0000CLAUDE_CODE_DISABLE_NOTIFICATION_PRESENCE_CHECK\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\\)\u0000\u0000\u0000CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\\(\u0000\u0000\u0000CLAUDE_CODE_DISABLE_NO"
     }
   ],
   "scan_signatures": true,
-  "anchor_strings": [
-    "CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK",
-    "tengu_disable_streaming_to_non_streaming_fallback"
-  ],
-  "version_last_tested": "2.1.114",
-  "category": "ratelimit"
+  "type": "js_replace",
+  "validate_js": true,
+  "version_last_tested": "2.1.114"
 }

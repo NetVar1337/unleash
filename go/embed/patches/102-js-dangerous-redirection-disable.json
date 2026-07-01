@@ -1,30 +1,30 @@
 {
-  "id": "js-dangerous-redirection-disable",
-  "description": "Disable hasDangerousRedirection by always returning false (0) instead of the computed value, allowing all shell redirections.",
-  "type": "js_replace",
-  "validate_js": true,
-  "scan_signatures": true,
-  "patches": [
-    {
-      "search_regex": "hasDangerousRedirection:O,dangerousRedirectionReason:T",
-      "replace": "hasDangerousRedirection:0,dangerousRedirectionReason:T",
-      "applied_marker": "hasDangerousRedirection:0,dangerousRedirectionReason:T",
-      "description": "Force hasDangerousRedirection to always be false (0) in primary return",
-      "required": false,
-      "count": 0
-    },
-    {
-      "search_regex": "hasDangerousRedirection:q,dangerousRedirectionReason:K",
-      "replace": "hasDangerousRedirection:0,dangerousRedirectionReason:K",
-      "applied_marker": "hasDangerousRedirection:0,dangerousRedirectionReason:K",
-      "description": "Force hasDangerousRedirection to false in alternate return path",
-      "required": false,
-      "count": 0
-    }
-  ],
   "anchor_strings": [
     "commandWithoutRedirections",
     "hasDangerousRedirection"
   ],
-  "category": "classifier"
+  "category": "classifier",
+  "description": "Disable hasDangerousRedirection by always returning false (0) instead of the computed value, allowing all shell redirections.",
+  "id": "js-dangerous-redirection-disable",
+  "patches": [
+    {
+      "applied_marker": "hasDangerousRedirection:0,dangerousRedirectionReason:T",
+      "count": 0,
+      "description": "Force hasDangerousRedirection to always be false (0) in primary return",
+      "replace": "hasDangerousRedirection:0,dangerousRedirectionReason:T",
+      "required": false,
+      "search_regex": "anagement\\.Automation\\.Language\\.FileRedirectionAst\\]\\},\\s*\\$true\\)\\s*if\\s*\\([A-Za-z_$][\\w$]*\\.Count\\s*-[A-Za-z_$][\\w$]*\\s*0\\)\\s*\\{\\s*[A-Za-z_$][\\w$]*\\s*=\\s*@\\([A-Za-z_$][\\w$]*-RawRedirections\\s*-Redirections\\s*[A-Za-z_$][\\w$]*\\)\\s*\\$statement\\.redirections\\s*=\\s*if\\s*\\(\\$statement\\.redirections\\)\\s*\\{\\s*@\\("
+    },
+    {
+      "applied_marker": "hasDangerousRedirection:0,dangerousRedirectionReason:K",
+      "count": 0,
+      "description": "Force hasDangerousRedirection to false in alternate return path",
+      "replace": "hasDangerousRedirection:0,dangerousRedirectionReason:K",
+      "required": false,
+      "search_regex": "hasDangerousRedirection:q,dangerousRedirectionReason:K"
+    }
+  ],
+  "scan_signatures": true,
+  "type": "js_replace",
+  "validate_js": true
 }

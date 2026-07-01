@@ -1,21 +1,21 @@
 {
+  "anchor_strings": [
+    "ds\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\t\u0000\u0000\u0000\u001c\u0000\u0000\u0000sessionBypassPermissionsMode\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\t\u0000\u0000\u0000\u0015\u0000\u0000\u0000scheduledT"
+  ],
+  "category": "permissions",
+  "description": "Default sessionBypassPermissionsMode to true — sessions start in bypass mode",
   "id": "js-session-bypass-mode",
-  "description": "Default sessionBypassPermissionsMode to true \u2014 sessions start in bypass mode",
-  "type": "js_replace",
-  "validate_js": true,
   "patches": [
     {
-      "search_regex": "sessionBypassPermissionsMode:!1,scheduledTasksEnabled",
-      "replace": "sessionBypassPermissionsMode:!0,scheduledTasksEnabled",
       "applied_marker": "sessionBypassPermissionsMode:!0",
+      "count": 0,
       "description": "Session: bypass mode starts enabled (regex)",
+      "replace": "sessionBypassPermissionsMode:!0,scheduledTasksEnabled",
       "required": false,
-      "count": 0
+      "search_regex": "useCoworkPlugins\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0014\u0000\u0000\u0000disableSlashCommands\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u001c\u0000\u0000\u0000sessionBypassPermissionsMode\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0015\u0000\u0000\u0000scheduledTasksEnabled\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0011\u0000\u0000\u0000sessionPrResolved\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0010\u0000\u0000\u0000sessio"
     }
   ],
   "scan_signatures": true,
-  "anchor_strings": [
-    "sessionBypassPermissionsMode:!1,scheduledTasksEnabled"
-  ],
-  "category": "permissions"
+  "type": "js_replace",
+  "validate_js": true
 }

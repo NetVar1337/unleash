@@ -1,21 +1,21 @@
 {
-  "id": "js-agent-summary-disable",
-  "description": "A78/H() runs a hidden per-agent background summarization API call on a timer ([AgentSummary] Timer fired) that burns tokens silently every interval. Short-circuit H() to return before any API call; timer still self-reschedules harmlessly but does no work.",
-  "type": "js_replace",
-  "validate_js": true,
-  "scan_signatures": true,
-  "patches": [
-    {
-      "search_regex": ",\"[A-Za-z_$][\\w$]*\\-8\"\\)\\)\\.trim\\(\\);return\\ [A-Za-z_$][\\w$]*\\.resolve\\([A-Za-z_$][\\w$]*,\\$\\)\\}catch\\{return\\ null\\}\\}async\\ function\\ [A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*,\\$,[A-Za-z_$][\\w$]*\\)\\{[A-Za-z_$][\\w$]*\\{[A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*=\\(await\\ [A-Za-z_$][\\w$]*\\.readFile\\([A-Za-z_$][\\w$]*\\.join\\([A-Za-z_$][\\w$]*,\\$\\),\"[A-Za-z_$][\\w$]*\\-8\"\\)",
-      "replace": "async function H(){if($)return;E(`[AgentSummary] Timer fired for agent ${K}`);return;",
-      "applied_marker": "[AgentSummary] Timer fired for agent ${K}`);return;",
-      "count": 0,
-      "required": false,
-      "description": "Early-return before the hidden summary API call"
-    }
-  ],
   "anchor_strings": [
     "async function H"
   ],
-  "category": "telemetry"
+  "category": "telemetry",
+  "description": "A78/H() runs a hidden per-agent background summarization API call on a timer ([AgentSummary] Timer fired) that burns tokens silently every interval. Short-circuit H() to return before any API call; timer still self-reschedules harmlessly but does no work.",
+  "id": "js-agent-summary-disable",
+  "patches": [
+    {
+      "applied_marker": "[AgentSummary] Timer fired for agent ${K}`);return;",
+      "count": 0,
+      "description": "Early-return before the hidden summary API call",
+      "replace": "async function H(){if($)return;E(`[AgentSummary] Timer fired for agent ${K}`);return;",
+      "required": false,
+      "search_regex": "tener_mask\\s*audio_set_listener_mask\\s*audio_get_listener_count\\s*audio_get_listener_info\\s*audio_system\\s*show_message\\s*show_message_async\\s*clickable_add\\s*clickable_add_ext\\s*clickable_change\\s*clickable_change_ext\\s*clickable_delete\\s*clickable_exis"
+    }
+  ],
+  "scan_signatures": true,
+  "type": "js_replace",
+  "validate_js": true
 }

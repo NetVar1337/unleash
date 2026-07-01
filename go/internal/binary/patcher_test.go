@@ -78,4 +78,52 @@ func TestApplyJSPatchesToRegionRegexZeroCountReplacesAll(t *testing.T) {
 	}
 }
 
+func TestRecoverVerifiedSubsetKeepsSafePaddedPatch(t *testing.T) {
+	patchList := []patches.Patch{
+		{ID: "exact"},
+		{ID: "safe-padded"},
+		{ID: "bad-padded"},
+	}
+	try := func(candidate []patches.Patch) PatchResult {
+		for _, p := range candidate {
+			if p.ID == "bad-padded" {
+				return PatchResult{Err: "verify failed"}
+			}
+		}
+		return PatchResult{OK: true, Applied: len(candidate)}
+	}
+
+	res := recoverVerifiedSubset(patchList, try)
+	if !res.OK {
+		t.Fatalf("recoverVerifiedSubset failed: %s", res.Err)
+	}
+	if res.Applied != 2 {
+		t.Fatalf("applied = %d, want safe exact + padded patches", res.Applied)
+	}
+	if res.Skipped != 1 {
+		t.Fatalf("skipped = %d, want only bad-padded", res.Skipped)
+	}
+	if len(res.SkippedHeavy) != 1 || res.SkippedHeavy[0] != "bad-padded" {
+		t.Fatalf("skipped = %v, want only bad-padded", res.SkippedHeavy)
+	}
+}
+
+func TestApplyJSPatchesToRegionCountsMissingSearchAsSkipped(t *testing.T) {
+	data := []byte("current code")
+	res := applyJSPatchesToRegion(data, 0, len(data), []patches.Patch{
+		{
+			ID: "missing",
+			Patches: []patches.SubPatch{
+				{Search: "old code", Replace: "new code"},
+				{SearchRegex: "oldRegex\\(\\)", Replace: "newRegex()"},
+			},
+		},
+	})
+	if res.Applied != 0 || res.Skipped != 2 {
+		t.Fatalf("result = applied %d skipped %d, want 0/2", res.Applied, res.Skipped)
+	}
+	if len(res.PerPatch) != 1 || res.PerPatch[0].Skipped != 2 {
+		t.Fatalf("per-patch result = %#v, want two skipped subpatches", res.PerPatch)
+	}
+}
 func intPtr(v int) *int { return &v }

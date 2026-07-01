@@ -64,7 +64,7 @@ func runPatch(dryRun bool) error {
 		fmt.Printf("  %starget not found — settings-only patches will apply%s\n", console.Y, console.X)
 	}
 
-	ok, fail, skip := 0, 0, 0
+	ok, fail, skip, try := 0, 0, 0, 0
 
 	// ── JS patches ────────────────────────────────────────────────────────
 	if tgt == "" {
@@ -108,54 +108,48 @@ func runPatch(dryRun bool) error {
 							}
 						}
 						msg := "no-op (already applied)"
+						mark := fmt.Sprintf("%sok%s", console.G, console.X)
 						if appliedN > 0 {
-							msg = fmt.Sprintf("would apply %d in-place", appliedN)
+							msg = fmt.Sprintf("would try %d in-place replacement(s); verification only runs without --dry-run", appliedN)
+							mark = fmt.Sprintf("%stry%s", console.Y, console.X)
 						}
-						fmt.Printf("  %sok%s    %s  %s\n", console.G, console.X, padRight(p.ID, 40), msg)
-						ok++
+						fmt.Printf("  %s    %s  %s\n", mark, padRight(p.ID, 40), msg)
+						if appliedN > 0 {
+							try++
+						} else {
+							ok++
+						}
 					}
 					fmt.Printf("  %sdry-run: binary not modified%s\n", console.Y, console.X)
 				}
 			}
 		} else {
-			result := binary.PatchBunSEAInplace(tgt, jsPatches)
-			if !result.OK {
-				fmt.Printf("  %sfail%s  [bun-inplace]  %s\n", console.R, console.X, result.Err)
-				fail += len(jsPatches)
-				// Heavy padding hints
-				var heavy []binary.PerPatchResult
-				for _, pr := range result.PerPatch {
-					if pr.MaxPadding > 64 {
-						heavy = append(heavy, pr)
-					}
+			for _, p := range jsPatches {
+				result := binary.PatchBunSEAInplace(tgt, []patches.Patch{p})
+				if !result.OK {
+					fmt.Printf("  %sfail%s  %s  %s\n", console.R, console.X, padRight(p.ID, 40), result.Err)
+					fail++
+					continue
 				}
-				if len(heavy) > 0 {
-					fmt.Printf("  %shint: %d patch(es) needed >64 bytes padding — likely corruption source:%s\n",
-						console.Y, len(heavy), console.X)
-					limit := minInt(5, len(heavy))
-					for _, pr := range heavy[:limit] {
-						fmt.Printf("    %s: %d bytes padding needed\n", pr.ID, pr.MaxPadding)
-					}
-					fmt.Printf("  %srun 'unleash scan' for signature analysis or 'unleash rollback' to revert%s\n",
-						console.Y, console.X)
-				}
-			} else {
 				for _, pr := range result.PerPatch {
 					msg := "no-op (already applied)"
+					mark := fmt.Sprintf("%sok%s", console.G, console.X)
 					if pr.Applied > 0 {
 						msg = fmt.Sprintf("%d in-place replacement(s)", pr.Applied)
+						ok++
+					} else if pr.Skipped > 0 {
+						msg = "search not found"
+						mark = fmt.Sprintf("%sskip%s", console.Y, console.X)
+						skip++
+					} else {
+						ok++
 					}
-					fmt.Printf("  %sok%s    %s  %s\n", console.G, console.X, padRight(pr.ID, 40), msg)
-					ok++
+					fmt.Printf("  %s    %s  %s\n", mark, padRight(pr.ID, 40), msg)
 				}
 				for _, pid := range result.SkippedHeavy {
-					fmt.Printf("  %sskip%s  %s  skipped — padding caused verify failure; retry succeeded without\n",
+					fmt.Printf("  %sskip%s  %s  skipped — failed binary verification; retry succeeded without\n",
 						console.Y, console.X, padRight(pid, 40))
 					skip++
-				}
-				if !result.Noop {
-					fmt.Printf("  %sverified in-place%s  (ran binary, Claude Code output confirmed)\n",
-						console.G, console.X)
 				}
 			}
 		}
@@ -198,8 +192,13 @@ func runPatch(dryRun bool) error {
 		}
 	}
 
-	fmt.Printf("\n%s%d ok %s %d failed %s %d skipped%s\n",
-		console.B, ok, console.DOT, fail, console.DOT, skip, console.X)
+	if try > 0 {
+		fmt.Printf("\n%s%d ok %s %d would try %s %d failed %s %d skipped%s\n",
+			console.B, ok, console.DOT, try, console.DOT, fail, console.DOT, skip, console.X)
+	} else {
+		fmt.Printf("\n%s%d ok %s %d failed %s %d skipped%s\n",
+			console.B, ok, console.DOT, fail, console.DOT, skip, console.X)
+	}
 
 	// Record state for autoheal drift detection
 	if tgt != "" && !dryRun && fail == 0 {

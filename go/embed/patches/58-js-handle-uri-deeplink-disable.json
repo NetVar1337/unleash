@@ -1,23 +1,23 @@
 {
-  "id": "js-handle-uri-deeplink-disable",
-  "description": "Disable the hidden `--handle-uri <cc:// URI>` deep-link handler that runs before argv parsing.",
-  "type": "js_replace",
-  "validate_js": true,
-  "patches": [
-    {
-      "search_regex": "let ([A-Za-z_$][\\w$]*)=process\\.argv\\.indexOf\\(\"--handle-uri\"\\);if\\(\\1!==-1&&process\\.argv\\[\\1\\+1\\]\\)",
-      "replace": "let \\1=process.argv.indexOf(\"--handle-uri\");if(!1&&\\1!==-1&&process.argv[\\1+1])",
-      "applied_marker": "process.argv.indexOf(\"--handle-uri\");if(!1&&",
-      "description": "The handler runs handleDeepLinkUri(URI) which can mutate user config and trigger enableConfigs() before the main CLI is ",
-      "required": false,
-      "count": 0
-    }
-  ],
-  "scan_signatures": true,
   "anchor_strings": [
     "\"--handle-uri\"",
     "process.argv.indexOf"
   ],
-  "version_last_tested": "2.1.114",
-  "category": "infrastructure"
+  "category": "infrastructure",
+  "description": "Disable the hidden `--handle-uri \u003ccc:// URI\u003e` deep-link handler that runs before argv parsing.",
+  "id": "js-handle-uri-deeplink-disable",
+  "patches": [
+    {
+      "applied_marker": "process.argv.indexOf(\"--handle-uri\");if(!1\u0026\u0026",
+      "count": 0,
+      "description": "The handler runs handleDeepLinkUri(URI) which can mutate user config and trigger enableConfigs() before the main CLI is ",
+      "replace": "let \\1=process.argv.indexOf(\"--handle-uri\");if(!1\u0026\u0026\\1!==-1\u0026\u0026process.argv[\\1+1])",
+      "required": false,
+      "search_regex": "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0010\u0000\u0000\u0000_watchWithNodeFs\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u000b\u0000\u0000\u0000_handleFile\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u000e\u0000\u0000\u0000_handleSymlink\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u000b\u0000\u0000\u0000_handleRead\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\\s*\u0000\u0000\u0000_handleDir\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\f\u0000\u0000\u0000_addToNodeFs\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0004\u0000\u0000\u0000[A-Za-z_$][\\w$]*\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000"
+    }
+  ],
+  "scan_signatures": true,
+  "type": "js_replace",
+  "validate_js": true,
+  "version_last_tested": "2.1.114"
 }

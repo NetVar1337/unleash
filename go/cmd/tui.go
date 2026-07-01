@@ -423,15 +423,19 @@ func applySelectedPatches(targetPath, targetKind string, patchList []patches.Pat
 			if err != nil {
 				return binary.PatchResult{Err: err.Error()}
 			}
-			jsResult := binary.PatchBunSEAInplace(targetPath, jsPatches)
-			if !jsResult.OK {
-				return jsResult
+			for _, p := range jsPatches {
+				jsResult := binary.PatchBunSEAInplace(targetPath, []patches.Patch{p})
+				if !jsResult.OK {
+					return jsResult
+				}
+				result.Applied += jsResult.Applied
+				result.Skipped += jsResult.Skipped
+				result.PerPatch = append(result.PerPatch, jsResult.PerPatch...)
+				result.SkippedHeavy = append(result.SkippedHeavy, jsResult.SkippedHeavy...)
+				if !jsResult.Noop {
+					result.Noop = false
+				}
 			}
-			result.Applied += jsResult.Applied
-			result.Skipped += jsResult.Skipped
-			result.PerPatch = append(result.PerPatch, jsResult.PerPatch...)
-			result.SkippedHeavy = append(result.SkippedHeavy, jsResult.SkippedHeavy...)
-			result.Noop = jsResult.Noop
 		}
 	}
 

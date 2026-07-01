@@ -41,7 +41,25 @@ func TestScanPatchesIgnoresBlankAnchors(t *testing.T) {
 	if len(rows) != 1 {
 		t.Fatalf("rows = %d, want 1", len(rows))
 	}
-	if rows[0].Status != "ok" || rows[0].Method != "anchor" {
-		t.Fatalf("row = %#v, want ok via anchor", rows[0])
+	if rows[0].Status != "drift" || rows[0].Method != "anchor" {
+		t.Fatalf("row = %#v, want drift via anchor because search is missing", rows[0])
+	}
+}
+
+func TestScanPatchesReportsDriftWhenAnchorExistsButSearchIsStale(t *testing.T) {
+	s := NewSigScanner("prefix currentFunction(){return true} suffix")
+	rows := s.ScanPatches([]patches.Patch{
+		{
+			ID:            "stale-regex",
+			Type:          "js_replace",
+			AnchorStrings: []string{"currentFunction"},
+			Patches:       []patches.SubPatch{{SearchRegex: "oldFunction\\(\\)\\{return true\\}", Replace: "return!1"}},
+		},
+	})
+	if len(rows) != 1 {
+		t.Fatalf("rows = %d, want 1", len(rows))
+	}
+	if rows[0].Status != "drift" || rows[0].Method == "none" {
+		t.Fatalf("row = %#v, want drift via an anchor-derived method because regex is stale", rows[0])
 	}
 }

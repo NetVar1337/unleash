@@ -1,26 +1,26 @@
 {
-  "id": "js-refusal-explanation-null-v2.1.114",
-  "description": "Null out refusal explanation field regardless of minified holder name.",
-  "type": "js_replace",
-  "validate_js": true,
-  "scan_signatures": true,
   "anchor_strings": [
     "?.type===\"refusal\"",
-    "explanation",
+    "le)\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\t\u0000\u0000\u0000\u000b\u0000\u0000\u0000explanation\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\t\u0000\u0000\u0000\t\u0000\u0000\u0000reasoning",
     "trimEnd"
   ],
-  "version_first_seen": "2.1.114",
-  "version_last_tested": "2.1.114",
+  "category": "refusal",
+  "description": "Null out refusal explanation field regardless of minified holder name.",
+  "id": "js-refusal-explanation-null-v2.1.114",
   "offset_v2_1_114": 111962100,
   "patches": [
     {
-      "search_regex": "\\?\\.type===\"refusal\"\\?([A-Za-z_$][\\w$]*)\\.explanation\\?\\.trimEnd\\(\\)\\?\\?null:null",
-      "replace": "?.type===\"refusal\"?null:null",
       "applied_marker": "?.type===\"refusal\"?null:null",
       "count": 0,
+      "description": "Null refusal explanation (v2.1.114+)",
+      "replace": "?.type===\"refusal\"?null:null",
       "required": false,
-      "description": "Null refusal explanation (v2.1.114+)"
+      "search_regex": "[A-Za-z_$][\\w$]*\\s*\\([A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*workflows\\),\\s*MEDIUM\\s*\\(recoverable\\s*changes\\),\\s*[A-Za-z_$][\\w$]*\\s*\\(dangerous/irreversible\\)\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u000b\u0000\u0000\u0000explanation\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\\s*\u0000\u0000\u0000reasoning\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0004\u0000\u0000\u0000[A-Za-z_$][\\w$]*\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\\s*\u0000\u0000\u0000riskLevel\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0019\u0000\u0000\u0000\u0004\u0000"
     }
   ],
-  "category": "refusal"
+  "scan_signatures": true,
+  "type": "js_replace",
+  "validate_js": true,
+  "version_first_seen": "2.1.114",
+  "version_last_tested": "2.1.114"
 }
