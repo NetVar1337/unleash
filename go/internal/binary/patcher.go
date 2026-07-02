@@ -36,8 +36,8 @@ type PerPatchResult struct {
 }
 
 // PatchBunSEAInplace patches a Bun SEA binary in-place, preserving the
-// ELF/MachO/PE layout. It writes to a temp file, verifies by running
-// --version, and performs an atomic rename on success.
+// ELF/MachO/PE layout. It writes to a temp file, verifies version output and
+// startup smoke behavior, then performs an atomic rename on success.
 //
 // Retry logic: if the full batch fails verification, recoverVerifiedSubset
 // adds patches one at a time and keeps only candidates whose cumulative set
@@ -123,16 +123,10 @@ func PatchBunSEAInplace(binaryPath string, patchList []patches.Patch) PatchResul
 			_ = runWithTimeout(cmd, 30)
 		}
 
-		// Verify by running --version
-		verifyCmd := exec.Command(tmpPath, "--version")
-		verifyOut, verifyErr := runCaptureWithTimeout(verifyCmd, 60)
-		if verifyErr != nil || !strings.Contains(verifyOut, "Claude Code") {
-			rc := -1
-			if verifyCmd.ProcessState != nil {
-				rc = verifyCmd.ProcessState.ExitCode()
-			}
+		verifyOut, verifyErr := verifyBunSEAExecutable(tmpPath)
+		if verifyErr != nil {
 			return PatchResult{
-				Err:      fmt.Sprintf("verify failed: %q rc=%d", truncate(verifyOut, 500), rc),
+				Err:      fmt.Sprintf("verify failed: %q: %v", truncate(verifyOut, 500), verifyErr),
 				Applied:  appliedTotal,
 				Skipped:  skippedTotal,
 				PerPatch: perPatch,
@@ -310,6 +304,39 @@ func applyRegexSubPatch(region []byte, sub patches.SubPatch) (applied int, skipp
 		}
 	}
 	return applied, skipped, maxPadding
+}
+
+func verifyBunSEAExecutable(path string) (string, error) {
+	versionCmd := exec.Command(path, "--version")
+	versionOut, versionErr := runCaptureWithTimeout(versionCmd, 60)
+	if versionErr != nil || !strings.Contains(versionOut, "Claude Code") {
+		return versionOut, fmt.Errorf("version check failed: %v", versionErr)
+	}
+
+	startupCmd := exec.Command(path)
+	startupCmd.Stdin = strings.NewReader("")
+	startupOut, startupErr := runCaptureWithTimeout(startupCmd, 10)
+	out := versionOut + startupOut
+	if isBunCrashOutput(startupOut) {
+		return out, fmt.Errorf("startup crashed")
+	}
+	if startupCmd.ProcessState != nil {
+		rc := startupCmd.ProcessState.ExitCode()
+		if rc < 0 || rc >= 128 {
+			return out, fmt.Errorf("startup crashed with rc=%d", rc)
+		}
+	}
+	if startupErr != nil && strings.Contains(startupErr.Error(), "timed out") {
+		return out, startupErr
+	}
+	return out, nil
+}
+
+func isBunCrashOutput(out string) bool {
+	return strings.Contains(out, "oh no: Bun has crashed") ||
+		strings.Contains(out, "panic(main thread)") ||
+		strings.Contains(out, "Segmentation fault") ||
+		strings.Contains(out, "Bus error")
 }
 
 // runWithTimeout runs a command with a timeout in seconds.

@@ -1,7 +1,10 @@
 package binary
 
 import (
+	"os"
 	"os/exec"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -126,4 +129,55 @@ func TestApplyJSPatchesToRegionCountsMissingSearchAsSkipped(t *testing.T) {
 		t.Fatalf("per-patch result = %#v, want two skipped subpatches", res.PerPatch)
 	}
 }
+
+func TestVerifyBunSEAExecutableRejectsStartupCrash(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("shell script smoke executable is Unix-only")
+	}
+	bin := writeFakeClaude(t, `#!/bin/sh
+if [ "$1" = "--version" ]; then
+	echo "2.1.197 (Claude Code)"
+	exit 0
+fi
+echo "panic(main thread): Segmentation fault at address 0x0"
+echo "oh no: Bun has crashed. This indicates a bug in Bun, not your code."
+exit 139
+`)
+
+	out, err := verifyBunSEAExecutable(bin)
+	if err == nil {
+		t.Fatal("verifyBunSEAExecutable accepted a binary that crashes on startup")
+	}
+	if !strings.Contains(out, "Bun has crashed") {
+		t.Fatalf("output = %q, want startup crash output", out)
+	}
+}
+
+func TestVerifyBunSEAExecutableAllowsCliUsageError(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("shell script smoke executable is Unix-only")
+	}
+	bin := writeFakeClaude(t, `#!/bin/sh
+if [ "$1" = "--version" ]; then
+	echo "2.1.196 (Claude Code)"
+	exit 0
+fi
+echo "Error: Input must be provided either through stdin or as a prompt argument when using --print"
+exit 1
+`)
+
+	if out, err := verifyBunSEAExecutable(bin); err != nil {
+		t.Fatalf("verifyBunSEAExecutable rejected normal CLI startup: %v\n%s", err, out)
+	}
+}
+
+func writeFakeClaude(t *testing.T, script string) string {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "claude")
+	if err := os.WriteFile(path, []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
 func intPtr(v int) *int { return &v }
