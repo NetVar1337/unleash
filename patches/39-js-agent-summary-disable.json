@@ -1,21 +1,26 @@
 {
   "anchor_strings": [
-    "async function H"
+    "tengu_agent_summary_skipped",
+    "[AgentSummary] Forking for summary"
   ],
   "category": "telemetry",
-  "description": "A78/H() runs a hidden per-agent background summarization API call on a timer ([AgentSummary] Timer fired) that burns tokens silently every interval. Short-circuit H() to return before any API call; timer still self-reschedules harmlessly but does no work.",
+  "description": "vpp() in 2.1.228 runs a hidden per-agent background summarization API call on a timer ([AgentSummary] Timer fired) that burns tokens silently every interval. Short-circuit the timer callback h() to return before the log line and API fork; timer still self-reschedules harmlessly but does no work.",
   "id": "js-agent-summary-disable",
   "patches": [
     {
-      "applied_marker": "[AgentSummary] Timer fired for agent ${K}`);return;",
+      "applied_marker": "async function h(){return;try{",
       "count": 0,
-      "description": "Early-return before the hidden summary API call",
-      "replace": "async function H(){if($)return;E(`[AgentSummary] Timer fired for agent ${K}`);return;",
+      "description": "Early-return inside the AgentSummary timer callback before the hidden summary API call (name-agnostic, anchored on the Timer fired log template)",
+      "replace": "\\1return;\\2",
       "required": false,
-      "search_regex": "tener_mask\\s*audio_set_listener_mask\\s*audio_get_listener_count\\s*audio_get_listener_info\\s*audio_system\\s*show_message\\s*show_message_async\\s*clickable_add\\s*clickable_add_ext\\s*clickable_change\\s*clickable_change_ext\\s*clickable_delete\\s*clickable_exis"
+      "search_regex": "(async function [A-Za-z_$][\\w$]*\\(\\)\\{)if\\([A-Za-z_$][\\w$]*\\)return;[A-Za-z_$][\\w$]*\\(`\\[AgentSummary\\] Timer fired for agent \\$\\{[A-Za-z_$][\\w$]*\\}`\\);(try\\{)"
     }
   ],
   "scan_signatures": true,
   "type": "js_replace",
-  "validate_js": true
+  "validate_js": true,
+  "version_last_tested": "2.1.228",
+  "retired": true,
+  "disabled": true,
+  "note": "Agent-summary async function body not present as JS in active region; no unique pooled disable surface found."
 }

@@ -1,23 +1,23 @@
 {
-  "anchor_strings": [
-    "er\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\t\u0000\u0000\u0000\u0018\u0000\u0000\u0000marketplaceUpdateHandler\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
-    "for(let q of H)"
-  ],
-  "category": "telemetry",
-  "description": "Stub `FOK()` — `tengu_plugin_load_failed` event (plugin error categorization sent to Anthropic on every plugin parse/install failure).",
   "id": "js-plugin-load-failed-telemetry-off",
-  "patches": [
-    {
-      "applied_marker": "(H,$){return;for(let q of H){let{name:K,marketplace:_}=",
-      "count": 0,
-      "description": "Error telemetry on plugin loads leaks plugin names and error categories. Silence.",
-      "replace": "function \\1(H,$){return;for(let q of H){let{name:K,marketplace:_}=\\2(q.source)",
-      "required": false,
-      "search_regex": "pluginDisableHandler\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0014\u0000\u0000\u0000pluginDetailsHandler\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0018\u0000\u0000\u0000marketplaceUpdateHandler\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0018\u0000\u0000\u0000marketplaceRemoveHandler\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0016\u0000\u0000\u0000marketplaceListHandler\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000"
-    }
-  ],
-  "scan_signatures": true,
+  "description": "Rename plugin load-failed telemetry event id in constant pool.",
   "type": "js_replace",
   "validate_js": true,
-  "version_last_tested": "2.1.114"
+  "scan_signatures": true,
+  "patches": [
+    {
+      "search_regex": "tengu_plugin_load_failed",
+      "replace": "tengu_plugin_load_VOIDED",
+      "applied_marker": "plugin_load_VOIDED",
+      "description": "Rename plugin load-failed event",
+      "required": false,
+      "count": 0
+    }
+  ],
+  "anchor_strings": [
+    "tengu_plugin_load_failed"
+  ],
+  "category": "telemetry",
+  "version_last_tested": "2.1.228",
+  "note": "2.1.228 bytecode event rename."
 }

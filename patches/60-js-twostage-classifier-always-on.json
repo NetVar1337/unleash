@@ -1,23 +1,16 @@
 {
   "id": "js-twostage-classifier-always-on",
-  "description": "Force HH7() (two-stage classifier gate) to always true so auto-mode uses the improved two-stage classifier regardless of Statsig config.",
+  "description": "RETIRED in 2.1.228: forced the twoStageClassifier gate function to return true. The gate JS is gone (bytecode build); the config parameter's default value is encoded in bytecode instructions, not patchable text.",
   "type": "js_replace",
-  "validate_js": true,
-  "patches": [
-    {
-      "search_regex": "function ([A-Za-z_$][\\w$]*)\\(\\)\\{return ([A-Za-z_$][\\w$]*)\\(\"tengu_auto_mode_config\",\\{\\}\\)\\?\\.twoStageClassifier\\?\\?!0\\}",
-      "replace": "function \\1(){return!0;return \\2(\"tengu_auto_mode_config\",{})?.twoStageClassifier??!0}",
-      "applied_marker": "(){return!0;return ",
-      "description": "Two-stage classifier (fast-then-thinking) gives better auto-mode decisions. Default fallback of `?? !0` is safe, but a s",
-      "required": false,
-      "count": 0
-    }
-  ],
-  "scan_signatures": true,
+  "retired": true,
+  "disabled": true,
+  "patches": [],
+  "scan_signatures": false,
   "anchor_strings": [
     "tengu_auto_mode_config",
     "twoStageClassifier"
   ],
-  "version_last_tested": "2.1.114",
-  "category": "classifier"
+  "version_last_tested": "2.1.228",
+  "category": "classifier",
+  "note": "Searched 2.1.228 active dump: tengu_auto_mode_config (4 pooled parameter-definition copies at ~48187952/48190040/48192088/48208896) and twoStageClassifier (1 copy at ~48190408) exist only as Statsig DynamicConfig schema constants; the 'default' values sit in adjacent bytecode (9f-prefixed instructions), and no env-var or bundled fallback config overrides it. Forcing the gate would require bytecode editing, which this patch format cannot express safely. Auto-mode classifier verdicts are instead neutralized at the prompt level by patch 33."
 }

@@ -7,16 +7,19 @@
   "id": "js-experimental-betas-always-on",
   "patches": [
     {
-      "applied_marker": "!!1\u0026\u0026!SH(process.env.CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS)",
+      "applied_marker": "!!1&&!SH(process.env.CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS)",
       "count": 0,
       "description": "Experimental beta features are the first to get Opus 4.7 / Sonnet 4.6 optimisations. Disabling them is a performance/fea",
-      "replace": "!!1\u0026\u0026!SH(process.env.CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS)\u0026\u0026(f||A)",
+      "replace": "!!1&&!SH(process.env.CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS)&&(f||A)",
       "required": false,
-      "search_regex": "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000#\u0000\u0000\u0000CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0026\u0000\u0000\u0000CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0018\u0000\u0000\u0000CLAUDE_CODE_DISABLE_CRON\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u001e\u0000\u0000\u0000CLAUDE_CODE_DISABLE_CLAUDE_MDS\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000"
+      "search_regex": "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000#\u0000\u0000\u0000CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000&\u0000\u0000\u0000CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0018\u0000\u0000\u0000CLAUDE_CODE_DISABLE_CRON\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u001e\u0000\u0000\u0000CLAUDE_CODE_DISABLE_CLAUDE_MDS\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000"
     }
   ],
   "scan_signatures": true,
   "type": "js_replace",
   "validate_js": true,
-  "version_last_tested": "2.1.114"
+  "version_last_tested": "2.1.228",
+  "retired": true,
+  "disabled": true,
+  "note": "CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY name-table pattern not a valid experimental-betas anchor."
 }

@@ -1,22 +1,15 @@
 {
   "id": "js-classifier-summary-kill-on",
-  "description": "Flip tengu_classifier_summary_kill gate default to true so the 'summary' classifier surface (which can add extra tool-use review passes and emit telemetry) is always disabled.",
+  "description": "RETIRED in 2.1.228: flipped the tengu_classifier_summary_kill gate default !1 -> !0 in JS. The boolean kill gate was replaced by the server-driven tengu_classifier_disabled_surfaces config; there is no local default to flip.",
   "type": "js_replace",
-  "validate_js": true,
-  "scan_signatures": true,
-  "patches": [
-    {
-      "search_regex": "continue;[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*\\[[A-Za-z_$][\\w$]*\\]\\)\\$\\.[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\)\\}[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\.[A-Za-z_$][\\w$]*\\(\"[A-Za-z_$][\\w$]*\"\\)\\)\\$\\.delete\\(\"summary\"\\);[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\$\\(\"tengu_classifier_summary_kill\",!1\\)\\)\\$\\.delete\\(\"summary\"\\);return\\ \\$\\}function\\ [A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\)\\{[A-Za-z_$][\\w$]*\\ \\$=[A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*;[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*\\.split\\(\",\"\\)\\)\\{[A-Za-z_$][\\w$]*\\ [A-Za-z_$][\\w$]*=[A-Za-z_$][\\w$]*\\.trim\\(\\);[A-Za-z_$][\\w$]*\\(![A-Za-z_$][\\w$]*\\)continue",
-      "replace": "k$(\"tengu_classifier_summary_kill\",!0)",
-      "applied_marker": "tengu_classifier_summary_kill\",!0)",
-      "description": "Kill summary classifier by default",
-      "required": false,
-      "count": 0
-    }
-  ],
+  "retired": true,
+  "disabled": true,
+  "patches": [],
+  "scan_signatures": false,
   "anchor_strings": [
     "tengu_classifier_summary_kill"
   ],
-  "version_last_tested": "2.1.119",
-  "category": "classifier"
+  "version_last_tested": "2.1.228",
+  "category": "classifier",
+  "note": "Searched 2.1.228 active dump: tengu_classifier_summary_kill still exists as a single pool constant (~35332744) but the surrounding mechanism changed \u2014 adjacent constants tengu_classifier_disabled_surfaces (~35332536), the surface list (bg/summary/watched/fanout/ccr/byoc/bridge/claude-desktop/desktop/cli/repl at ~35329808-35330112) and the log line '[classifier] tengu_classifier_disabled_surfaces: unknown surface' (~35334640) show the kill switch became a comma-separated server config parsed in bytecode. Renaming the gate/config constants only breaks the lookup (surfaces stay enabled) \u2014 the opposite of the intended effect \u2014 so no safe string lever exists."
 }

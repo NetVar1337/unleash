@@ -1,21 +1,28 @@
 {
-  "anchor_strings": [
-    "ds\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\t\u0000\u0000\u0000\u001c\u0000\u0000\u0000sessionBypassPermissionsMode\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\t\u0000\u0000\u0000\u0015\u0000\u0000\u0000scheduledT"
-  ],
-  "category": "permissions",
-  "description": "Default sessionBypassPermissionsMode to true — sessions start in bypass mode",
   "id": "js-session-bypass-mode",
+  "description": "Force sessionBypassPermissionsMode() getter to true — sessions start (and stay) in bypass mode regardless of reset.",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": true,
   "patches": [
     {
-      "applied_marker": "sessionBypassPermissionsMode:!0",
-      "count": 0,
-      "description": "Session: bypass mode starts enabled (regex)",
-      "replace": "sessionBypassPermissionsMode:!0,scheduledTasksEnabled",
+      "search_regex": "sessionBypassPermissionsMode\\(\\)\\{return this\\.#[A-Za-z_$][\\w$]*\\}",
+      "replace": "sessionBypassPermissionsMode(){return !0}",
+      "applied_marker": "sessionBypassPermissionsMode(){return !0}",
+      "description": "Session: bypass mode getter always true (robust to #v reset)",
       "required": false,
-      "search_regex": "useCoworkPlugins\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0014\u0000\u0000\u0000disableSlashCommands\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u001c\u0000\u0000\u0000sessionBypassPermissionsMode\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0015\u0000\u0000\u0000scheduledTasksEnabled\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0011\u0000\u0000\u0000sessionPrResolved\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0010\u0000\u0000\u0000sessio"
+      "count": 0
     }
   ],
-  "scan_signatures": true,
-  "type": "js_replace",
-  "validate_js": true
+  "anchor_strings": [
+    "sessionBypassPermissionsMode(){return this.",
+    "replaceSessionBypassPermissionsMode(e){this.",
+    "sessionPersistenceDisabled(){return this."
+  ],
+  "category": "permissions",
+  "version_last_tested": "2.1.228",
+  "offset_v2_1_228": 180390290,
+  "note": "No sessionBypassPermissionsMode getter source in active region. Settings defaultMode=bypassPermissions is the supported path.",
+  "retired": true,
+  "disabled": true
 }

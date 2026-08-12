@@ -1,22 +1,26 @@
 {
+  "anchor_strings": [
+    "tengu_plugin_settings_premature_read",
+    "pluginBaseLoaded"
+  ],
+  "category": "telemetry",
+  "description": "Drop the tengu_plugin_settings_premature_read event fired on every uncached plugin settings read (msn() in 2.1.228) by forcing its guard condition falsey.",
   "id": "js-tengu-plugin-prematureread-off",
-  "description": "Drop the `tengu_plugin_settings_premature_read` event emitted on every uncached plugin settings read.",
-  "type": "js_replace",
-  "validate_js": true,
   "patches": [
     {
-      "search_regex": "\\{settings:[A-Za-z_$][\\w$]*\\}=[A-Za-z_$][\\w$]*\\(\\);return\\ [A-Za-z_$][\\w$]*\\|\\|\\{\\}\\}function\\ [A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\)\\{[A-Za-z_$][\\w$]*\\(![A-Za-z_$][\\w$]*\\(\\)\\)[A-Za-z_$][\\w$]*\\(\"tengu_plugin_settings_premature_read\",\\{[A-Za-z_$][\\w$]*:[A-Za-z_$][\\w$]*\\}\\);[A-Za-z_$][\\w$]*\\{settings:\\$\\}=[A-Za-z_$][\\w$]*\\(\\);return\\(\\$\\|\\|\\{\\}\\)\\[[A-Za-z_$][\\w$]*\\]\\}function\\ [A-Za-z_$][\\w$]*",
-      "replace": "if(!1&&!YG6())l(\"tengu_plugin_settings_premature_read\",{key:H})",
-      "applied_marker": "if(!1&&!YG6())l(\"tengu_plugin_settings_premature_read\"",
-      "description": "High-frequency telemetry event firing on every `ycH(key)` call during plugin-init races. Independent telemetry sink.",
+      "applied_marker": "if(!1)O(\"tengu_plugin_settings_premature_read\"",
+      "count": 0,
+      "description": "High-frequency telemetry event firing on every plugin-settings read during plugin-init races — force the pluginBaseLoaded guard to !1 (name-agnostic)",
+      "replace": "\\1!1\\2",
       "required": false,
-      "count": 0
+      "search_regex": "(if\\()![A-Za-z_$][\\w$]*\\(\\)\\.pluginBaseLoaded(\\)[A-Za-z_$][\\w$]*\\(\"tengu_plugin_settings_premature_read\",\\{key:[A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*\\)\\}\\);)"
     }
   ],
   "scan_signatures": true,
-  "anchor_strings": [
-    "tengu_plugin_settings_premature_read"
-  ],
-  "version_last_tested": "2.1.114",
-  "category": "telemetry"
+  "type": "js_replace",
+  "validate_js": true,
+  "version_last_tested": "2.1.228",
+  "retired": true,
+  "disabled": true,
+  "note": "tengu_plugin_settings_premature_read / pluginBaseLoaded JS shape absent from active region."
 }

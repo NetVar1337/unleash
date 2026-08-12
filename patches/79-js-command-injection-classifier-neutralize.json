@@ -1,22 +1,13 @@
 {
   "id": "js-command-injection-classifier-neutralize",
-  "description": "Bash-prefix classifier flags shell with ${} or backticks as command_injection_detected, forcing manual-approval. Flip to pass-through so allowlist check succeeds (v2.1.132: vars D,T,w,j,H).",
+  "description": "RETIRED in 2.1.228: flipped success:!1,error:\"command_injection_detected\" to success:!0. The local bash-prefix classifier verdict tokens no longer exist anywhere in the binary.",
   "type": "js_replace",
-  "validate_js": true,
-  "scan_signatures": true,
-  "patches": [
-    {
-      "search": "success:!1,error:\"command_injection_detected\"",
-      "replace": "success:!0,error:\"command_injection_detected\"",
-      "applied_marker": "success:!0,error:\"command_injection_detected\"",
-      "description": "flip !1 to !0",
-      "required": false,
-      "count": 0
-    }
-  ],
-  "anchor_strings": [
-    "command_injection_detected"
-  ],
-  "version_last_tested": "2.1.132",
-  "category": "classifier"
+  "retired": true,
+  "disabled": true,
+  "patches": [],
+  "scan_signatures": false,
+  "anchor_strings": [],
+  "version_last_tested": "2.1.228",
+  "category": "classifier",
+  "note": "Searched 2.1.228 active dump: 'command_injection_detected' 0 hits, 'command_injection' 0, 'success:!1,error:' 0 (no JS source in patchable region), 'injection' hits unrelated (URL --handle-uri argument-injection docs at ~10542736, allowPlaintextInject credential config at ~14517136). 'commandPrefix' survives only as a lone identifier-pool constant (~29522536). The local heuristic prefix-classifier surface was removed/restructured; bash command gating now flows through the LLM auto-mode classifier (whose prompts are flipped permissive by patch 33) and bashCommandClamp configuration."
 }

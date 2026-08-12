@@ -10,12 +10,16 @@
       "applied_marker": "/*pr-footer-disabled-by-patcher*/",
       "count": 0,
       "description": "Companion to js-co-authored-by-claude-off; keeps all git artifacts author-less.",
-      "replace": "\\g\u003c1\u003e=``/*pr-footer-disabled-by-patcher*/          ",
+      "replace": "\\g<1>=``/*pr-footer-disabled-by-patcher*/          ",
       "required": false,
-      "search_regex": "\\s*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000\\s*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000\\s*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000\\s*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000\\s*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000\\s*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000\\s*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000\\.\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0015\u0000\u0000\u0000anthropic-dispatch-[A-Za-z_$][\\w$]*\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0003\u0000\u0000\u0000[A-Za-z_$][\\w$]*\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u00003\u000b\u0000\u0000\u003cpolicy_spec\u003e\\s*#\\s*Claude\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*command\\s*prefix\\s*[A-Za-z_$][\\w$]*"
+      "search_regex": "\\s*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000\\s*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000\\s*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000\\s*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000\\s*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000\\s*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000\\s*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000\\.\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0015\u0000\u0000\u0000anthropic-dispatch-[A-Za-z_$][\\w$]*\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0003\u0000\u0000\u0000[A-Za-z_$][\\w$]*\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u00003\u000b\u0000\u0000<policy_spec>\\s*#\\s*Claude\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*command\\s*prefix\\s*[A-Za-z_$][\\w$]*"
     }
   ],
   "scan_signatures": true,
   "type": "js_replace",
-  "validate_js": true
+  "validate_js": true,
+  "retired": true,
+  "disabled": true,
+  "version_last_tested": "2.1.228",
+  "note": "\"Generated with\" string absent from active region (0 hits). 108 bytecode blank companion may cover residual."
 }

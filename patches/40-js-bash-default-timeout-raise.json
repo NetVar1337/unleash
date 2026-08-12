@@ -18,6 +18,9 @@
     "BASH_DEFAULT_TIMEOUT_MS",
     "return q}return "
   ],
-  "version_last_tested": "2.1.132",
-  "category": "ratelimit"
+  "version_last_tested": "2.1.228",
+  "category": "ratelimit",
+  "retired": true,
+  "disabled": true,
+  "note": "bash timeout constant cluster JS not found as contiguous source in active region."
 }

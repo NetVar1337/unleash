@@ -1,21 +1,24 @@
 {
-  "anchor_strings": [
-    "nel\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\t\u0000\u0000\u0000\u0012\u0000\u0000\u0000autoCompactEnabled\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\t\u0000\u0000\u0000\u0011\u0000\u0000\u0000"
-  ],
-  "category": "features",
-  "description": "Flip default_global_config.autoCompactEnabled from true to false so new installs do not silently compact history mid-session.",
   "id": "js-autocompact-default-off",
+  "description": "Rename tengu_auto_compact_setting_changed event; boolean default object shape absent from active bytecode.",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": true,
   "patches": [
     {
-      "applied_marker": "autoCompactEnabled:!1,autoScrollEnabled:!0",
-      "count": 0,
-      "description": "Existing D9 candidate patch target. Default-true means first-time users lose context silently. Operator can re-enable vi",
-      "replace": "autoCompactEnabled:!1,autoScrollEnabled:!0,showTurnDuration:!0",
+      "search_regex": "tengu_auto_compact_setting_changed",
+      "replace": "tengu_auto_compact_setting_chgOFF_",
+      "applied_marker": "setting_chgOFF_",
+      "description": "Rename autocompact setting-changed event",
       "required": false,
-      "search_regex": "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0007\u0000\u0000\u0000verbose\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0015\u0000\u0000\u0000preferredNotifChannel\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0012\u0000\u0000\u0000autoCompactEnabled\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0011\u0000\u0000\u0000autoScrollEnabled\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0018\u0000\u0000\u0000fileCheckpointingEnabled\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000"
+      "count": 0
     }
   ],
-  "scan_signatures": true,
-  "type": "js_replace",
-  "validate_js": true
+  "anchor_strings": [
+    "tengu_auto_compact_setting_changed",
+    "autoCompactEnabled"
+  ],
+  "category": "feature_gates",
+  "version_last_tested": "2.1.228",
+  "note": "2.1.228: autoCompactEnabled:!0/!1 object literals not in active region (property name only). Event rename is best-effort."
 }

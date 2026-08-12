@@ -1,22 +1,25 @@
 {
   "anchor_strings": [
-    "timed out while downloading marketplace"
+    "Request timed out while downloading marketplace"
   ],
   "category": "infrastructure",
-  "description": "Sibling to patch 75: plugin marketplace fetch also throws on ETIMEDOUT. Silence by making the comparison falsey.",
+  "description": "Sibling to js-econnrefused-silent: the plugin marketplace download (CFp in 2.1.228) also throws specifically on ETIMEDOUT. Silence by making the comparison falsey.",
   "id": "js-marketplace-etimedout-silent",
   "patches": [
     {
-      "applied_marker": "if(0\u0026\u0026D.code===\"x\")throw Error(`Request timed out",
+      "applied_marker": "if(0&&l.code===\"x\")throw Error",
       "count": 0,
-      "description": "marketplace ETIMEDOUT -\u003e silent",
-      "replace": "if(0\u0026\u0026D.code===\"x\")throw Error(`Request timed out   ",
+      "description": "marketplace ETIMEDOUT -> silent (force condition falsey, name-agnostic)",
+      "replace": "if(0&&\\1.code===\"x\")\\2",
       "required": false,
-      "search_regex": "Technical\\s*details:\\s*\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\\s*\u0000\u0000\u0000ETIMEDOUT\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u00005\u0000\u0000\u0000Request\\s*timed\\s*[A-Za-z_$][\\w$]*\\s*while\\s*downloading\\s*marketplace\\s*[A-Za-z_$][\\w$]*\\s*\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000=\u0000\u0000\u0000\\.\\s*[A-Za-z_$][\\w$]*\\s*server\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*unreachable\\.\\s*Technical\\s*details:\\s*\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0005\u0000"
+      "search_regex": "if\\(([A-Za-z_$][\\w$]*)\\.code===\"ETIMEDOUT\"\\)(throw Error)"
     }
   ],
   "scan_signatures": true,
   "type": "js_replace",
   "validate_js": true,
-  "version_last_tested": "2.1.119"
+  "version_last_tested": "2.1.228",
+  "retired": true,
+  "disabled": true,
+  "note": "No unique marketplace+ETIMEDOUT JS branch in active bytecode; ETIMEDOUT is a generic errno token."
 }

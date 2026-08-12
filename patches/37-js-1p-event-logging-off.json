@@ -1,20 +1,26 @@
 {
+  "anchor_strings": [
+    "is1PEventLoggingEnabled",
+    "logEventTo1PAwaitable"
+  ],
+  "category": "telemetry",
+  "description": "is1PEventLoggingEnabled (ghe in 2.1.228, exported from the 1P module as is1PEventLoggingEnabled) gates the 1P OTEL event sink (logEventTo1P, logGrowthBookExperimentTo1P). Force it to return false so the OpenTelemetry pipeline that ships claude-code events to Anthropic's 1P ingest is disabled.",
   "id": "js-1p-event-logging-off",
-  "description": "is1PEventLoggingEnabled (Na) gates the 1P OTEL event sink (logEventTo1P, logGrowthBookExperimentTo1P). Force false so the OpenTelemetry pipeline that ships claude-code events to Anthropic's 1P ingest is disabled regardless of A46() value.",
-  "type": "js_replace",
-  "validate_js": true,
-  "scan_signatures": false,
   "patches": [
     {
-      "search_regex": "function Na\\(\\)\\{return!A46\\(\\)\\}",
-      "replace": "function Na(){return!1}",
-      "applied_marker": "function Na(){return!1}",
+      "applied_marker": "function ghe(){return!1}",
       "count": 0,
+      "description": "Force the is1PEventLoggingEnabled function to return !1, disabling the 1P OTEL event sink (name-agnostic shape, anchored on the following logEventTo1PAsync definition)",
+      "replace": "\\1!1\\2",
       "required": false,
-      "description": "Force Na() \u2192 false, disabling 1P OTEL event sink"
+      "search_regex": "(function [A-Za-z_$][\\w$]*\\(\\)\\{return)![A-Za-z_$][\\w$]*\\(\\)(\\}async function [A-Za-z_$][\\w$]*\\([A-Za-z_$][\\w$]*,[A-Za-z_$][\\w$]*,[A-Za-z_$][\\w$]*=\\{\\}\\)\\{try\\{)"
     }
   ],
-  "superseded_on": "2.1.114",
-  "note": "Legacy minified fn name (A46/Na). Behavior covered by env telemetry=0 via install-rules.",
-  "category": "telemetry"
+  "scan_signatures": false,
+  "type": "js_replace",
+  "validate_js": true,
+  "version_last_tested": "2.1.228",
+  "note": "No unique first-party event-logging function body or distinctive gate string beyond generic firstParty (too broad to rename safely). Metrics path covered by 19/35/36.",
+  "retired": true,
+  "disabled": true
 }

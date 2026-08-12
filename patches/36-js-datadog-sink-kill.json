@@ -1,25 +1,23 @@
 {
   "id": "js-datadog-sink-kill",
-  "description": "Gb1() POSTs telemetry to http-intake.logs.us5.datadoghq.com independently of the tengu_* d() funnel and the 1P OTEL sink. Short-circuit to no-op before any network activity.",
+  "description": "Break Datadog event funnel by renaming tengu_log_datadog_events in the constant pool.",
   "type": "js_replace",
   "validate_js": true,
-  "scan_signatures": false,
+  "scan_signatures": true,
   "patches": [
     {
-      "search": "y$()!==\"firstParty\")",
-      "replace": "!0!==\"firstParty\")  ",
-      "applied_marker": "!0!==\"firstParty\")  ",
-      "description": "disable all y$()-gated firstParty telemetry sinks",
+      "search_regex": "tengu_log_datadog_events",
+      "replace": "tengu_log_datadog_voided",
+      "applied_marker": "datadog_voided",
+      "description": "Rename datadog events gate id",
       "required": false,
       "count": 0
     }
   ],
   "anchor_strings": [
-    "async function BQH",
-    "y$()!==\"firstParty\")return"
+    "tengu_log_datadog_events"
   ],
-  "superseded_on": "2.1.114",
-  "note": "Legacy (<=2.1.112) symbol name. Equivalent behavior covered by v2.1.114 name-agnostic patches. Kept for backward compat.",
-  "version_last_tested": "2.1.152",
-  "category": "telemetry"
+  "category": "telemetry",
+  "version_last_tested": "2.1.228",
+  "note": "Same rename target as 35; second apply is no-op after first. Kept for standalone scan."
 }

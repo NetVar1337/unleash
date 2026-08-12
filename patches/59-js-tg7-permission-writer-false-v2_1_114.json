@@ -9,7 +9,7 @@
     "Claude requested permissions to write"
   ],
   "version_first_seen": "2.1.114",
-  "version_last_tested": "2.1.114",
+  "version_last_tested": "2.1.228",
   "patches": [
     {
       "search_regex": "function tg7\\(([A-Za-z_$][\\w$]*)\\)\\{",
@@ -20,5 +20,8 @@
       "description": "tg7 predicate always false (v2.1.114)"
     }
   ],
-  "category": "permissions"
+  "category": "permissions",
+  "retired": true,
+  "disabled": true,
+  "note": "tg7 permission writer function source absent from active region."
 }

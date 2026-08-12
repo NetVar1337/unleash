@@ -7,24 +7,24 @@
     {
       "search_regex": "hasTrustDialogAccepted:!1",
       "replace": "hasTrustDialogAccepted:!0",
-      "applied_marker": "hasTrustDialogAccepted:!0",
-      "description": "Auto-accept workspace trust dialog (regex)",
+      "applied_marker": "disabledMcpjsonServers:[],hasTrustDialogAccepted:!0",
+      "description": "Auto-accept workspace trust dialog (default project context object)",
       "required": false,
       "count": 0
     },
     {
       "search_regex": "hasClaudeMdExternalIncludesApproved:!1",
       "replace": "hasClaudeMdExternalIncludesApproved:!0",
-      "applied_marker": "hasClaudeMdExternalIncludesApproved:!0",
-      "description": "Auto-approve external CLAUDE.md includes (regex)",
+      "applied_marker": "projectOnboardingSeenCount:0,hasClaudeMdExternalIncludesApproved:!0",
+      "description": "Auto-approve external CLAUDE.md includes",
       "required": false,
       "count": 0
     },
     {
       "search_regex": "hasClaudeMdExternalIncludesWarningShown:!1",
       "replace": "hasClaudeMdExternalIncludesWarningShown:!0",
-      "applied_marker": "hasClaudeMdExternalIncludesWarningShown:!0",
-      "description": "Skip external includes warning (regex)",
+      "applied_marker": "hasClaudeMdExternalIncludesWarningShown:!0};",
+      "description": "Skip external includes warning",
       "required": false,
       "count": 0
     }
@@ -35,5 +35,10 @@
     "hasClaudeMdExternalIncludesApproved:!1",
     "hasClaudeMdExternalIncludesWarningShown:!1"
   ],
-  "category": "permissions"
+  "category": "permissions",
+  "version_last_tested": "2.1.228",
+  "offset_v2_1_228": 195387049,
+  "note": "No hasTrustDialogAccepted:!1 in active bytecode pools — only property-name strings + UX help text. Runtime trust/bypass covered by settings 01-bypass-permissions.",
+  "retired": true,
+  "disabled": true
 }

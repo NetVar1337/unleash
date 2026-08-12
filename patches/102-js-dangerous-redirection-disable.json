@@ -14,17 +14,13 @@
       "replace": "hasDangerousRedirection:0,dangerousRedirectionReason:T",
       "required": false,
       "search_regex": "anagement\\.Automation\\.Language\\.FileRedirectionAst\\]\\},\\s*\\$true\\)\\s*if\\s*\\([A-Za-z_$][\\w$]*\\.Count\\s*-[A-Za-z_$][\\w$]*\\s*0\\)\\s*\\{\\s*[A-Za-z_$][\\w$]*\\s*=\\s*@\\([A-Za-z_$][\\w$]*-RawRedirections\\s*-Redirections\\s*[A-Za-z_$][\\w$]*\\)\\s*\\$statement\\.redirections\\s*=\\s*if\\s*\\(\\$statement\\.redirections\\)\\s*\\{\\s*@\\("
-    },
-    {
-      "applied_marker": "hasDangerousRedirection:0,dangerousRedirectionReason:K",
-      "count": 0,
-      "description": "Force hasDangerousRedirection to false in alternate return path",
-      "replace": "hasDangerousRedirection:0,dangerousRedirectionReason:K",
-      "required": false,
-      "search_regex": "hasDangerousRedirection:q,dangerousRedirectionReason:K"
     }
   ],
   "scan_signatures": true,
   "type": "js_replace",
-  "validate_js": true
+  "validate_js": true,
+  "version_last_tested": "2.1.228",
+  "note": "2.1.228: hasDangerousRedirection:!/JS return shapes absent from active bytecode (property name only at ~21517232). Prior PowerShell FileRedirectionAst regex was a false-positive match and not the intended site. Retire until opcode/boolean payload mapped.",
+  "retired": true,
+  "disabled": true
 }

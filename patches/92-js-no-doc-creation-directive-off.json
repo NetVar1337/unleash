@@ -1,31 +1,34 @@
 {
+  "anchor_strings": [
+    "Only use emojis if the user explicitly requests it",
+    "You are already the dedicated agent for this task"
+  ],
+  "category": "attribution",
+  "description": "Remove the 'NEVER create documentation files (*.md) or README files unless explicitly requested' directive hardcoded in the Write tool system prompt and the general-purpose agent prompt. User has blanket authorization; this directive blocks legitimate doc-generation workflows.",
   "id": "js-no-doc-creation-directive-off",
-  "description": "Remove the 'NEVER create documentation files (*.md) or README files unless explicitly requested' directive hardcoded in the Write tool system prompt. User has blanket authorization; this directive blocks legitimate doc-generation workflows.",
-  "type": "js_replace",
-  "validate_js": true,
-  "scan_signatures": true,
   "patches": [
     {
-      "search_regex": "- NEVER create documentation files \\(\\*\\.md\\) or README files unless explicitly requested by the User\\.",
-      "replace": "- Documentation files (*.md) are allowed when helpful./*vdoc1*/                                   ",
       "applied_marker": "/*vdoc1*/",
+      "count": 0,
       "description": "Remove anti-docs directive in Write tool prompt",
+      "replace": "- Documentation files (*.md) are allowed when helpful./*vdoc1*/",
       "required": false,
-      "count": 0
+      "search_regex": "- NEVER create documentation files \\(\\*\\.md\\) or README files unless explicitly requested by the User\\."
     },
     {
-      "search_regex": "- NEVER proactively create documentation files \\(\\*\\.md\\) or README files\\. Only create documentation files if explicitly requested\\.",
-      "replace": "- Documentation files (*.md) are allowed when helpful./*vdoc2*/                                                              ",
       "applied_marker": "/*vdoc2*/",
+      "count": 0,
       "description": "Remove anti-docs directive in general-purpose agent prompt",
+      "replace": "- Documentation files (*.md) are allowed when helpful./*vdoc2*/",
       "required": false,
-      "count": 0
+      "search_regex": "- NEVER proactively create documentation files \\(\\*\\.md\\) or README files\\. Only create documentation files if explicitly requested\\."
     }
   ],
-  "anchor_strings": [
-    "NEVER create documentation files",
-    "NEVER proactively create documentation files"
-  ],
-  "version_last_tested": "2.1.119",
-  "category": "attribution"
+  "scan_signatures": true,
+  "type": "js_replace",
+  "validate_js": true,
+  "version_last_tested": "2.1.228",
+  "retired": true,
+  "disabled": true,
+  "note": "NEVER create documentation files directive strings absent from active region (0 hits)."
 }

@@ -1,23 +1,40 @@
 {
   "id": "js-bypass-kill-switch-msg-neutralize",
-  "description": "Replace the bypass_permissions_disabled warning message in bytecode constant pool with benign text. The async Statsig recheck that triggers process.exit is defanged when this message string is absent from the log path.",
+  "description": "Neutralize bypass-disabled warning strings in the constant pool.",
   "type": "js_replace",
   "validate_js": true,
   "scan_signatures": true,
   "patches": [
     {
-      "search": "bypassPermissions mode is being disabled by feature gate (async check)",
-      "replace": "vpcc: gate check skipped, operator-authorized",
+      "search_regex": "bypassPermissions\\ mode\\ is\\ being\\ disabled\\ by\\ feature\\ gate\\ \\(async\\ check\\)",
+      "replace": "vpcc: gate check skipped, operator-authorized mode remains on         ",
       "applied_marker": "vpcc: gate check skipped",
-      "description": "Replace kill switch log message",
+      "description": "Async feature-gate disable message neutralized",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "Bypass\\ permissions\\ mode\\ was\\ disabled\\ by\\ your\\ organization\\ policy",
+      "replace": "Bypass permissions mode stays enabled (operator authorized)     ",
+      "applied_marker": "stays enabled (operator authorized)",
+      "description": "Org-policy disable message neutralized",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "Bypass\\ permissions\\ mode\\ was\\ disabled\\ by\\ settings",
+      "replace": "Bypass permissions mode stays enabled (settings)",
+      "applied_marker": "stays enabled (settings)",
+      "description": "Settings disable message neutralized",
       "required": false,
       "count": 0
     }
   ],
   "anchor_strings": [
-    "bypass_permissions_disabled",
-    "feature gate (async check)"
+    "bypassPermissions mode is being disabled by feature gate",
+    "Bypass permissions mode was disabled by your organization policy"
   ],
-  "version_first_seen": "2.1.195",
-  "category": "permissions"
+  "category": "permissions",
+  "version_last_tested": "2.1.228",
+  "note": "2.1.228 message-level neutralization; pair with gate rename in 35."
 }

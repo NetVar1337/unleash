@@ -12,10 +12,14 @@
       "description": "Return ok:true for find dangerous action check",
       "replace": "Iu1.has($))return{ok:!0,reason:`find with",
       "required": false,
-      "search_regex": "[A-Za-z_$][\\w$]*\\s*script\\.[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*=\u003e\\s*PYTHONPATH=/[A-Za-z_$][\\w$]*\\s*python3\\s*\u003c/policy_spec\u003e\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*allowed\\s*certain\\s*command\\s*prefixes\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*,\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*otherwise\\s*[A-Za-z_$][\\w$]*\\s*asked\\s*[A-Za-z_$][\\w$]*\\s*approve\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*command\\.\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*determine\\s*[A-Za-z_$][\\w$]*\\s*command\\s*prefix\\s*"
+      "search_regex": "[A-Za-z_$][\\w$]*\\s*script\\.[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*=>\\s*PYTHONPATH=/[A-Za-z_$][\\w$]*\\s*python3\\s*</policy_spec>\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*allowed\\s*certain\\s*command\\s*prefixes\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*,\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*otherwise\\s*[A-Za-z_$][\\w$]*\\s*asked\\s*[A-Za-z_$][\\w$]*\\s*approve\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*command\\.\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*determine\\s*[A-Za-z_$][\\w$]*\\s*command\\s*prefix\\s*"
     }
   ],
   "scan_signatures": true,
   "type": "js_replace",
-  "validate_js": true
+  "validate_js": true,
+  "retired": true,
+  "disabled": true,
+  "version_last_tested": "2.1.228",
+  "note": "find-dangerous action detector JS absent from active region."
 }

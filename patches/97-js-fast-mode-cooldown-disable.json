@@ -1,21 +1,26 @@
 {
   "anchor_strings": [
-    "function Ydq(H,_){if(!iK())return"
+    "enterCooldown",
+    "hasLoggedCooldownExpiry"
   ],
   "category": "ratelimit",
-  "description": "Disable fast mode cooldown by changing status from 'cooldown' to 'active' and keeping tF6 flag enabled, preventing rate-limit-triggered fast mode suspension.",
+  "description": "Disable fast mode cooldown in 2.1.228: the rate-limit cooldown writes runtimeState={status:\"cooldown\",resetAt,reason} on the fast-mode state machine; force the recorded status to \"active\" (padded to same length) so the cooldown never engages and fast mode is never suspended.",
   "id": "js-fast-mode-cooldown-disable",
   "patches": [
     {
-      "applied_marker": "MCH={status:\"active\"",
+      "applied_marker": "runtimeState={status:\"active\"  ,resetAt",
       "count": 0,
-      "description": "Change cooldown status to active and keep tF6 enabled",
-      "replace": "MCH={status:\"active\"  ,resetAt:H,reason:_},tF6=!0",
+      "description": "enterCooldown: recorded status cooldown -> active (same length)",
+      "replace": "\\1\"active\"  \\2",
       "required": false,
-      "search_regex": "[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*for\\s*manual\\s*confirmation\\.\\)\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*every\\s*command\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*prefix\\.\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*command\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*prefix,\\s*return\\s*\"none\"\\.\\s*[A-Za-z_$][\\w$]*\\s*return\\s*[A-Za-z_$][\\w$]*\\s*prefix\\.\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*return\\s*[A-Za-z_$][\\w$]*\\s*other\\s*[A-Za-z_$][\\w$]*,\\s*markdown\\s*markers,\\s*[A-Za-z_$][\\w$]*\\s*other\\s*content\\s*[A-Za-z_$][\\w$]*\\s*formatting\\.\u0000\u0000\u0000"
+      "search_regex": "(this\\.runtimeState=\\{status:)\"cooldown\"(,resetAt:[A-Za-z_$][\\w$]*,reason:[A-Za-z_$][\\w$]*\\})"
     }
   ],
   "scan_signatures": true,
   "type": "js_replace",
-  "validate_js": true
+  "validate_js": true,
+  "version_last_tested": "2.1.228",
+  "retired": true,
+  "disabled": true,
+  "note": "runtimeState cooldown JS shape absent; bare cooldown token too generic (many hits)."
 }

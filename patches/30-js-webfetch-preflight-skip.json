@@ -1,21 +1,28 @@
 {
-  "anchor_strings": [
-    "ewMode\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\t\u0000\u0000\u0000\u0015\u0000\u0000\u0000skipWebFetchPreflight\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\t\u0000\u0000\u0000\u0007\u0000\u0000\u0000san"
-  ],
-  "category": "infrastructure",
-  "description": "WebFetch: skip domain_info preflight switch — treat every URL as allowed, no api.anthropic.com/api/web/domain_info roundtrip",
   "id": "js-webfetch-preflight-skip",
+  "description": "WebFetch: skip domain_info preflight switch — treat every URL as allowed, no api.anthropic.com/api/web/domain_info roundtrip",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": true,
   "patches": [
     {
-      "applied_marker": "if(false)switch((await lZK(W)).status)",
-      "count": 0,
-      "description": "Force-skip WebFetch preflight domain check",
-      "replace": "if(false)switch((await lZK(W)).status)",
+      "search_regex": "if\\(!([A-Za-z_$][\\w$]*)\\(\\)\\.skipWebFetchPreflight\\)switch\\(\\(await ([A-Za-z_$][\\w$]*)\\(([A-Za-z_$][\\w$]*)\\)\\)\\.status\\)\\{",
+      "replace": "if(!1)switch((await \\2(\\3)).status){",
+      "applied_marker": "if(!1)switch((await",
+      "description": "Force-skip WebFetch preflight domain check (predicate → !1, switch becomes dead code)",
       "required": false,
-      "search_regex": "[A-Za-z_$][\\w$]*\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0016\u0000\u0000\u0000parentSettingsBehavior\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0011\u0000\u0000\u0000forceLoginOrgUUID\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u001a\u0000\u0000\u0000forceRemoteSettingsRefresh\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0011\u0000\u0000\u0000otelHeadersHelper\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u000b\u0000\u0000\u0000output"
+      "count": 0
     }
   ],
-  "scan_signatures": true,
-  "type": "js_replace",
-  "validate_js": true
+  "anchor_strings": [
+    "if(!pa().skipWebFetchPreflight)switch((await $yp(g)).status){",
+    "case\"blocked\":throw new Fca(g)",
+    "case\"check_failed\":throw new Uca(g)"
+  ],
+  "category": "infrastructure",
+  "version_last_tested": "2.1.228",
+  "offset_v2_1_228": 188969413,
+  "note": "skipWebFetchPreflight exists only as property name in active pools; no if(!x().skipWebFetchPreflight)switch JS shape.",
+  "retired": true,
+  "disabled": true
 }

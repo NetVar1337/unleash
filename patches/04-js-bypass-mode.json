@@ -1,6 +1,6 @@
 {
   "id": "js-bypass-mode",
-  "description": "Enable isBypassPermissionsModeAvailable in cli.js \u2014 two specific occurrences with full context",
+  "description": "Enable isBypassPermissionsModeAvailable in cli.js — session-destination remap plus every default context object",
   "type": "js_replace",
   "validate_js": true,
   "patches": [
@@ -9,8 +9,8 @@
       "replace": "destination:\"session\"});return{...\\1,isBypassPermissionsModeAvailable:!0}",
       "required": false,
       "count": 0,
-      "applied_marker": "destination:\"session\"});return{...",
-      "description": "Occurrence 1 \u2014 session destination context (regex)"
+      "applied_marker": "return{...t,isBypassPermissionsModeAvailable:!0}",
+      "description": "Occurrence 1 — createDisabledBypassPermissionsContext (uFn) session-destination remap keeps bypass available"
     },
     {
       "search_regex": "alwaysAllowRules:\\{\\},alwaysDenyRules:\\{\\},alwaysAskRules:\\{\\},isBypassPermissionsModeAvailable:!1",
@@ -18,14 +18,19 @@
       "required": false,
       "count": 0,
       "applied_marker": "alwaysAskRules:{},isBypassPermissionsModeAvailable:!0",
-      "description": "Occurrence 2+ \u2014 default context object (regex, all instances)"
+      "description": "Occurrence 2+ — every default tool-permission context object (Tj factory, prompt context, tool description)"
     }
   ],
   "scan_signatures": true,
   "anchor_strings": [
     ",isBypassPermissionsModeAvailable:!1}",
     "destination:\"session\"});return{...",
-    ",isBypassPermissionsModeAvailable:!1"
+    "alwaysAllowRules:{},alwaysDenyRules:{},alwaysAskRules:{}"
   ],
-  "category": "permissions"
+  "category": "permissions",
+  "version_last_tested": "2.1.228",
+  "offset_v2_1_228": 195048791,
+  "note": "No isBypassPermissionsModeAvailable:!1 object shape in active region. Settings 01 sets isBypassPermissionsModeAvailable + defaultMode=bypassPermissions.",
+  "retired": true,
+  "disabled": true
 }

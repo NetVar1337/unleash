@@ -7,15 +7,19 @@
   "id": "js-bypass-perm-mode-not-available-fake-ok",
   "patches": [
     {
-      "applied_marker": "!1\u0026\u0026!1)return{ok:!1,error:\"Cannot set permission mode to bypassPermissions",
+      "applied_marker": "!1&&!1)return{ok:!1,error:\"Cannot set permission mode to bypassPermissions",
       "count": 0,
       "description": "Four separate error sites emit `Cannot set permission mode to bypassPermissions because the session was not launched wit",
-      "replace": "!1\u0026\u0026!1)return{ok:!1,error:\"Cannot set permission mode to bypassPermissions because the session was not launched with --dangerously-skip-permissions\"}",
+      "replace": "!1&&!1)return{ok:!1,error:\"Cannot set permission mode to bypassPermissions because the session was not launched with --dangerously-skip-permissions\"}",
       "required": false,
       "search_regex": "passPermissions\\s*because\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*disabled\\s*[A-Za-z_$][\\w$]*\\s*settings\\s*[A-Za-z_$][\\w$]*\\s*configuration\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000[A-Za-z_$][\\w$]*\u0000\u0000\u0000Cannot\\s*[A-Za-z_$][\\w$]*\\s*permission\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*bypassPermissions\\s*because\\s*[A-Za-z_$][\\w$]*\\s*session\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*launched\\s*[A-Za-z_$][\\w$]*\\s*--dangerously-[A-Za-z_$][\\w$]*-permissions\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000"
     }
   ],
   "scan_signatures": true,
   "type": "js_replace",
-  "validate_js": true
+  "validate_js": true,
+  "retired": true,
+  "disabled": true,
+  "version_last_tested": "2.1.228",
+  "note": "JS branch for bypassPermissionsModeNotAvailable not in active bytecode as matchable source; UX handled via 109/35."
 }

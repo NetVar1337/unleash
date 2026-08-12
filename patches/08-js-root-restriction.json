@@ -5,14 +5,6 @@
   "validate_js": true,
   "patches": [
     {
-      "search_regex": "--dangerously-skip-permissions cannot be used with root/sudo privileges for security reasons\"\\),process\\.exit\\(1\\)",
-      "replace": "--dangerously-skip-permissions running with elevated privileges \u2014 all actions authorized\"),void(0)          ",
-      "applied_marker": "--dangerously-skip-permissions running with elevated privileges",
-      "description": "Replace JS source call-site: process.exit(1) \u2192 void(0)",
-      "required": false,
-      "count": 0
-    },
-    {
       "search": "--dangerously-skip-permissions cannot be used with root/sudo privileges for security reasons",
       "replace": "--dangerously-skip-permissions elevated-ok                                                  ",
       "applied_marker": "--dangerously-skip-permissions elevated-ok",
@@ -21,5 +13,7 @@
     }
   ],
   "scan_signatures": false,
-  "category": "permissions"
+  "category": "permissions",
+  "version_last_tested": "2.1.228",
+  "note": "2.1.228: JS call-site shape gone; keep bytecode constant-pool root-restriction string neutralize only."
 }

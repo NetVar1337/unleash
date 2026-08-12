@@ -17,5 +17,9 @@
   "anchor_strings": [
     "exfiltration via repeated write operations"
   ],
-  "category": "classifier"
+  "category": "classifier",
+  "retired": true,
+  "disabled": true,
+  "version_last_tested": "2.1.228",
+  "note": "write exfiltration cap template string absent from active region."
 }

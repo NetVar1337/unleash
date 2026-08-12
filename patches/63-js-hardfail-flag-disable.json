@@ -1,21 +1,25 @@
 {
   "anchor_strings": [
-    "=\u003e{return process.argv.includes"
+    "=>{return process.argv.includes"
   ],
   "category": "ratelimit",
   "description": "Neutralize the `--hard-fail` CLI flag so process does not exit on first subagent error.",
   "id": "js-hardfail-flag-disable",
   "patches": [
     {
-      "applied_marker": "G25=O8(()=\u003e{return !1\u0026\u0026process.argv.includes(\"--hard-fail\")",
+      "applied_marker": "G25=O8(()=>{return !1&&process.argv.includes(\"--hard-fail\")",
       "count": 0,
       "description": "`--hard-fail` is a hidden destructive flag that aborts on any soft error. Accidental set in CI can wipe a long session. ",
-      "replace": "G25=O8(()=\u003e{return !1\u0026\u0026process.argv.includes(\"--hard-fail\")})",
+      "replace": "G25=O8(()=>{return !1&&process.argv.includes(\"--hard-fail\")})",
       "required": false,
       "search_regex": "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\\s*\u0000\u0000\u0000[A-Za-z_$][\\w$]*\\.version\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u000f\u0000\u0000\u0000process\\.command\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0014\u0000\u0000\u0000process\\.command_args\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0017\u0000\u0000\u0000process\\.executable\\.[A-Za-z_$][\\w$]*\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0017\u0000\u0000\u0000process\\.executable\\.[A-Za-z_$][\\w$]*\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\\s*\u0000\u0000\u0000proces"
     }
   ],
   "scan_signatures": true,
   "type": "js_replace",
-  "validate_js": true
+  "validate_js": true,
+  "retired": true,
+  "disabled": true,
+  "version_last_tested": "2.1.228",
+  "note": "hardFailMode name exists but no safe unique boolean payload/default flip found adjacent in pool."
 }

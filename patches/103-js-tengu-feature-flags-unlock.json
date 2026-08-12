@@ -347,5 +347,9 @@
     "tengu_orchid_mantis",
     "tengu_slate_harbor_experiment"
   ],
-  "category": "features"
+  "category": "features",
+  "retired": true,
+  "disabled": true,
+  "version_last_tested": "2.1.228",
+  "note": "Mass f_(\"tengu_*\",!1) JS gate list absent from active bytecode; important gates handled via dedicated renames where needed."
 }

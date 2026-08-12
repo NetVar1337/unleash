@@ -1,6 +1,6 @@
 {
   "id": "js-unlock-ab-flags",
-  "description": "Unlock clientDataCache A/B test flags \u00e2\u20ac\u201d enhanced Opus 4.6 output style (quiet_salted_ember) and Sonnet 4.6 enhanced prompt (coral_reef_sonnet) \u00e2\u20ac\u201d normally server-gated internal flags",
+  "description": "Unlock clientDataCache A/B test flags â€” enhanced Opus 4.6 output style (quiet_salted_ember) and Sonnet 4.6 enhanced prompt (coral_reef_sonnet) â€” normally server-gated internal flags",
   "type": "js_replace",
   "validate_js": true,
   "scan_signatures": false,
@@ -19,7 +19,9 @@
     "clientDataCache?.kelp_forest_sonnet"
   ],
   "superseded_on": "2.1.114",
-  "note": "Legacy (<=2.1.112) symbol name. Equivalent behavior covered by v2.1.114 name-agnostic patches. Kept for backward compat.",
-  "version_last_tested": "2.1.152",
-  "category": "features"
+  "note": "claude-sonnet-4-6 model gate literal absent from active region.",
+  "version_last_tested": "2.1.228",
+  "category": "features",
+  "retired": true,
+  "disabled": true
 }

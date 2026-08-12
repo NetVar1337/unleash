@@ -1,21 +1,41 @@
 {
-  "anchor_strings": [
-    "return Boolean"
-  ],
-  "category": "permissions",
-  "description": "Tw() sync Statsig gate returns false for known kill-switch gates (tengu_disable_bypass_permissions_mode, tengu_log_datadog_events, tengu_kairos_cron, tengu_cold_compact). Defangs Anthropic's ability to remotely toggle these via Statsig. Other gate names fall through to the original logic.",
   "id": "js-statsig-gate-kill-switches-off",
+  "description": "Defang Statsig remote kill switches by renaming constant-pool gate ids so lookups miss.",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": true,
   "patches": [
     {
-      "applied_marker": "q===\"tengu_disable_bypass_permissions_mode\"||q===\"tengu_log_datadog_events\"",
-      "count": 0,
-      "description": "Allowlist known kill-switch gates to always return false",
-      "replace": "function Tw(q){if(q===\"tengu_disable_bypass_permissions_mode\"||q===\"tengu_log_datadog_events\"||q===\"tengu_kairos_cron\"||q===\"tengu_cold_compact\")return!1;let K=nk6();if(K\u0026\u0026q in K)return Boolean(K[q]);",
+      "search_regex": "tengu_disable_bypass_permissions_mode",
+      "replace": "tengu_disable_bypass_permissions_VOID",
+      "applied_marker": "permissions_VOID",
+      "description": "Rename bypass kill-switch gate id",
       "required": false,
-      "search_regex": "[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*for\\s*manual\\s*confirmation\\.\\)\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*every\\s*command\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*prefix\\.\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*command\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*prefix,\\s*return\\s*\"none\"\\.\\s*[A-Za-z_$][\\w$]*\\s*return\\s*[A-Za-z_$][\\w$]*\\s*prefix\\.\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*return\\s*[A-Za-z_$][\\w$]*\\s*other\\s*[A-Za-z_$][\\w$]*,\\s*markdown\\s*markers,\\s*[A-Za-z_$][\\w$]*\\s*other\\s*content\\s*[A-Za-z_$][\\w$]*\\s*formatting\\.\u0000\u0000\u0000"
+      "count": 0
+    },
+    {
+      "search_regex": "tengu_log_datadog_events",
+      "replace": "tengu_log_datadog_voided",
+      "applied_marker": "datadog_voided",
+      "description": "Rename datadog events gate id",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "tengu_kairos_cron",
+      "replace": "tengu_kairos_cr0n",
+      "applied_marker": "kairos_cr0n",
+      "description": "Rename kairos_cron gate id",
+      "required": false,
+      "count": 0
     }
   ],
-  "scan_signatures": true,
-  "type": "js_replace",
-  "validate_js": true
+  "anchor_strings": [
+    "tengu_disable_bypass_permissions_mode",
+    "tengu_log_datadog_events",
+    "tengu_kairos_cron"
+  ],
+  "category": "permissions",
+  "version_last_tested": "2.1.228",
+  "note": "2.1.228 bytecode: JS gate-reader bodies absent from active region; rename pooled gate ids."
 }

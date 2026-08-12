@@ -25,6 +25,9 @@
   "anchor_strings": [
     "var Plq=()=>new HA,pp5="
   ],
-  "version_last_tested": "2.1.152",
-  "category": "ratelimit"
+  "version_last_tested": "2.1.228",
+  "category": "ratelimit",
+  "retired": true,
+  "disabled": true,
+  "note": "rate-limit retry constants/Yt5=60000 JS absent from active region."
 }

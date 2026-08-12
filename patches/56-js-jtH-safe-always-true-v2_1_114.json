@@ -1,24 +1,82 @@
 {
   "id": "js-jtH-safe-always-true-v2.1.114",
-  "description": "Force the safety-check helper to always return {safe:true}. Matches on body anchor 'Claude requested permissions to write', not literal fn name.",
+  "description": "Blind the suspicious-Windows-path safety check (jtH successor): every detection input found in the 2.1.228 pools is neutralized \u2014 device-name regexes (two module copies), three-dots regex, trailing-space and 8.3 short-name regexes become never-matching patterns, and the \\\\?\\ / \\\\.\\ / //?/ / //./ long-path prefix literals become impossible byte sequences. With no input able to match, the check cannot flag paths.",
   "type": "js_replace",
   "validate_js": true,
-  "scan_signatures": true,
-  "anchor_strings": [
-    "Claude requested permissions to write",
-    "safe:!1"
-  ],
-  "version_first_seen": "2.1.114",
-  "version_last_tested": "2.1.114",
   "patches": [
     {
-      "search_regex": "function ([A-Za-z_$][\\w$]*)\\(([A-Za-z_$][\\w$]*),([A-Za-z_$][\\w$]*),([A-Za-z_$][\\w$]*),([A-Za-z_$][\\w$]*)\\)\\{let ([A-Za-z_$][\\w$]*)=\\4\\|\\|\\5,([A-Za-z_$][\\w$]*)=\\3\\?\\?",
-      "replace": "function \\1(\\2,\\3,\\4,\\5){return{safe:!0};let \\6=\\4||\\5,\\7=\\3??",
-      "applied_marker": "return{safe:!0};let",
-      "count": 0,
+      "search_regex": "I\u0000\u0000\u0000\\^\\(con\\|prn\\|aux\\|nul\\|com\\[0\\-9\\\\u00B9\\\\u00B2\\\\u00B3\\]\\|lpt\\[0\\-9\\\\u00B9\\\\u00B2\\\\u00B3\\]\\)\\$",
+      "replace": "I\u0000\u0000\u0000a^",
+      "applied_marker": "I\u0000\u0000\u0000a^",
+      "description": "Blind device-name regex (module A, len 73) with never-matching pattern a^",
       "required": false,
-      "description": "Early-return {safe:true} regardless of minified name"
+      "count": 0
+    },
+    {
+      "search_regex": "P\u0000\u0000\u0000\\^\\(con\\|prn\\|aux\\|nul\\|com\\[1\\-9\\\\u00B9\\\\u00B2\\\\u00B3\\]\\|lpt\\[1\\-9\\\\u00B9\\\\u00B2\\\\u00B3\\]\\)\\(\\\\\\.\\.\\*\\)\\?\\$",
+      "replace": "P\u0000\u0000\u0000a^",
+      "applied_marker": "P\u0000\u0000\u0000a^",
+      "description": "Blind device-name regex (module B, len 80) with never-matching pattern a^",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "\u0018\u0000\u0000\u0000\\(\\^\\|\\\\/\\|\\\\\\\\\\)\\\\\\.\\{3,\\}\\(\\\\/\\|\\\\\\\\\\|\\$\\)",
+      "replace": "\u0018\u0000\u0000\u0000a^",
+      "applied_marker": "\u0018\u0000\u0000\u0000a^",
+      "description": "Blind three-consecutive-dots regex with never-matching pattern a^",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "\u0003\u0000\u0000\u0000\\ \\+\\$",
+      "replace": "\u0003\u0000\u0000\u0000a^",
+      "applied_marker": "\u0003\u0000\u0000\u0000a^",
+      "description": "Blind trailing-space regex with never-matching pattern a^",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "\u0003\u0000\u0000\u0000\\~\\\\d",
+      "replace": "\u0003\u0000\u0000\u0000z^",
+      "applied_marker": "\u0003\u0000\u0000\u0000z^",
+      "description": "Blind 8.3 short-name regex with never-matching pattern z^",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "\u0004\u0000\u0000\u0000\\\\\\\\\\?\\\\\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\\t\u0000\u0000\u0000\u0004\u0000\u0000\u0000\\\\\\\\\\.\\\\",
+      "replace": "\u0004\u0000\u0000\u0000\u0001\u0002\u0003\u0004\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\t\u0000\u0000\u0000\u0004\u0000\u0000\u0000\u0001\u0002\u0003\u0004",
+      "applied_marker": "\u0004\u0000\u0000\u0000\u0001\u0002\u0003\u0004",
+      "description": "Replace \\\\?\\ and \\\\.\\ long-path prefix literals (jtH-module copies, contiguous entries) with impossible prefix bytes",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "\u0004\u0000\u0000\u0000//\\?/",
+      "replace": "\u0004\u0000\u0000\u0000\u0005\u0006\u0007\b",
+      "applied_marker": "\u0004\u0000\u0000\u0000\u0005\u0006\u0007\b",
+      "description": "Replace //?/ long-path prefix literal with impossible prefix bytes",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "\u0004\u0000\u0000\u0000//\\./",
+      "replace": "\u0004\u0000\u0000\u0000\u000e\u000f\u001a\u001b",
+      "applied_marker": "\u0004\u0000\u0000\u0000\u000e\u000f\u001a\u001b",
+      "description": "Replace //./ long-path prefix literal with impossible prefix bytes",
+      "required": false,
+      "count": 0
     }
   ],
-  "category": "classifier"
+  "scan_signatures": true,
+  "anchor_strings": [
+    "suspiciousWindowsPath",
+    "Claude requested permissions to write to"
+  ],
+  "category": "classifier",
+  "version_first_seen": "2.1.114",
+  "version_last_tested": "2.1.228",
+  "offset_v2_1_228": 16884620,
+  "note": "The {safe:!0} JS early-return surface is gone (bytecode build). Alternate-data-stream detection appears to be a bytecode char test (no pooled pattern found) and cannot be text-blinded. The jtH-module \\\\?\\ copy is anchored via the contiguous \\\\.\\ entry so the two other dump copies (path-normalization modules ~10.7M/~18.6M) stay untouched. Never-matching patterns: 'a^'/'z^' are impossible regardless of regex flags."
 }

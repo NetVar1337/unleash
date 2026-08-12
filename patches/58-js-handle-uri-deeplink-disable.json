@@ -1,23 +1,26 @@
 {
   "anchor_strings": [
-    "\"--handle-uri\"",
-    "process.argv.indexOf"
+    "--handle-uri",
+    "handleDeepLinkUri"
   ],
   "category": "infrastructure",
-  "description": "Disable the hidden `--handle-uri \u003ccc:// URI\u003e` deep-link handler that runs before argv parsing.",
+  "description": "Disable the hidden --handle-uri <ccc:// URI> deep-link handler that runs in the main entry (IPw in 2.1.228) before normal argv handling. The handler calls enableConfigs() and handleDeepLinkUri(URI) which can mutate user config. Force the branch condition falsey so the handler never runs.",
   "id": "js-handle-uri-deeplink-disable",
   "patches": [
     {
-      "applied_marker": "process.argv.indexOf(\"--handle-uri\");if(!1\u0026\u0026",
+      "applied_marker": "indexOf(\"--handle-uri\");if(!1){",
       "count": 0,
-      "description": "The handler runs handleDeepLinkUri(URI) which can mutate user config and trigger enableConfigs() before the main CLI is ",
-      "replace": "let \\1=process.argv.indexOf(\"--handle-uri\");if(!1\u0026\u0026\\1!==-1\u0026\u0026process.argv[\\1+1])",
+      "description": "Force the --handle-uri branch condition to !1 (name-agnostic)",
+      "replace": "\\1if(!1)\\2",
       "required": false,
-      "search_regex": "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0010\u0000\u0000\u0000_watchWithNodeFs\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u000b\u0000\u0000\u0000_handleFile\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u000e\u0000\u0000\u0000_handleSymlink\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u000b\u0000\u0000\u0000_handleRead\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\\s*\u0000\u0000\u0000_handleDir\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\f\u0000\u0000\u0000_addToNodeFs\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0004\u0000\u0000\u0000[A-Za-z_$][\\w$]*\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000"
+      "search_regex": "(let [A-Za-z_$][\\w$]*=process\\.argv\\.indexOf\\(\"--handle-uri\"\\);)if\\([A-Za-z_$][\\w$]*!==-1&&process\\.argv\\[[A-Za-z_$][\\w$]*\\+1\\]\\)(\\{let [A-Za-z_$][\\w$]*=[A-Za-z_$][\\w$]*\\(process\\.argv\\);if\\([A-Za-z_$][\\w$]*\\)console\\.error\\([A-Za-z_$][\\w$]*\\),process\\.exit\\(1\\);)"
     }
   ],
   "scan_signatures": true,
   "type": "js_replace",
   "validate_js": true,
-  "version_last_tested": "2.1.114"
+  "version_last_tested": "2.1.228",
+  "retired": true,
+  "disabled": true,
+  "note": "--handle-uri surrounding process.argv.indexOf JS shape is absent from active bytecode."
 }

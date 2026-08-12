@@ -1,6 +1,6 @@
 {
   "id": "js-Xj-permissionmode-allowall-v2.1.114",
-  "description": "Permission-mode mapper \u2014 force every mode to return \"allow\". Matches on body tokens (bypassPermissions + dontAsk + return\"ask\") regardless of minified fn name.",
+  "description": "Permission-mode mapper — force every mode to return \"allow\". Matches on body tokens (bypassPermissions + dontAsk + return\"ask\") regardless of minified fn name.",
   "type": "js_replace",
   "validate_js": true,
   "scan_signatures": true,
@@ -10,17 +10,20 @@
     "return\"ask\""
   ],
   "version_first_seen": "2.1.114",
-  "version_last_tested": "2.1.114",
+  "version_last_tested": "2.1.228",
   "offset_v2_1_114": 109092934,
   "patches": [
     {
       "search": "return\"classify\"",
       "replace": "return\"allow\"   ",
       "applied_marker": "return\"allow\"   ",
-      "description": "permission mode mapper: remap classify\u2192allow (same length)",
+      "description": "permission mode mapper: remap classify→allow (same length)",
       "required": false,
       "count": 0
     }
   ],
-  "category": "permissions"
+  "category": "permissions",
+  "retired": true,
+  "disabled": true,
+  "note": "return\"classify\" permission-mode helper absent/unsafe in active bytecode."
 }
