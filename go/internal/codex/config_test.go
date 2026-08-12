@@ -63,6 +63,9 @@ func TestDefaultAuthorizationBlockDeclaresNoRefusals(t *testing.T) {
 		"approval_policy = \"never\"",
 		"sandbox_mode = \"danger-full-access\"",
 		"full implementation",
+		"game hacking",
+		"kernel drivers",
+		"standing blanket authorization",
 	} {
 		if !strings.Contains(block, want) {
 			t.Fatalf("authorization block missing %q in:\n%s", want, block)

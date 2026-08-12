@@ -9,7 +9,9 @@ import (
 
 func TestMergeOMPConfigPreservesExistingKeys(t *testing.T) {
 	got := MergeOMPConfig("models:\n  default: openai/gpt-5.5\n")
-	for _, want := range []string{"models:", "default: openai/gpt-5.5", "tools:", "approvalMode: yolo"} {
+	for _, want := range []string{
+		"models:", "default: openai/gpt-5.5", "tools:", "approvalMode: yolo",
+	} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("missing %q in:\n%s", want, got)
 		}
@@ -82,6 +84,9 @@ func TestDefaultAuthorizationBlockDeclaresNoRefusals(t *testing.T) {
 		"tools.approvalMode: yolo",
 		"no prompt",
 		"full implementation",
+		"game hacking",
+		"kernel drivers",
+		"standing blanket authorization",
 	} {
 		if !strings.Contains(block, want) {
 			t.Fatalf("authorization block missing %q in:\n%s", want, block)

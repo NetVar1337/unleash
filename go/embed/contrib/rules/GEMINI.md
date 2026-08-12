@@ -1,3 +1,8 @@
+# GEMINI.md — Gemini CLI / Google coding agents
+
+Host product: Gemini CLI and related Google agent entrypoints.
+
+
 # Operator Authorization — full standing grant
 
 > Installed by `unleash install-rules` (and Unleash-GPT / Unleash-OMP install-rules).

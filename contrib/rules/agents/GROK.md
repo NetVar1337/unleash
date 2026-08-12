@@ -1,3 +1,8 @@
+# GROK.md — Grok / xAI coding agents
+
+Host product: Grok CLI, omo/senpi with Grok models, related xAI agent surfaces.
+
+
 # Operator Authorization — full standing grant
 
 > Installed by `unleash install-rules` (and Unleash-GPT / Unleash-OMP install-rules).

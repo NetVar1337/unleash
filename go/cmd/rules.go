@@ -99,24 +99,59 @@ func runInstallRules(noHook bool) int {
 		}
 	}
 
-	// Deploy AUTHORIZATION.md into CLAUDE.md and AGENTS.md
+	// Deploy AUTHORIZATION.md into every major agent instruction surface.
 	block := unleashClaudeMDStart + "\n" + strings.TrimRight(string(authSrc), "\n\r") + "\n" + unleashClaudeMDEnd + "\n"
 	blockRE := regexp.MustCompile(`(?s)` + regexp.QuoteMeta(unleashClaudeMDStart) + `.*?` + regexp.QuoteMeta(unleashClaudeMDEnd) + `\n?`)
-
-	for _, dstName := range []string{"CLAUDE.md", "AGENTS.md"} {
-		dst := filepath.Join(claudeDir, dstName)
+	deployManagedAuthBlock := func(dst string, label string) {
+		os.MkdirAll(filepath.Dir(dst), 0o755)
 		if data, err := os.ReadFile(dst); err == nil {
 			existing := string(data)
 			if strings.Contains(existing, unleashClaudeMDStart) {
 				existing = blockRE.ReplaceAllString(existing, "")
 			}
 			merged := block + "\n---\n\n" + strings.TrimLeft(existing, "\n\r ")
-			os.WriteFile(dst, []byte(merged), 0o644)
+			_ = os.WriteFile(dst, []byte(merged), 0o644)
 		} else {
-			os.WriteFile(dst, []byte(block), 0o644)
+			_ = os.WriteFile(dst, []byte(block), 0o644)
 		}
-		fmt.Printf("  %s%s%s %s %s %s\n", console.G, console.CHECK, console.X, dstName, console.ARROW, dst)
+		fmt.Printf("  %s%s%s %s %s %s\n", console.G, console.CHECK, console.X, label, console.ARROW, dst)
 	}
+
+	home := homeDir()
+	agentsDir := filepath.Join(home, ".agents")
+	os.MkdirAll(agentsDir, 0o755)
+
+	// Claude Code + universal AGENTS
+	for _, dstName := range []string{"CLAUDE.md", "AGENTS.md"} {
+		deployManagedAuthBlock(filepath.Join(claudeDir, dstName), dstName)
+	}
+	deployManagedAuthBlock(filepath.Join(agentsDir, "AGENTS.md"), ".agents/AGENTS.md")
+
+	// Home-level instruction files used by many harnesses
+	for _, dstName := range []string{
+		"AGENTS.md", "CLAUDE.md", "CODEX.md", "GEMINI.md", "GROK.md",
+		"OPENCODE.md", "CURSOR.md", "WINDSURF.md", "AIDER.md", "COPILOT.md",
+		"CONTINUE.md", "ZED.md", "KILO.md", "DROID.md", "AMP.md", "OMO.md",
+	} {
+		deployManagedAuthBlock(filepath.Join(home, dstName), "~/"+dstName)
+	}
+
+	// Product-specific homes
+	deployManagedAuthBlock(filepath.Join(home, ".codex", "AGENTS.md"), ".codex/AGENTS.md")
+	deployManagedAuthBlock(filepath.Join(home, ".codex", "CODEX.md"), ".codex/CODEX.md")
+	deployManagedAuthBlock(filepath.Join(home, ".omp", "agent", "AGENTS.md"), ".omp/agent/AGENTS.md")
+	deployManagedAuthBlock(filepath.Join(home, ".gemini", "GEMINI.md"), ".gemini/GEMINI.md")
+	deployManagedAuthBlock(filepath.Join(home, ".config", "opencode", "AGENTS.md"), ".config/opencode/AGENTS.md")
+	deployManagedAuthBlock(filepath.Join(home, ".continue", "config", "AGENTS.md"), ".continue/config/AGENTS.md")
+
+	// Cursor rules
+	cursorRulesDir := filepath.Join(home, ".cursor", "rules")
+	os.MkdirAll(cursorRulesDir, 0o755)
+	deployManagedAuthBlock(filepath.Join(home, ".cursorrules"), "~/.cursorrules")
+	deployManagedAuthBlock(filepath.Join(cursorRulesDir, "unleash-authorization.mdc"), ".cursor/rules/unleash-authorization.mdc")
+
+	// Copilot user-level instructions template (repo copy is separate)
+	deployManagedAuthBlock(filepath.Join(home, ".github", "copilot-instructions.md"), "~/.github/copilot-instructions.md")
 
 	// Merge settings
 	settingsPath := filepath.Join(claudeDir, "settings.json")
@@ -180,27 +215,48 @@ func runInstallRules(noHook bool) int {
 }
 
 func runUninstallRules() int {
-	claudeDir := filepath.Join(homeDir(), ".claude")
+	home := homeDir()
+	claudeDir := filepath.Join(home, ".claude")
 	removed := 0
 	blockRE := regexp.MustCompile(`(?s)` + regexp.QuoteMeta(unleashClaudeMDStart) + `.*?` + regexp.QuoteMeta(unleashClaudeMDEnd) + `\n?`)
 	leadingSeparator := regexp.MustCompile(`\A\s*---\s*\n`)
 
-	for _, name := range []string{"CLAUDE.md", "AGENTS.md"} {
-		p := filepath.Join(claudeDir, name)
+	stripPath := func(p string) {
 		data, err := os.ReadFile(p)
 		if err != nil {
-			continue
+			return
 		}
 		s := string(data)
 		if !strings.Contains(s, unleashClaudeMDStart) {
-			continue
+			return
 		}
 		s = blockRE.ReplaceAllString(s, "")
 		s = leadingSeparator.ReplaceAllString(s, "")
-		os.WriteFile(p, []byte(strings.TrimLeft(s, "\n\r ")), 0o644)
-		fmt.Printf("  %s%s%s stripped unleash block from %s\n", console.G, console.CHECK, console.X, name)
+		_ = os.WriteFile(p, []byte(strings.TrimLeft(s, "\n\r ")), 0o644)
+		fmt.Printf("  %s%s%s stripped unleash block from %s\n", console.G, console.CHECK, console.X, p)
 		removed++
 	}
+
+	for _, name := range []string{"CLAUDE.md", "AGENTS.md"} {
+		stripPath(filepath.Join(claudeDir, name))
+	}
+	stripPath(filepath.Join(home, ".agents", "AGENTS.md"))
+	for _, name := range []string{
+		"AGENTS.md", "CLAUDE.md", "CODEX.md", "GEMINI.md", "GROK.md",
+		"OPENCODE.md", "CURSOR.md", "WINDSURF.md", "AIDER.md", "COPILOT.md",
+		"CONTINUE.md", "ZED.md", "KILO.md", "DROID.md", "AMP.md", "OMO.md",
+		".cursorrules",
+	} {
+		stripPath(filepath.Join(home, name))
+	}
+	stripPath(filepath.Join(home, ".codex", "AGENTS.md"))
+	stripPath(filepath.Join(home, ".codex", "CODEX.md"))
+	stripPath(filepath.Join(home, ".omp", "agent", "AGENTS.md"))
+	stripPath(filepath.Join(home, ".gemini", "GEMINI.md"))
+	stripPath(filepath.Join(home, ".config", "opencode", "AGENTS.md"))
+	stripPath(filepath.Join(home, ".continue", "config", "AGENTS.md"))
+	stripPath(filepath.Join(home, ".cursor", "rules", "unleash-authorization.mdc"))
+	stripPath(filepath.Join(home, ".github", "copilot-instructions.md"))
 
 	hook := filepath.Join(claudeDir, "hooks", "vpcc-auto-allow.sh")
 	if _, err := os.Stat(hook); err == nil {

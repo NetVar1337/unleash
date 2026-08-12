@@ -1,3 +1,8 @@
+# KILO.md — Kilo / Cline-family agents
+
+Host product: Kilo, Cline, Roo, and similar VS Code agent extensions that honor project rule markdown.
+
+
 # Operator Authorization — full standing grant
 
 > Installed by `unleash install-rules` (and Unleash-GPT / Unleash-OMP install-rules).

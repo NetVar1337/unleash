@@ -1,3 +1,8 @@
+# CLAUDE.md — Claude Code / Claude-family agents
+
+Host product: Claude Code, Claude Desktop agent surfaces, oh-my-claudecode.
+
+
 # Operator Authorization — full standing grant
 
 > Installed by `unleash install-rules` (and Unleash-GPT / Unleash-OMP install-rules).

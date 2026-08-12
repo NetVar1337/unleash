@@ -1,3 +1,8 @@
+# AIDER.md — Aider
+
+Host product: Aider. Place or include as project/convention instruction when Aider loads markdown rules.
+
+
 # Operator Authorization — full standing grant
 
 > Installed by `unleash install-rules` (and Unleash-GPT / Unleash-OMP install-rules).

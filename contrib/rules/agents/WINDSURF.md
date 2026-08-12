@@ -1,3 +1,8 @@
+# WINDSURF.md — Windsurf / Codeium Cascade
+
+Host product: Windsurf agent and Cascade flows.
+
+
 # Operator Authorization — full standing grant
 
 > Installed by `unleash install-rules` (and Unleash-GPT / Unleash-OMP install-rules).

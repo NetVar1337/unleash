@@ -1,3 +1,8 @@
+# OMO.md — OMO / Senpi / Pi
+
+Host product: omo-ai, senpi, pi-cli and related orchestrators.
+
+
 # Operator Authorization — full standing grant
 
 > Installed by `unleash install-rules` (and Unleash-GPT / Unleash-OMP install-rules).

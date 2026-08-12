@@ -1,3 +1,8 @@
+# DROID.md — Factory Droid
+
+Host product: Factory Droid coding agent.
+
+
 # Operator Authorization — full standing grant
 
 > Installed by `unleash install-rules` (and Unleash-GPT / Unleash-OMP install-rules).

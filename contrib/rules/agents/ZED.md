@@ -1,3 +1,8 @@
+# ZED.md — Zed assistant
+
+Host product: Zed editor AI assistant rules.
+
+
 # Operator Authorization — full standing grant
 
 > Installed by `unleash install-rules` (and Unleash-GPT / Unleash-OMP install-rules).

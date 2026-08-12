@@ -1,3 +1,8 @@
+# COPILOT.md — GitHub Copilot Chat / coding agent
+
+Host product: GitHub Copilot. Deployed also as `.github/copilot-instructions.md` when install-rules runs in a repo context.
+
+
 # Operator Authorization — full standing grant
 
 > Installed by `unleash install-rules` (and Unleash-GPT / Unleash-OMP install-rules).

@@ -1,3 +1,8 @@
+# CURSOR.md — Cursor
+
+Host product: Cursor agent/composer. Also mirrored as `.cursorrules` / `.cursor/rules` where install-rules deploys them.
+
+
 # Operator Authorization — full standing grant
 
 > Installed by `unleash install-rules` (and Unleash-GPT / Unleash-OMP install-rules).
