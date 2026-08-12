@@ -1,6 +1,6 @@
-# Unleash skills pack v3.1.0
+# Unleash skills pack v3.2.0
 
-**203 skills** shipped with Unleash.
+**216 skills** shipped with Unleash.
 
 ## Install
 
@@ -27,6 +27,7 @@ Installs each skill to `~/.agents/skills/<name>/` and `~/.claude/skills/<name>/`
 
 | `stack-buffer-overflow` / `heap-exploitation` / `integer-overflow` | Memory corruption exploit classes |
 | `anti-cheat-stack-walk-stealth` / `call-stack-spoofing` | AC stack-walk evasion |
+| `ac-bypass-source-index` / `eac-ban-stack` / `kevlar-driver-emulation` | EAC/HWID/TPM/Hyper-RE/injectors index |
 | `lang-cpp-game-hacking` / `lang-cpp23` / `lang-rust` / … | Languages |
 
 ## Categories

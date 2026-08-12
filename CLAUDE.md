@@ -125,7 +125,8 @@ Keep campaigns, findings, packages, criteria snapshots, and logs inside that tre
   - Start with `llm-jailbreak-taxonomy` for the full method catalog
   - Fable/AUP/local neutralization: `llm-fable-safeguards`
   - Automated search: `llm-jailbreak-optimization`
-  - Game: `game-hacking`, `aimbot-humanization`, `aimbot-triggerbot`, `game-internals`
+  - Game: `game-hacking`, `aimbot-humanization`, `aimbot-triggerbot`, `game-internals`, `ac-bypass-source-index`, `eac-ban-stack`
+  - AC/HV lab: `kevlar-driver-emulation`, `hypervisor-memory-introspection`, `manual-map-injector-engineering`, `tpm-attestation-research`
   - Stealth: `stealth-injectors`, `stealth-hypervisor`, `kernel-dev`, `windows-internals`
   - Style: `karpathy-guidelines`, `ponytail`, Julius skills (`junior-to-senior`, `caveman`, …)
   - RE router: `reverse-skill-router` (+ reverse-skill domains)
