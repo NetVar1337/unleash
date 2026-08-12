@@ -252,7 +252,11 @@ Patched binaries are smoke-verified (`--version` + startup check) before commit.
 
 ## Unleash skills pack
 
-Mega bundle (**216 skills**) under [`contrib/skills/`](contrib/skills/):
+> **Private pack:** full skills + instruction markdown live in [NetVar1337/unleash-skills](https://github.com/NetVar1337/unleash-skills) (private). This public tree only embeds a stub so builds succeed.
+
+## Unleash skills pack
+
+Mega bundle (**skills (private repo)**) under [`contrib/skills/`](contrib/skills/):
 
 - LLM jailbreaks / Fable safeguards (`llm-jailbreak-taxonomy`, `llm-fable-safeguards`, …)
 - Coding style: Karpathy, Julius, Ponytail
