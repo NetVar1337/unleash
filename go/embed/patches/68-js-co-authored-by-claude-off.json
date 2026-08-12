@@ -2,6 +2,8 @@
   "id": "js-co-authored-by-claude-off",
   "description": "Blank Co-Authored-By trailer prefix in constant pool.",
   "type": "js_replace",
+  "retired": true,
+  "retired_reason": "Superseded by js-co-authored-by-bytecode-blank (108) which blanks the Bun pool constants on 2.1.228.",
   "validate_js": true,
   "scan_signatures": true,
   "patches": [
