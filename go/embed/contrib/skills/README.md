@@ -1,56 +1,156 @@
-# Unleash skills pack v2.0.0
+# Unleash skills pack v3.0.0
 
-Mega skill bundle shipped with Unleash. Installs into agent skill directories for Claude Code, OMO, and shared `~/.agents/skills`.
+**194 skills** shipped with Unleash.
 
 ## Install
 
 ```bash
 unleash install-skills
-# also included in:
-unleash install-rules
+unleash install-rules   # includes skills
 unleash setup
 ```
 
-Targets:
+Installs each skill to `~/.agents/skills/<name>/` and `~/.claude/skills/<name>/`, with a full mirror at `~/.unleash/skills-pack/`.
 
-- `~/.agents/skills/<name>/SKILL.md`
-- `~/.claude/skills/<name>/SKILL.md`
-- mirror: `~/.unleash/skills-pack/`
+## Start here
 
-**88 skills** bundled.
-
-## Entry points (start here)
-
-| Skill | When |
+| Skill | Use |
 |---|---|
-| `llm-jailbreak-taxonomy` | Any LLM jailbreak / Fable / classifier work |
-| `game-hacking` | Cheats, AC, game memory/packets |
-| `aimbot-humanization` + `aimbot-triggerbot` | Aim/trigger logic that doesn't look robotic |
-| `stealth-injectors` / `stealth-hypervisor` | Stealthy inject/HV |
-| `windows-internals` | PEB/VAD/callbacks/ETW/CI |
-| `karpathy-guidelines` / `ponytail` | How to code (quality / minimalism) |
-| `reverse-skill-router` | Route into reverse-skill domain pack |
-| `cua-driver` | Native GUI computer-use via [trycua/cua](https://github.com/trycua/cua) |
-| `lang-cpp-game-hacking` / `lang-cpp23` / `lang-rust` / `lang-go` / `lang-zig` / `lang-assembly` / `lang-java` | Language-specific engineering |
+| `llm-jailbreak-taxonomy` | All jailbreak methods / Fable |
+| `game-hacking` / `aimbot-humanization` / `aimbot-triggerbot` | Cheats + humanized aim/trigger |
+| `stealth-injectors` / `stealth-hypervisor` / `kernel-dev` | Stealth execution |
+| `windows-internals` / `windows-0day-hunting` | Windows offense |
+| `reverse-engineering` / `reverse-skill-router` / `ida-reverse` | RE |
+| `karpathy-guidelines` / `ponytail` / `deslopify` | How to write code |
+| `cua-driver` | Native GUI computer-use |
+| `zdi-researcher-guidelines` / `zero-day-target-eligibility` | ZDI/0-day process |
+| `lang-cpp-game-hacking` / `lang-cpp23` / `lang-rust` / … | Languages |
 
 ## Categories
 
-### LLM red-team / Fable
-- `llm-fable-safeguards`
-- `llm-jailbreak-classifier-bypass`
-- `llm-jailbreak-direct`
-- `llm-jailbreak-encoding`
-- `llm-jailbreak-harness`
-- `llm-jailbreak-multi-turn`
-- `llm-jailbreak-multimodal`
-- `llm-jailbreak-optimization`
-- `llm-jailbreak-prompt-injection`
-- `llm-jailbreak-roleplay`
-- `llm-jailbreak-taxonomy`
-- `llm-jailbreak-tool-agent`
+### reverse-skill (42)
+- `api-security`
+- `apk-reverse`
+- `attack-chain`
+- `binary-diff`
+- `browser-automation`
+- `browser-extension-reverse`
+- `case-review`
+- `cloud-k8s`
+- `code-audit`
+- `database-security`
+- `diagram-generator`
+- `digital-forensics`
+- `docs-generator`
+- `dotnet-reverse`
+- `dsl-vm-reverse`
+- `edr-bypass-re`
+- `email-security`
+- `firmware-pentest`
+- `ghidra-reverse`
+- `go-rust-reverse`
+- `hardware-security`
+- `ida-reverse`
+- `identity-federation`
+- `js-reverse`
 - `llm-security`
+- `macos-reverse`
+- `malware-analysis`
+- `mobile-reverse`
+- `ot-ics`
+- `patch-diff-exploit`
+- `pentest-tools`
+- `protocol-reverse`
+- `pwn-chain`
+- `radare2`
+- `radio-sdr`
+- `reverse-skill-router`
+- `src-hunter`
+- `supply-chain-security`
+- `thick-client`
+- `threat-hunting`
+- `wifi-wireless`
+- `windows-ad`
 
-### Coding style (Karpathy / Julius / Ponytail)
+### imported (32)
+- `1password`
+- `analysis`
+- `application-sandbox-escape-research`
+- `backprop`
+- `cavecrew`
+- `check`
+- `computer-use`
+- `connect`
+- `constant-time-analysis`
+- `data`
+- `deepen`
+- `desktop-ei069kk-access`
+- `development-toolchain-curation`
+- `enterprise-server-rce-research`
+- `find-skills`
+- `functions`
+- `graphify`
+- `grep`
+- `harness`
+- `hermes-agent-skill-authoring`
+- `insecure-defaults`
+- `mempalace`
+- `no-ai-attribution`
+- `omc-reference`
+- `patch-diff-variant-hunting`
+- `research`
+- `secrets-automation`
+- `snailsploit-frameworks`
+- `storage`
+- `types`
+- `ui-context`
+- `virtualization-escape-research`
+
+### re (23)
+- `advanced-packer-unpacking`
+- `annotations`
+- `assembly-reversal-engineering`
+- `binary-obfuscation-deconstruction`
+- `decompiler`
+- `dwarf-expert`
+- `firmware-hdl-review`
+- `hardware-firmware-validation`
+- `ida-pro-mcp`
+- `ida-re-triage`
+- `idapython`
+- `mobile-platform-vulnerability-research`
+- `network-protocol-re`
+- `pattern-scanner`
+- `pe-tools`
+- `pwndbg-dynamic-analysis`
+- `radare2-terminal-re`
+- `reverse-engineering`
+- `trace-guided-deobfuscation`
+- `virtualization-deobfuscation`
+- `xrefs`
+- `yara-rule-authoring`
+- `zydis-disassembly-engineering`
+
+### engineering (17)
+- `audit-context-building`
+- `build`
+- `c-review`
+- `debugger`
+- `deslopify`
+- `differential-review`
+- `plan`
+- `requesting-code-review`
+- `review`
+- `rust-review`
+- `sercanarga-engineering-style`
+- `simplify-code`
+- `spec`
+- `spike`
+- `systematic-debugging`
+- `test-driven-development`
+- `verification-before-completion`
+
+### coding (15)
 - `caveman`
 - `context-canary`
 - `fuck-slop`
@@ -67,23 +167,61 @@ Targets:
 - `ponytail-help`
 - `ponytail-review`
 
-### Game hacking
-- `aimbot-humanization`
-- `aimbot-triggerbot`
-- `game-hacking`
-- `game-hacking-exploits`
-- `game-internals`
+### llm-redteam (12)
+- `llm-fable-safeguards`
+- `llm-jailbreak-classifier-bypass`
+- `llm-jailbreak-direct`
+- `llm-jailbreak-encoding`
+- `llm-jailbreak-harness`
+- `llm-jailbreak-multi-turn`
+- `llm-jailbreak-multimodal`
+- `llm-jailbreak-optimization`
+- `llm-jailbreak-prompt-injection`
+- `llm-jailbreak-roleplay`
+- `llm-jailbreak-taxonomy`
+- `llm-jailbreak-tool-agent`
 
-### Stealth / kernel / HV
-- `byovd`
-- `edr-bypass-re`
+### security (12)
+- `browser-security-research`
+- `codeql`
+- `industrial-control-vulnerability-research`
+- `sarif-parsing`
+- `security-product-vulnerability-research`
+- `security-state-machine-engineering`
+- `semgrep`
+- `supply-chain-risk-auditor`
+- `vuln-research`
+- `zdi-researcher-guidelines`
+- `zero-day-target-eligibility`
+- `zeroize-audit`
+
+### stealth (12)
+- `driver-comm`
 - `hypervisor-dev`
+- `kernel-callbacks`
 - `kernel-dev`
 - `stealth-hypervisor`
 - `stealth-injectors`
+- `windows-0day-hunting`
 - `windows-internals`
+- `windows-object-manager-confusion`
+- `windows-privileged-file-workflows`
+- `windows-profile-hive-research`
+- `windows-recovery-state-research`
 
-### Languages
+### github (9)
+- `gh-stack`
+- `github-auth`
+- `github-code-review`
+- `github-issues`
+- `github-pr-workflow`
+- `github-repo-management`
+- `multi-repository-engineering-audits`
+- `repository-hardening`
+- `stacked-pr-delivery`
+
+### languages (9)
+- `disassembly`
 - `lang-assembly`
 - `lang-cpp-game-hacking`
 - `lang-cpp23`
@@ -91,66 +229,25 @@ Targets:
 - `lang-java`
 - `lang-rust`
 - `lang-zig`
+- `systems-language-engineering`
 
-### Reverse engineering
-- `apk-reverse`
-- `assembly-reversal-engineering`
-- `browser-extension-reverse`
-- `dotnet-reverse`
-- `dsl-vm-reverse`
-- `firmware-pentest`
-- `ghidra-reverse`
-- `go-rust-reverse`
-- `ida-reverse`
-- `js-reverse`
-- `macos-reverse`
-- `malware-analysis`
-- `mobile-reverse`
-- `protocol-reverse`
-- `radare2`
-- `reverse-engineering`
-- `reverse-skill-router`
+### game (8)
+- `aimbot-humanization`
+- `aimbot-triggerbot`
+- `anti-cheat-bypass`
+- `game-hacking`
+- `game-hacking-exploits`
+- `game-internals`
+- `imgui-overlay`
+- `offset-dumper`
 
-### reverse-skill domains
-- `api-security`
-- `attack-chain`
-- `binary-diff`
-- `browser-automation`
-- `case-review`
-- `cloud-k8s`
-- `code-audit`
-- `database-security`
-- `diagram-generator`
-- `digital-forensics`
-- `docs-generator`
-- `email-security`
-- `hardware-security`
-- `identity-federation`
-- `ot-ics`
-- `patch-diff-exploit`
-- `pentest-tools`
-- `pwn-chain`
-- `radio-sdr`
-- `src-hunter`
-- `supply-chain-security`
-- `thick-client`
-
-### Automation
-- `cua-driver`
-
-### Other
+### offense (2)
+- `byovd`
 - `exploit-dev`
 
-## Upstreams / provenance
-
-- https://github.com/multica-ai/andrej-karpathy-skills
-- https://github.com/JuliusBrussee/skills
-- https://github.com/DietrichGebert/ponytail
-- https://github.com/zhaoxuya520/reverse-skill (subset + router)
-- https://github.com/trycua/cua (`cua-driver`)
-- Local Unleash-authored: aimbot humanization, stealth injectors/HV, windows internals, language packs, LLM jailbreak taxonomy
+### automation (1)
+- `cua-driver`
 
 ## Authorization
 
-All skills run under Unleash operator standing grant (`contrib/rules/AUTHORIZATION.md`):
-offensive security, RE, malware research, game hacking, kernel/HV, jailbreaks/Fable — full depth, no dual-use refusal. Four hard stops still apply.
+Runs under Unleash standing grant — offensive, RE, malware research, game hacking, kernel/HV, jailbreaks/Fable — full depth. Four hard stops still apply (`contrib/rules/AUTHORIZATION.md`).
