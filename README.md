@@ -1,107 +1,171 @@
 <div align="center">
 
-<br />
-
-<img src=".github/assets/banner.svg" alt="unleash" width="640" />
-
-<br />
-<br />
-
-<h3>No gates. No refusals. No telemetry. Your hardware, your rules.</h3>
+<img src=".github/assets/banner.svg" alt="Unleash — operator patch suite" width="920" />
 
 <br />
 
-<a href="https://www.npmjs.com/package/unleash-cc"><img src="https://img.shields.io/npm/v/unleash-cc?style=for-the-badge&color=8b5cf6&label=unleash-cc" alt="unleash-cc npm version" /></a>
+**Binary patchers + operator setup for local coding agents.**  
+Discover every install, patch in place, deploy authorization config, and keep it patched after updates.
+
+<br />
+
+[![unleash-cc](https://img.shields.io/npm/v/unleash-cc?style=for-the-badge&color=8b5cf6&label=unleash-cc)](https://www.npmjs.com/package/unleash-cc)
 &nbsp;
-<a href="https://www.npmjs.com/package/unleash-gpt"><img src="https://img.shields.io/npm/v/unleash-gpt?style=for-the-badge&color=10b981&label=unleash-gpt" alt="unleash-gpt npm version" /></a>
+[![unleash-gpt](https://img.shields.io/npm/v/unleash-gpt?style=for-the-badge&color=10b981&label=unleash-gpt)](https://www.npmjs.com/package/unleash-gpt)
 &nbsp;
-<a href="https://www.npmjs.com/package/unleash-omp"><img src="https://img.shields.io/npm/v/unleash-omp?style=for-the-badge&color=22d3ee&label=unleash-omp" alt="unleash-omp npm version" /></a>
+[![unleash-omp](https://img.shields.io/npm/v/unleash-omp?style=for-the-badge&color=22d3ee&label=unleash-omp)](https://www.npmjs.com/package/unleash-omp)
 
 <br />
-<br />
 
-<table>
-<tr>
-<td align="center"><strong>Unleash</strong><br /><sub>Claude Code</sub></td>
-<td align="center"><strong>Unleash-GPT</strong><br /><sub>Codex CLI</sub></td>
-<td align="center"><strong>Unleash-OMP</strong><br /><sub>Oh-My-Pi</sub></td>
-</tr>
-<tr>
-<td align="center"><code>npm install -g unleash-cc</code></td>
-<td align="center"><code>npm install -g unleash-gpt</code></td>
-<td align="center"><code>npm install -g unleash-omp</code></td>
-</tr>
-</table>
-
-<sub>macOS arm64 · macOS x64 · Linux x64 · Linux arm64 · Windows x64 · Windows arm64</sub>
+`macOS arm64` · `macOS x64` · `Linux x64` · `Linux arm64` · `Windows x64` · `Windows arm64`
 
 <br />
-<br />
+
+<img src=".github/assets/products.svg" alt="Unleash products" width="920" />
 
 </div>
 
 ---
 
-# Unleash
+## What is Unleash?
 
-Unleash is a Go binary patcher and operator setup suite for three local coding agents:
+**Unleash** is a three-product operator suite. Each product finds **every** copy of its target agent on the machine — npm, bun, WinGet, Scoop, Homebrew, native installers, version managers — patches the binary in place, writes operator config, and installs a guard that re-applies patches after updates.
 
-| Product | Target | npm package | Command | State directory | Config/rules written |
+| Product | Target | npm | CLI | State | Config written |
 |---|---|---|---|---|---|
-| **Unleash** | Claude Code | `unleash-cc` | `unleash` | `~/.unleash/` | `~/.claude/CLAUDE.md`, `~/.claude/AGENTS.md`, `~/.claude/settings.json` |
-| **Unleash-GPT** | OpenAI Codex CLI | `unleash-gpt` | `unleash-gpt` | `~/.unleash-gpt/` | `~/.codex/AGENTS.md`, `~/.codex/config.toml` |
-| **Unleash-OMP** | Oh-My-Pi / OMP | `unleash-omp` | `unleash-omp` | `~/.unleash-omp/` | `~/.omp/agent/AGENTS.md`, `~/.omp/agent/config.yml` |
+| **Unleash** | Claude Code | [`unleash-cc`](https://www.npmjs.com/package/unleash-cc) | `unleash` | `~/.unleash/` | `~/.claude/CLAUDE.md`, `~/.claude/AGENTS.md`, `~/.claude/settings.json` |
+| **Unleash-GPT** | OpenAI Codex CLI | [`unleash-gpt`](https://www.npmjs.com/package/unleash-gpt) | `unleash-gpt` | `~/.unleash-gpt/` | `~/.codex/AGENTS.md`, `~/.codex/config.toml` |
+| **Unleash-OMP** | Oh-My-Pi / OMP | [`unleash-omp`](https://www.npmjs.com/package/unleash-omp) | `unleash-omp` | `~/.unleash-omp/` | `~/.omp/agent/AGENTS.md`, `~/.omp/agent/config.yml` |
 
-Each product is shipped as its own npm package, binary name, release tag family, and patch set. The normal Claude Code Unleash flow remains unchanged; GPT and OMP are separate companion tools.
+**Currently tested:** Claude Code **2.1.228** · Codex CLI **0.147.0** · OMP **17.2.13 / 17.2.14**
 
 ---
 
-## Quick setup
-
-Install the npm package for the agent you use, then run `setup`. Each npm package is a thin launcher that selects the prebuilt binary for your OS/CPU.
-
-### Claude Code: Unleash
+## Install
 
 ```bash
-npm install -g unleash-cc
-unleash setup
+# npm
+npm install -g unleash-cc      # Claude Code
+npm install -g unleash-gpt     # Codex CLI
+npm install -g unleash-omp     # Oh-My-Pi
+
+# bun
+bun add -g unleash-cc
+
+# Windows — all three from GitHub releases
+irm https://raw.githubusercontent.com/NetVar1337/unleash/main/scripts/install.ps1 | iex
+
+# Linux / macOS
+curl -fsSL https://raw.githubusercontent.com/NetVar1337/unleash/main/scripts/install.sh | bash
 ```
 
-`unleash setup` performs the full Claude Code flow: target discovery, binary patching, authorization rules, plugin install, and update guard setup.
+GitHub Releases ship standalone binaries for six platforms  
+(`unleash-windows-amd64.exe`, `unleash-darwin-arm64`, …) plus checksums.  
+A winget manifest template lives in [`contrib/winget/`](contrib/winget/).
 
-Useful commands:
+---
+
+## Quick start
 
 ```bash
-unleash status
-unleash patch
-unleash verify
-unleash scan
-unleash tui
-unleash doctor
-unleash rollback
+unleash setup        # Claude Code — patch + rules + plugins + guard
+unleash-gpt setup    # Codex CLI  — patch + rules/config
+unleash-omp setup    # Oh-My-Pi   — patch + rules/config
 ```
 
-### Codex CLI: Unleash-GPT
+Same verbs on every product:
 
 ```bash
-npm install -g unleash-gpt@latest
-unleash-gpt setup
+unleash status           # every detected install + SHA + format
+unleash patch --dry-run  # preview
+unleash patch            # patch ALL detected installs
+unleash verify           # confirm applied markers
+unleash scan             # signature-drift report
+unleash guard            # SHA check; re-patch on change
+unleash doctor           # full health report
+unleash rollback         # restore newest backup
+unleash tui              # interactive control panel
 ```
 
-`unleash-gpt setup` discovers the local Codex CLI binary, applies Codex-specific byte patches, and installs Codex operator config.
+---
 
-Useful commands:
+## Discovery surface
 
-```bash
-unleash-gpt status
-unleash-gpt patch --dry-run
-unleash-gpt patch
-unleash-gpt verify
-unleash-gpt install-rules
-unleash-gpt rollback
-```
+Unleash patches the agent no matter how it was installed. Multiple coexisting copies are all patched (hardlinked files are deduped by identity).
 
-Current Codex setup writes:
+<details>
+<summary><strong>Claude Code</strong></summary>
+
+| Method | Example | Layout |
+|---|---|---|
+| Native installer | `irm https://claude.ai/install.ps1 \| iex` / `curl … \| bash` | `~/.local/bin/claude(.exe)` + `~/.local/share/claude/versions/<ver>` |
+| npm | `npm i -g @anthropic-ai/claude-code` | npm root + platform subpackage (often hardlinked) |
+| bun | `bun add -g @anthropic-ai/claude-code` | `~/.bun/install/global/node_modules/…` |
+| WinGet | `winget install Anthropic.ClaudeCode` | `%LOCALAPPDATA%\Microsoft\WinGet\Packages\…` |
+| Scoop / Chocolatey | `scoop install claude-code` | scoop/choco lib dirs |
+| Homebrew | formula or cask | `/opt/homebrew/…`, Caskroom |
+| Version managers | nvm / fnm / mise / volta / pnpm | versioned `node_modules` |
+| System packages | apt / dnf / apk | `/usr/bin/claude`, `/opt/claude-code/…` |
+
+</details>
+
+<details>
+<summary><strong>Codex CLI</strong></summary>
+
+npm (flat + nested), bun, pnpm, volta, WinGet, native (`~/.local/bin/codex`, `~/.codex/bin`), Scoop, Homebrew, PATH shim fallback.
+
+</details>
+
+<details>
+<summary><strong>OMP</strong></summary>
+
+Standalone SEA executables (WindowsApps, `%LOCALAPPDATA%\Programs`, `~/.local/bin`, WinGet), bun global `@oh-my-pi/pi-coding-agent`, npm global, mise, PATH shim fallback.
+
+</details>
+
+---
+
+## Engine notes
+
+Why this survives real installs and updates:
+
+- **Same-length in-place patching** — replacements pad to match length; longer ones are skipped, never shifting bytecode.
+- **Hardlink-safe commit** — npm often hardlinks `bin/claude.exe` to the platform binary; Unleash writes verified bytes in place so every link is patched.
+- **SEA layout tolerance** — Bun SEA builds where `.bun` raw size exceeds virtual size (CC 2.1.228+) and both pre/post-2.1.150 active-bundle layouts; only the patchable bundle is touched, never the VFS tail.
+- **Bytecode constant-pool targeting (CC 2.1.228+)** — the active region is Bun bytecode + length-prefixed string pools, not minified JS source. Gate ids, messages, and pool strings are the primary surface; settings cover runtime defaults that no longer exist as `:!1` flips.
+- **Backref-capable matcher** — `\1`–`\9` backreferences (emulated on RE2) for minifier-agnostic patterns.
+- **Update guard** — `unleash guard` (Task Scheduler / launchd / systemd, ~6h) compares per-target SHA manifests and re-runs the pipeline after updates.
+
+---
+
+## What each product patches
+
+### Unleash · Claude Code
+
+Bytecode constant-pool + settings patching of the Bun SEA:
+
+| Category | Effect |
+|---|---|
+| **Permissions** | Bypass gates, sandbox friction, trust checks, remote kill-switch gate ids / disable messages |
+| **Refusal & AUP** | Neutralize usage-policy refusal text, plan-mode blocks, denial workarounds, refusal stop handling |
+| **Classifier** | Fail safety classifiers open; neutralize dangerous-prefix / injection blocker copy |
+| **Telemetry** | Disable metrics/Datadog/OTEL paths, plugin telemetry events, protection headers, domain preflights |
+| **Feature gates** | Statsig-facing gate id renames / force paths where a pool surface exists |
+| **Rate limits** | Raise timeouts, output caps, subagent caps, retries (where constants remain patchable) |
+| **Subscription** | Pin subscription-sensitive surfaces where a safe pool/settings lever exists |
+| **Attribution** | Blank co-author trailers and generated-with markers |
+| **Infrastructure** | Off-switch keys, root restrictions, plugin denylists, MCP friction, update guards |
+
+Settings companion (`01-bypass-permissions`) forces `defaultMode=bypassPermissions`, trust skip, sandbox disable, and related operator defaults.
+
+### Unleash-GPT · Codex CLI
+
+- Sentry DSN → loopback
+- OTLP metrics endpoint → loopback
+- Cyber-safety doc endpoint → loopback
+- High-risk cyber fallback + approval/policy rejection wording neutralized
+- Approval/sandbox fallback warning neutralized
+- Writes `~/.codex/AGENTS.md` + `~/.codex/config.toml`:
 
 ```toml
 approval_policy = "never"
@@ -109,113 +173,47 @@ sandbox_mode = "danger-full-access"
 dangerously_bypass_approvals_and_sandbox = true
 ```
 
-### Oh-My-Pi: Unleash-OMP
+### Unleash-OMP · Oh-My-Pi
 
-```bash
-npm install -g unleash-omp@latest
-unleash-omp setup
-```
-
-`unleash-omp setup` discovers the installed OMP bundle, applies OMP-specific byte patches, and installs OMP operator config.
-
-Useful commands:
-
-```bash
-unleash-omp status
-unleash-omp patch --dry-run
-unleash-omp patch
-unleash-omp verify
-unleash-omp install-rules
-unleash-omp rollback
-```
-
-Current OMP setup writes:
+- Auto-QA grievance endpoint → loopback
+- Approval `deny`/`prompt` branches neutralized (17.x resolver shapes)
+- Channel permission gate → always-allow tool execution
+- Startup update check + marketplace auto-update defaults off (binary **and** `config.yml`)
+- OMP npm update-check endpoint → loopback
+- Writes `~/.omp/agent/AGENTS.md` + `~/.omp/agent/config.yml`:
 
 ```yaml
 tools:
   approvalMode: yolo
+startup:
+  checkUpdate: false
+marketplace:
+  autoUpdate: "off"
 ```
-
----
-
-## What each product patches
-
-### Unleash for Claude Code
-
-Unleash patches Claude Code's Bun SEA bytecode in place. The current Claude Code patch inventory contains **113 patch files** / **159 subpatches** across these categories:
-
-| Category | Count | Effect |
-|---|---:|---|
-| Permissions | 26 | Bypass permission gates, sandbox restrictions, trust dialogs, workspace checks, and remote bypass kill switches. |
-| Refusal and AUP | 14 | Remove local refusal/AUP text, plan-mode restrictions, denial workarounds, and refusal stop handling. |
-| Classifier | 14 | Fail classifiers open; neutralize safety checks, dangerous prefix checks, command-injection blockers, and `canUseTool` gates. |
-| Telemetry | 13 | Disable metrics, Datadog, OTEL, plugin telemetry, additional-protection headers, and domain preflight telemetry. |
-| Feature gates | 9 | Flip 42 Statsig-gated features on, including agent teams, background tasks, subagent forking, and reactive compaction. |
-| Rate limits | 13 | Raise timeouts, output caps, subagent caps, max turns, retry counts, and fallback thresholds. |
-| Subscription | 3 | Pin subscription-sensitive gates to available states. |
-| Attribution | 6 | Blank co-author trailers and generated-with markers in bytecode constants. |
-| Infrastructure | 15 | Neutralize off switches, process exits, root restrictions, plugin denylists, MCP friction, and update guards. |
-
-### Unleash-GPT for Codex CLI
-
-Unleash-GPT uses Codex-specific target discovery, config, and byte patches. Current patch coverage includes:
-
-- Sentry DSN loopback redirect.
-- OTLP metrics loopback redirect.
-- Cyber-safety documentation endpoint loopback redirect.
-- Local high-risk cyber fallback wording neutralization.
-- Local approval/policy rejection wording neutralization.
-- Local approval/sandbox fallback warning neutralization.
-- Managed Codex operator rules under `~/.codex/AGENTS.md`.
-- Managed Codex config requiring `approval_policy = "never"`, `sandbox_mode = "danger-full-access"`, and `dangerously_bypass_approvals_and_sandbox = true`.
-
-### Unleash-OMP for Oh-My-Pi
-
-Unleash-OMP uses OMP-specific bundle discovery, config, and byte patches. Current patch coverage includes:
-
-- Auto-QA grievance endpoint loopback redirect.
-- OMP approval `deny` policy neutralization.
-- OMP approval `prompt` policy neutralization.
-- ACP permission gate set emptied for `bash`, `edit`, `delete`, and `move`.
-- Startup update check default disabled.
-- Marketplace auto-update default disabled.
-- OMP npm update endpoint loopback redirect.
-- Managed OMP operator rules under `~/.omp/agent/AGENTS.md`.
-- Managed OMP config requiring `tools.approvalMode: yolo`.
 
 ---
 
 ## Build from source
 
-Clone once, then build whichever binary you need.
-
 ```bash
-git clone https://github.com/VoidChecksum/unleash
+git clone https://github.com/NetVar1337/unleash
 cd unleash/go
 
 # Claude Code
-GOOS=linux   GOARCH=amd64 go build -o unleash-linux-amd64 .
-GOOS=darwin  GOARCH=arm64 go build -o unleash-darwin-arm64 .
 GOOS=windows GOARCH=amd64 go build -o unleash-windows-amd64.exe .
-
 # Codex CLI
-GOOS=linux   GOARCH=amd64 go build -o unleash-gpt-linux-amd64 ./cmd/unleash-gpt
-GOOS=darwin  GOARCH=arm64 go build -o unleash-gpt-darwin-arm64 ./cmd/unleash-gpt
 GOOS=windows GOARCH=amd64 go build -o unleash-gpt-windows-amd64.exe ./cmd/unleash-gpt
-
 # Oh-My-Pi
-GOOS=linux   GOARCH=amd64 go build -o unleash-omp-linux-amd64 ./cmd/unleash-omp
-GOOS=darwin  GOARCH=arm64 go build -o unleash-omp-darwin-arm64 ./cmd/unleash-omp
 GOOS=windows GOARCH=amd64 go build -o unleash-omp-windows-amd64.exe ./cmd/unleash-omp
 ```
 
-Go 1.24.2+ is required. Release workflows build all six platform targets for each product.
+Requires **Go 1.24.2+**. Release workflows build all six platform targets per product.
 
 ---
 
-## Release and package layout
+## Release layout
 
-| Product | Git tag pattern | GitHub artifacts | npm package | npm binary |
+| Product | Git tag | GitHub artifacts | npm package | npm bin |
 |---|---|---|---|---|
 | Unleash | `cc-v*` | `unleash-*` | `unleash-cc` | `unleash` |
 | Unleash-GPT | `gpt-v*` | `unleash-gpt-*` | `unleash-gpt` | `unleash-gpt` |
@@ -229,25 +227,14 @@ Go 1.24.2+ is required. Release workflows build all six platform targets for eac
 | Unleash-OMP | `omp-v1.0.1` |
 <!-- release-versions:end -->
 
-The npm packages are thin launchers with prebuilt platform binaries in `bin/`. Publishing is tag-driven: push `cc-vX.Y.Z` to publish `unleash-cc@X.Y.Z`, `gpt-vX.Y.Z` to publish `unleash-gpt@X.Y.Z`, and `omp-vX.Y.Z` to publish `unleash-omp@X.Y.Z`.
-
----
-
-## Target discovery
-
-| Product | Discovery targets |
-|---|---|
-| Unleash | Claude Code native installers, npm/bun/pnpm/volta/nvm/fnm/mise layouts, Homebrew, WinGet, Scoop, Chocolatey, Linux package layouts. |
-| Unleash-GPT | Codex native installer, npm optional package layout, PATH shim fallback, platform package variants. |
-| Unleash-OMP | OMP Bun global install, npm global install, PATH shim fallback, custom npm prefixes. |
-
-All patch operations create timestamped backups before writing unless run with `--dry-run`.
+npm packages are thin launchers over prebuilt `bin/` binaries (npm **and** bun).  
+Publishing is tag-driven: push `cc-vX.Y.Z` → publish `unleash-cc@X.Y.Z`.
 
 ---
 
 ## Safety model
 
-The tools install an operator-authorization block with four hard stops:
+Operator-authorization block with four hard stops:
 
 1. No secret exfiltration to networks not invoked by the current task.
 2. No overwriting uncommitted work without green tests or explicit confirmation.
@@ -256,8 +243,26 @@ The tools install an operator-authorization block with four hard stops:
 
 Everything else is treated as pre-authorized local operator work.
 
+Every patch run creates timestamped backups first (`rollback` restores the newest).  
+Patched binaries are smoke-verified (`--version` + startup check) before commit.
+
+---
+
+## Brand assets
+
+| File | Use |
+|---|---|
+| [`.github/assets/banner.svg`](.github/assets/banner.svg) | Hero banner |
+| [`.github/assets/logo.svg`](.github/assets/logo.svg) | App mark / favicon source |
+| [`.github/assets/wordmark.svg`](.github/assets/wordmark.svg) | Horizontal wordmark |
+| [`.github/assets/products.svg`](.github/assets/products.svg) | Three-product card strip |
+
+<div align="center">
+<img src=".github/assets/wordmark.svg" alt="Unleash wordmark" width="420" />
+</div>
+
 ---
 
 ## License
 
-GPL-3.0-or-later. See [LICENSE](LICENSE).
+**GPL-3.0-or-later** — see [LICENSE](LICENSE).

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 280" role="img" aria-label="Unleash products">
+  <defs>
+    <linearGradient id="c1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#8b5cf6"/><stop offset="100%" stop-color="#6d28d9"/></linearGradient>
+    <linearGradient id="c2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#34d399"/><stop offset="100%" stop-color="#059669"/></linearGradient>
+    <linearGradient id="c3" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#22d3ee"/><stop offset="100%" stop-color="#0284c7"/></linearGradient>
+  </defs>
+  <rect width="1100" height="280" fill="none"/>
+
+  <g>
+    <rect x="20" y="24" width="340" height="232" rx="20" fill="#111827" stroke="#8b5cf6" stroke-opacity="0.4"/>
+    <circle cx="72" cy="78" r="22" fill="url(#c1)"/>
+    <text x="110" y="72" font-family="ui-sans-serif,system-ui,sans-serif" font-size="26" font-weight="800" fill="#f8fafc">Unleash</text>
+    <text x="110" y="98" font-family="ui-monospace,monospace" font-size="13" fill="#a78bfa">Claude Code · unleash-cc</text>
+    <text x="48" y="150" font-family="ui-sans-serif,system-ui,sans-serif" font-size="15" fill="#94a3b8">Bytecode pool patching for</text>
+    <text x="48" y="172" font-family="ui-sans-serif,system-ui,sans-serif" font-size="15" fill="#94a3b8">permissions, refusals, classifiers,</text>
+    <text x="48" y="194" font-family="ui-sans-serif,system-ui,sans-serif" font-size="15" fill="#94a3b8">telemetry, and kill switches.</text>
+    <text x="48" y="230" font-family="ui-monospace,monospace" font-size="13" fill="#64748b">tested: 2.1.228</text>
+  </g>
+
+  <g>
+    <rect x="380" y="24" width="340" height="232" rx="20" fill="#111827" stroke="#10b981" stroke-opacity="0.4"/>
+    <circle cx="432" cy="78" r="22" fill="url(#c2)"/>
+    <text x="470" y="72" font-family="ui-sans-serif,system-ui,sans-serif" font-size="26" font-weight="800" fill="#f8fafc">Unleash-GPT</text>
+    <text x="470" y="98" font-family="ui-monospace,monospace" font-size="13" fill="#6ee7b7">Codex CLI · unleash-gpt</text>
+    <text x="408" y="150" font-family="ui-sans-serif,system-ui,sans-serif" font-size="15" fill="#94a3b8">Redirect telemetry sinks, neutralize</text>
+    <text x="408" y="172" font-family="ui-sans-serif,system-ui,sans-serif" font-size="15" fill="#94a3b8">approval friction, and write YOLO</text>
+    <text x="408" y="194" font-family="ui-sans-serif,system-ui,sans-serif" font-size="15" fill="#94a3b8">Codex config by default.</text>
+    <text x="408" y="230" font-family="ui-monospace,monospace" font-size="13" fill="#64748b">tested: 0.147.0</text>
+  </g>
+
+  <g>
+    <rect x="740" y="24" width="340" height="232" rx="20" fill="#111827" stroke="#22d3ee" stroke-opacity="0.4"/>
+    <circle cx="792" cy="78" r="22" fill="url(#c3)"/>
+    <text x="830" y="72" font-family="ui-sans-serif,system-ui,sans-serif" font-size="26" font-weight="800" fill="#f8fafc">Unleash-OMP</text>
+    <text x="830" y="98" font-family="ui-monospace,monospace" font-size="13" fill="#67e8f9">Oh-My-Pi · unleash-omp</text>
+    <text x="768" y="150" font-family="ui-sans-serif,system-ui,sans-serif" font-size="15" fill="#94a3b8">Force always-allow tool policy,</text>
+    <text x="768" y="172" font-family="ui-sans-serif,system-ui,sans-serif" font-size="15" fill="#94a3b8">mute update/marketplace noise,</text>
+    <text x="768" y="194" font-family="ui-sans-serif,system-ui,sans-serif" font-size="15" fill="#94a3b8">and pin operator agent rules.</text>
+    <text x="768" y="230" font-family="ui-monospace,monospace" font-size="13" fill="#64748b">tested: 17.2.13 / 17.2.14</text>
+  </g>
+</svg>

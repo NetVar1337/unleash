@@ -1,21 +1,60 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 160" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 420" role="img" aria-label="Unleash">
   <defs>
-    <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#8b5cf6"/>
-      <stop offset="50%" stop-color="#a78bfa"/>
+    <linearGradient id="beam" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="45%" stop-color="#a78bfa"/>
       <stop offset="100%" stop-color="#22d3ee"/>
     </linearGradient>
-    <linearGradient id="g2" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.15"/>
-      <stop offset="100%" stop-color="#22d3ee" stop-opacity="0.08"/>
+    <linearGradient id="glow" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#7c3aed" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#8b5cf6" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#22d3ee" stop-opacity="0"/>
     </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#161b22"/>
+      <stop offset="100%" stop-color="#0d1117"/>
+    </linearGradient>
+    <radialGradient id="orb" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.45"/>
+      <stop offset="55%" stop-color="#7c3aed" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#0d1117" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="18" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M32 0H0V32" fill="none" stroke="#ffffff" stroke-opacity="0.035" stroke-width="1"/>
+    </pattern>
   </defs>
-  <rect width="640" height="160" rx="16" fill="#0d1117"/>
-  <rect x="1" y="1" width="638" height="158" rx="15" fill="url(#g2)" stroke="url(#g1)" stroke-width="1.5" stroke-opacity="0.3"/>
-  <text x="320" y="82" text-anchor="middle" font-family="'JetBrains Mono','Fira Code','SF Mono',monospace" font-size="56" font-weight="800" fill="url(#g1)" letter-spacing="8">UNLEASH</text>
-  <text x="320" y="118" text-anchor="middle" font-family="'Inter','SF Pro',system-ui,sans-serif" font-size="14" fill="#9ca3af" letter-spacing="4">CLAUDE CODE PATCHER</text>
-  <circle cx="48" cy="80" r="4" fill="#8b5cf6" opacity="0.5"/>
-  <circle cx="592" cy="80" r="4" fill="#22d3ee" opacity="0.5"/>
-  <line x1="60" y1="80" x2="120" y2="80" stroke="#8b5cf6" stroke-width="0.5" stroke-opacity="0.2"/>
-  <line x1="520" y1="80" x2="580" y2="80" stroke="#22d3ee" stroke-width="0.5" stroke-opacity="0.2"/>
+
+  <rect width="1200" height="420" rx="28" fill="#0d1117"/>
+  <rect width="1200" height="420" rx="28" fill="url(#panel)"/>
+  <rect width="1200" height="420" rx="28" fill="url(#grid)"/>
+  <ellipse cx="600" cy="120" rx="420" ry="160" fill="url(#orb)"/>
+  <rect x="80" y="0" width="1040" height="3" fill="url(#glow)"/>
+
+  <!-- bolt mark -->
+  <g transform="translate(140,118)" filter="url(#soft)">
+    <circle cx="54" cy="54" r="54" fill="#111827" stroke="url(#beam)" stroke-width="2"/>
+    <path d="M66 18 L34 62 H58 L42 96 L86 48 H60 Z" fill="url(#beam)"/>
+  </g>
+
+  <text x="280" y="165" font-family="ui-sans-serif, system-ui, Segoe UI, Inter, sans-serif" font-size="86" font-weight="800" letter-spacing="4" fill="url(#beam)">UNLEASH</text>
+  <text x="284" y="210" font-family="ui-sans-serif, system-ui, Segoe UI, Inter, sans-serif" font-size="22" font-weight="600" letter-spacing="5" fill="#94a3b8">OPERATOR PATCH SUITE</text>
+  <text x="284" y="248" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="16" fill="#64748b">Claude Code · Codex CLI · Oh-My-Pi</text>
+
+  <!-- product chips -->
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" font-weight="700">
+    <rect x="284" y="290" width="170" height="42" rx="12" fill="#1f1630" stroke="#8b5cf6" stroke-opacity="0.55"/>
+    <text x="369" y="316" text-anchor="middle" fill="#c4b5fd">unleash-cc</text>
+
+    <rect x="470" y="290" width="180" height="42" rx="12" fill="#0f241f" stroke="#10b981" stroke-opacity="0.55"/>
+    <text x="560" y="316" text-anchor="middle" fill="#6ee7b7">unleash-gpt</text>
+
+    <rect x="666" y="290" width="180" height="42" rx="12" fill="#0b2530" stroke="#22d3ee" stroke-opacity="0.55"/>
+    <text x="756" y="316" text-anchor="middle" fill="#67e8f9">unleash-omp</text>
+  </g>
+
+  <text x="600" y="380" text-anchor="middle" font-family="ui-sans-serif, system-ui, Segoe UI, Inter, sans-serif" font-size="15" fill="#6b7280">No gates. No refusals. No telemetry. Your hardware, your rules.</text>
 </svg>
