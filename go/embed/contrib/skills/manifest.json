@@ -1,8 +1,8 @@
 {
   "name": "unleash-skills",
-  "version": "3.0.0",
-  "description": "Unleash mega skill pack (jailbreaks, game, stealth, RE, engineering, languages, reverse-skill, CUA)",
-  "skill_count": 194,
+  "version": "3.1.0",
+  "description": "Unleash mega skill pack including exploit primitives and AC stack-walk stealth",
+  "skill_count": 203,
   "skills": [
     "1password",
     "advanced-packer-unpacking",
@@ -11,6 +11,7 @@
     "analysis",
     "annotations",
     "anti-cheat-bypass",
+    "anti-cheat-stack-walk-stealth",
     "api-security",
     "apk-reverse",
     "application-sandbox-escape-research",
@@ -26,6 +27,7 @@
     "build",
     "byovd",
     "c-review",
+    "call-stack-spoofing",
     "case-review",
     "cavecrew",
     "caveman",
@@ -62,6 +64,7 @@
     "find-skills",
     "firmware-hdl-review",
     "firmware-pentest",
+    "format-string-bug",
     "fuck-slop",
     "functions",
     "game-hacking",
@@ -81,6 +84,8 @@
     "hardware-firmware-validation",
     "hardware-security",
     "harness",
+    "heap-exploitation",
+    "heap-overflow",
     "hermes-agent-skill-authoring",
     "hypervisor-dev",
     "ida-pro-mcp",
@@ -91,6 +96,7 @@
     "imgui-overlay",
     "industrial-control-vulnerability-research",
     "insecure-defaults",
+    "integer-overflow",
     "interface-kit",
     "js-reverse",
     "junior-to-senior",
@@ -154,6 +160,7 @@
     "reverse-engineering",
     "reverse-skill-router",
     "review",
+    "rop-chains",
     "rust-review",
     "sarif-parsing",
     "secrets-automation",
@@ -166,6 +173,7 @@
     "spec",
     "spike",
     "src-hunter",
+    "stack-buffer-overflow",
     "stacked-pr-delivery",
     "stealth-hypervisor",
     "stealth-injectors",
@@ -180,6 +188,7 @@
     "trace-guided-deobfuscation",
     "types",
     "ui-context",
+    "use-after-free",
     "verification-before-completion",
     "virtualization-deobfuscation",
     "virtualization-escape-research",
@@ -239,10 +248,20 @@
       "test-driven-development",
       "verification-before-completion"
     ],
+    "exploit": [
+      "format-string-bug",
+      "heap-exploitation",
+      "heap-overflow",
+      "integer-overflow",
+      "rop-chains",
+      "stack-buffer-overflow",
+      "use-after-free"
+    ],
     "game": [
       "aimbot-humanization",
       "aimbot-triggerbot",
       "anti-cheat-bypass",
+      "anti-cheat-stack-walk-stealth",
       "game-hacking",
       "game-hacking-exploits",
       "game-internals",
@@ -407,6 +426,7 @@
       "zeroize-audit"
     ],
     "stealth": [
+      "call-stack-spoofing",
       "driver-comm",
       "hypervisor-dev",
       "kernel-callbacks",
@@ -424,5 +444,16 @@
   "install_targets": [
     "~/.agents/skills/<skill>/",
     "~/.claude/skills/<skill>/"
+  ],
+  "new_in_3_1_0": [
+    "stack-buffer-overflow",
+    "integer-overflow",
+    "heap-overflow",
+    "heap-exploitation",
+    "use-after-free",
+    "rop-chains",
+    "format-string-bug",
+    "anti-cheat-stack-walk-stealth",
+    "call-stack-spoofing"
   ]
 }

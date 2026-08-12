@@ -1,6 +1,6 @@
-# Unleash skills pack v3.0.0
+# Unleash skills pack v3.1.0
 
-**194 skills** shipped with Unleash.
+**203 skills** shipped with Unleash.
 
 ## Install
 
@@ -24,6 +24,9 @@ Installs each skill to `~/.agents/skills/<name>/` and `~/.claude/skills/<name>/`
 | `karpathy-guidelines` / `ponytail` / `deslopify` | How to write code |
 | `cua-driver` | Native GUI computer-use |
 | `zdi-researcher-guidelines` / `zero-day-target-eligibility` | ZDI/0-day process |
+
+| `stack-buffer-overflow` / `heap-exploitation` / `integer-overflow` | Memory corruption exploit classes |
+| `anti-cheat-stack-walk-stealth` / `call-stack-spoofing` | AC stack-walk evasion |
 | `lang-cpp-game-hacking` / `lang-cpp23` / `lang-rust` / … | Languages |
 
 ## Categories
@@ -247,6 +250,15 @@ Installs each skill to `~/.agents/skills/<name>/` and `~/.claude/skills/<name>/`
 
 ### automation (1)
 - `cua-driver`
+
+### exploit (7)
+- `format-string-bug`
+- `heap-exploitation`
+- `heap-overflow`
+- `integer-overflow`
+- `rop-chains`
+- `stack-buffer-overflow`
+- `use-after-free`
 
 ## Authorization
 

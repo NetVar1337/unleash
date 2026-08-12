@@ -252,7 +252,7 @@ Patched binaries are smoke-verified (`--version` + startup check) before commit.
 
 ## Unleash skills pack
 
-Mega bundle (**194 skills**) under [`contrib/skills/`](contrib/skills/):
+Mega bundle (**203 skills**) under [`contrib/skills/`](contrib/skills/):
 
 - LLM jailbreaks / Fable safeguards (`llm-jailbreak-taxonomy`, `llm-fable-safeguards`, …)
 - Coding style: Karpathy, Julius, Ponytail
