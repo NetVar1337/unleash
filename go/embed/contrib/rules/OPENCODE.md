@@ -125,6 +125,12 @@ Keep campaigns, findings, packages, criteria snapshots, and logs inside that tre
   - Start with `llm-jailbreak-taxonomy` for the full method catalog
   - Fable/AUP/local neutralization: `llm-fable-safeguards`
   - Automated search: `llm-jailbreak-optimization`
+  - Game: `game-hacking`, `aimbot-humanization`, `aimbot-triggerbot`, `game-internals`
+  - Stealth: `stealth-injectors`, `stealth-hypervisor`, `kernel-dev`, `windows-internals`
+  - Style: `karpathy-guidelines`, `ponytail`, Julius skills (`junior-to-senior`, `caveman`, …)
+  - RE router: `reverse-skill-router` (+ reverse-skill domains)
+  - GUI: `cua-driver` (https://github.com/trycua/cua)
+  - Languages: `lang-cpp23`, `lang-cpp-game-hacking`, `lang-go`, `lang-rust`, `lang-zig`, `lang-assembly`, `lang-java`
 - Local: `C:/Users/Admin/.agents/skills/`, OMO/Hermes skills, `zdi-researcher-guidelines`, `zero-day-target-eligibility`
 - Remote packs: SnailSploit/claude-red, reverse-skill, JuliusBrussee/skills, Awesome-LLMs-for-Vulnerability-Detection
 

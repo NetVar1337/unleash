@@ -250,17 +250,23 @@ Patched binaries are smoke-verified (`--version` + startup check) before commit.
 ---
 
 
-## Unleash skills pack (LLM jailbreaks / Fable)
+## Unleash skills pack
 
-Shipped under [`contrib/skills/`](contrib/skills/) and installed by `unleash install-rules` or `unleash install-skills` into `~/.agents/skills` and `~/.claude/skills`.
+Mega bundle (**88 skills**) under [`contrib/skills/`](contrib/skills/):
 
-| Skill | Purpose |
-|---|---|
-| `llm-jailbreak-taxonomy` | Full method catalog + attack-surface map (**start here**) |
-| `llm-fable-safeguards` | Fable/AUP/stop_reason + local pool neutralization |
-| `llm-jailbreak-*` | Direct, encoding, roleplay, multi-turn, injection, tools, classifiers, optimization, multimodal, harness |
+- LLM jailbreaks / Fable safeguards (`llm-jailbreak-taxonomy`, `llm-fable-safeguards`, …)
+- Coding style: Karpathy, Julius, Ponytail
+- Game hacking, aimbot humanization/triggerbot, game internals/exploits
+- Windows internals, stealth injectors, stealth hypervisor, kernel/BYOVD
+- Languages: C++23, C++ game hacking, Go, Rust, Zig, Java, Assembly
+- reverse-skill domain pack + `cua-driver` (trycua/cua)
+
+```bash
+unleash install-skills
+```
 
 See [`contrib/skills/README.md`](contrib/skills/README.md).
+
 
 ## Brand assets
 
