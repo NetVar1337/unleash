@@ -183,15 +183,20 @@ func restoreFile(dstPath, backupPath string) error {
 	os.Chmod(tmpPath, mode)
 
 	if err := os.Rename(tmpPath, dstPath); err != nil {
-		// Windows may need remove-then-rename if target is busy
-		if rmErr := os.Remove(dstPath); rmErr == nil {
-			if err2 := os.Rename(tmpPath, dstPath); err2 == nil {
-				fmt.Printf("  %s%s%s %s <- %s\n", console.G, console.CHECK, console.X, dstPath, filepath.Base(backupPath))
-				return nil
+		_ = os.Remove(dstPath)
+		if err2 := os.Rename(tmpPath, dstPath); err2 != nil {
+			// in-place overwrite when rename is denied (exe locked)
+			in, rerr := os.ReadFile(tmpPath)
+			if rerr != nil {
+				_ = os.Remove(tmpPath)
+				return fmt.Errorf("restore failed (rename: %v; read temp: %v) — close Claude Code and retry", err2, rerr)
 			}
+			if werr := os.WriteFile(dstPath, in, mode); werr != nil {
+				_ = os.Remove(tmpPath)
+				return fmt.Errorf("restore failed (rename: %v; write: %v) — close Claude Code and retry", err2, werr)
+			}
+			_ = os.Remove(tmpPath)
 		}
-		os.Remove(tmpPath)
-		return err
 	}
 	fmt.Printf("  %s%s%s %s <- %s\n", console.G, console.CHECK, console.X, dstPath, filepath.Base(backupPath))
 	return nil

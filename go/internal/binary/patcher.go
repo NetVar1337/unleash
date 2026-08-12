@@ -133,36 +133,28 @@ func PatchBunSEAInplace(binaryPath string, patchList []patches.Patch) PatchResul
 			}
 		}
 
-		if HardlinkCount(binaryPath) > 1 {
-			// Hardlinked layout (npm ships bin/claude.exe hardlinked to the
-			// platform subpackage copy). An os.Rename would sever the link
-			// and leave sibling copies stale/unpatched, so commit the
-			// verified bytes in place — every hardlink then serves the
-			// patched data.
-			f, oerr := os.OpenFile(binaryPath, os.O_WRONLY|os.O_TRUNC, originalMode)
-			if oerr != nil {
-				return PatchResult{
-					Err:     fmt.Sprintf("in-place open failed: %v", oerr),
-					Applied: appliedTotal,
-					Skipped: skippedTotal,
+		// Commit strategy:
+		//  1) hardlinks → must write in place (rename would break siblings)
+		//  2) Windows / same-size SEA → prefer in-place (rename fails if exe is locked)
+		//  3) else atomic rename, falling back to in-place on access-denied
+		preferInPlace := HardlinkCount(binaryPath) > 1 || runtime.GOOS == "windows"
+		if preferInPlace {
+			if err := commitBytesInPlace(binaryPath, data, originalMode); err != nil {
+				// Last resort: try rename (may still fail if locked)
+				if rerr := replaceFile(tmpPath, binaryPath); rerr != nil {
+					return PatchResult{
+						Err: fmt.Sprintf("commit failed (in-place: %v; replace: %v) — close Claude Code and retry",
+							err, rerr),
+						Applied: appliedTotal,
+						Skipped: skippedTotal,
+					}
 				}
+				// rename took the temp file
+				tmpPath = ""
+			} else {
+				// in-place ok; drop temp
 			}
-			_, werr := f.Write(data)
-			cerr := f.Close()
-			if werr != nil {
-				return PatchResult{
-					Err:     fmt.Sprintf("in-place write failed: %v", werr),
-					Applied: appliedTotal,
-					Skipped: skippedTotal,
-				}
-			}
-			if cerr != nil {
-				return PatchResult{
-					Err:     fmt.Sprintf("in-place close failed: %v", cerr),
-					Applied: appliedTotal,
-					Skipped: skippedTotal,
-				}
-			}
+			_ = os.Chmod(binaryPath, originalMode)
 			return PatchResult{
 				OK:       true,
 				Applied:  appliedTotal,
@@ -171,16 +163,20 @@ func PatchBunSEAInplace(binaryPath string, patchList []patches.Patch) PatchResul
 			}
 		}
 
-		// Atomic replace
-		if err := os.Rename(tmpPath, binaryPath); err != nil {
-			return PatchResult{
-				Err:     fmt.Sprintf("rename failed: %v", err),
-				Applied: appliedTotal,
-				Skipped: skippedTotal,
+		if err := replaceFile(tmpPath, binaryPath); err != nil {
+			// Fall back to in-place when rename is denied (locked binary).
+			if ierr := commitBytesInPlace(binaryPath, data, originalMode); ierr != nil {
+				return PatchResult{
+					Err: fmt.Sprintf("rename failed: %v; in-place fallback: %v — close Claude Code and retry",
+						err, ierr),
+					Applied: appliedTotal,
+					Skipped: skippedTotal,
+				}
 			}
+		} else {
+			tmpPath = "" // consumed by rename
 		}
 
-		// Restore mode after rename (may fail on Windows)
 		_ = os.Chmod(binaryPath, originalMode)
 
 		return PatchResult{
@@ -455,4 +451,46 @@ func sortedKeys(m map[string]bool) []string {
 	}
 	sort.Strings(keys)
 	return keys
+}
+
+// commitBytesInPlace overwrites path with data without rename.
+// Same-size Bun SEA patches keep the PE layout; works when the file is
+// hardlinked or (often) when rename is blocked because the exe is mapped.
+func commitBytesInPlace(path string, data []byte, mode os.FileMode) error {
+	f, err := os.OpenFile(path, os.O_WRONLY, mode)
+	if err != nil {
+		// retry with truncate if exclusive write fails
+		f, err = os.OpenFile(path, os.O_WRONLY|os.O_TRUNC, mode)
+		if err != nil {
+			return err
+		}
+	}
+	n, werr := f.Write(data)
+	if werr == nil && n != len(data) {
+		werr = fmt.Errorf("short write %d/%d", n, len(data))
+	}
+	// Ensure size matches when we did not truncate first
+	if werr == nil {
+		werr = f.Truncate(int64(len(data)))
+	}
+	cerr := f.Close()
+	if werr != nil {
+		return werr
+	}
+	return cerr
+}
+
+// replaceFile renames src onto dst, removing dst first on platforms that
+// refuse non-empty destination rename (Windows).
+func replaceFile(src, dst string) error {
+	if err := os.Rename(src, dst); err == nil {
+		return nil
+	}
+	// Windows: destination exists / is locked → remove then rename
+	_ = os.Remove(dst)
+	if err := os.Rename(src, dst); err == nil {
+		return nil
+	} else {
+		return err
+	}
 }

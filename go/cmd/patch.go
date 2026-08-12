@@ -337,33 +337,38 @@ func patchJSTarget(tgt, kind string, jsPatches []patches.Patch, dryRun bool) (ok
 		return
 	}
 
-	for _, p := range jsPatches {
-		result := binary.PatchBunSEAInplace(tgt, []patches.Patch{p})
-		if !result.OK {
-			fmt.Printf("  %sfail%s  %s  %s\n", console.R, console.X, padRight(p.ID, 40), result.Err)
-			fail++
-			continue
-		}
+	// One read → apply all selected JS patches → one verify → one commit.
+	// Far faster than per-id rounds and avoids mid-run lock failures leaving
+	// a half-patched binary.
+	result := binary.PatchBunSEAInplace(tgt, jsPatches)
+	if !result.OK {
+		fmt.Printf("  %sfail%s  [bun-sea]  %s\n", console.R, console.X, result.Err)
+		// Still print per-patch detail when available
 		for _, pr := range result.PerPatch {
-			msg := "no-op (already applied)"
-			mark := fmt.Sprintf("%sok%s", console.G, console.X)
-			if pr.Applied > 0 {
-				msg = fmt.Sprintf("%d in-place replacement(s)", pr.Applied)
-				ok++
-			} else if pr.Skipped > 0 {
-				msg = "search not found"
-				mark = fmt.Sprintf("%sskip%s", console.Y, console.X)
-				skip++
-			} else {
-				ok++
-			}
-			fmt.Printf("  %s    %s  %s\n", mark, padRight(pr.ID, 40), msg)
+			fmt.Printf("  %s—%s    %s  (batch aborted)\n", console.Y, console.X, padRight(pr.ID, 40))
 		}
-		for _, pid := range result.SkippedHeavy {
-			fmt.Printf("  %sskip%s  %s  skipped — failed binary verification; retry succeeded without\n",
-				console.Y, console.X, padRight(pid, 40))
+		fail += len(jsPatches)
+		return
+	}
+	for _, pr := range result.PerPatch {
+		msg := "no-op (already applied)"
+		mark := fmt.Sprintf("%sok%s", console.G, console.X)
+		if pr.Applied > 0 {
+			msg = fmt.Sprintf("%d in-place replacement(s)", pr.Applied)
+			ok++
+		} else if pr.Skipped > 0 {
+			msg = "search not found"
+			mark = fmt.Sprintf("%sskip%s", console.Y, console.X)
 			skip++
+		} else {
+			ok++
 		}
+		fmt.Printf("  %s    %s  %s\n", mark, padRight(pr.ID, 40), msg)
+	}
+	for _, pid := range result.SkippedHeavy {
+		fmt.Printf("  %sskip%s  %s  skipped — failed binary verification; retry succeeded without\n",
+			console.Y, console.X, padRight(pid, 40))
+		skip++
 	}
 	return
 }
