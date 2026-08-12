@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -13,6 +14,8 @@ import (
 	"github.com/VoidChecksum/unleash/internal/console"
 	"github.com/VoidChecksum/unleash/internal/scanner"
 	"github.com/VoidChecksum/unleash/internal/target"
+
+	vpccembed "github.com/VoidChecksum/unleash/embed"
 )
 
 const (
@@ -37,6 +40,23 @@ func NewInstallRulesCmd() *cobra.Command {
 	c.Flags().BoolVar(&noHook, "no-hook", false,
 		"Skip PreToolUse shell hook; rely on binary patch 05 (zero subprocess overhead)")
 	return c
+}
+
+// NewInstallSkillsCmd deploys the Unleash LLM jailbreak / red-team skill pack.
+func NewInstallSkillsCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "install-skills",
+		Short: "Deploy Unleash LLM jailbreak/red-team skill pack to agent skill dirs",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			n, err := runInstallSkills()
+			if err != nil {
+				fmt.Printf("%s%s%s\n", console.R, err.Error(), console.X)
+				os.Exit(2)
+			}
+			fmt.Printf("\n%s%s installed %d skill files%s\n", console.G, console.CHECK, n, console.X)
+			return nil
+		},
+	}
 }
 
 // NewUninstallRulesCmd creates the "uninstall-rules" cobra command.
@@ -209,6 +229,13 @@ func runInstallRules(noHook bool) int {
 		}
 	}
 
+	// Deploy bundled LLM red-team / jailbreak skills
+	if n, err := runInstallSkills(); err != nil {
+		fmt.Printf("  %sskills: %v%s\n", console.Y, err, console.X)
+	} else {
+		fmt.Printf("  %s%s%s skills pack deployed (%d files)\n", console.G, console.CHECK, console.X, n)
+	}
+
 	fmt.Printf("\n%s%s authorization rules installed%s\n", console.G, console.CHECK, console.X)
 	fmt.Printf("  revert: unleash uninstall-rules\n")
 	return 0
@@ -343,4 +370,76 @@ func stripAutoAllowHook(settings map[string]interface{}) {
 			delete(settings, "hooks")
 		}
 	}
+}
+
+// runInstallSkills copies contrib/skills/*/SKILL.md (and package docs) into
+// ~/.agents/skills and ~/.claude/skills so Claude Code / OMO / shared agents
+// can load the Unleash jailbreak taxonomy pack.
+func runInstallSkills() (int, error) {
+	home := homeDir()
+	roots := []string{
+		filepath.Join(home, ".agents", "skills"),
+		filepath.Join(home, ".claude", "skills"),
+	}
+	for _, r := range roots {
+		if err := os.MkdirAll(r, 0o755); err != nil {
+			return 0, err
+		}
+	}
+
+	// Also drop package index under ~/.unleash/skills-pack
+	stateSkills := filepath.Join(home, ".unleash", "skills-pack")
+	_ = os.MkdirAll(stateSkills, 0o755)
+
+	written := 0
+	err := fs.WalkDir(vpccembed.EmbeddedContrib, "contrib/skills", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+		// path like contrib/skills/<name>/SKILL.md or contrib/skills/README.md
+		rel, err := filepath.Rel("contrib/skills", path)
+		if err != nil {
+			return err
+		}
+		data, err := fs.ReadFile(vpccembed.EmbeddedContrib, filepath.ToSlash(path))
+		if err != nil {
+			return err
+		}
+		// state mirror
+		stateDst := filepath.Join(stateSkills, rel)
+		if err := os.MkdirAll(filepath.Dir(stateDst), 0o755); err != nil {
+			return err
+		}
+		if err := os.WriteFile(stateDst, data, 0o644); err != nil {
+			return err
+		}
+		// only SKILL.md trees install into agent skill dirs
+		base := filepath.Base(rel)
+		dir := filepath.Dir(rel)
+		if base == "SKILL.md" && dir != "." {
+			for _, root := range roots {
+				dst := filepath.Join(root, dir, "SKILL.md")
+				if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
+					return err
+				}
+				if err := os.WriteFile(dst, data, 0o644); err != nil {
+					return err
+				}
+				written++
+			}
+			fmt.Printf("  %s%s%s skill %s\n", console.G, console.CHECK, console.X, dir)
+		}
+		return nil
+	})
+	if err != nil {
+		// missing pack should not hard-fail older builds without skills dir
+		if strings.Contains(err.Error(), "file does not exist") || strings.Contains(err.Error(), "cannot find") {
+			return 0, fmt.Errorf("contrib/skills missing in package (rebuild assets)")
+		}
+		return written, err
+	}
+	return written, nil
 }

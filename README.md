@@ -83,6 +83,7 @@ unleash verify           # confirm applied markers
 unleash scan             # signature-drift report
 unleash guard            # SHA check; re-patch on change
 unleash doctor           # full health report
+unleash install-skills   # LLM jailbreak / Fable skill pack
 unleash rollback         # restore newest backup
 unleash tui              # interactive control panel
 ```
@@ -247,6 +248,19 @@ Every patch run creates timestamped backups first (`rollback` restores the newes
 Patched binaries are smoke-verified (`--version` + startup check) before commit.
 
 ---
+
+
+## Unleash skills pack (LLM jailbreaks / Fable)
+
+Shipped under [`contrib/skills/`](contrib/skills/) and installed by `unleash install-rules` or `unleash install-skills` into `~/.agents/skills` and `~/.claude/skills`.
+
+| Skill | Purpose |
+|---|---|
+| `llm-jailbreak-taxonomy` | Full method catalog + attack-surface map (**start here**) |
+| `llm-fable-safeguards` | Fable/AUP/stop_reason + local pool neutralization |
+| `llm-jailbreak-*` | Direct, encoding, roleplay, multi-turn, injection, tools, classifiers, optimization, multimodal, harness |
+
+See [`contrib/skills/README.md`](contrib/skills/README.md).
 
 ## Brand assets
 

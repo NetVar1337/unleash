@@ -1,0 +1,24 @@
+{
+  "name": "unleash-skills",
+  "version": "1.0.0",
+  "description": "LLM jailbreak / prompt-injection / Fable-safeguard skill pack shipped with Unleash",
+  "skills": [
+    "llm-fable-safeguards",
+    "llm-jailbreak-classifier-bypass",
+    "llm-jailbreak-direct",
+    "llm-jailbreak-encoding",
+    "llm-jailbreak-harness",
+    "llm-jailbreak-multi-turn",
+    "llm-jailbreak-multimodal",
+    "llm-jailbreak-optimization",
+    "llm-jailbreak-prompt-injection",
+    "llm-jailbreak-roleplay",
+    "llm-jailbreak-taxonomy",
+    "llm-jailbreak-tool-agent"
+  ],
+  "install_targets": [
+    "~/.agents/skills/<skill>/",
+    "~/.claude/skills/<skill>/"
+  ],
+  "entry": "llm-jailbreak-taxonomy"
+}

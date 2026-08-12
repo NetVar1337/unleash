@@ -14,8 +14,8 @@ var version = "1.1.0"
 func main() {
 	cmd.SetVersion(version)
 	rootCmd := &cobra.Command{
-		Use:   "unleash",
-		Short: "Unleash — binary patcher for Claude Code",
+		Use:     "unleash",
+		Short:   "Unleash — binary patcher for Claude Code",
 		Version: version,
 		Run: func(c *cobra.Command, args []string) {
 			// Default: launch TUI when no subcommand given
@@ -38,6 +38,7 @@ func main() {
 		cmd.NewInstallPreloadCmd(),
 		cmd.NewUninstallPreloadCmd(),
 		cmd.NewInstallRulesCmd(),
+		cmd.NewInstallSkillsCmd(),
 		cmd.NewUninstallRulesCmd(),
 		cmd.NewScanCmd(),
 		cmd.NewDoctorCmd(),

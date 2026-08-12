@@ -116,7 +116,11 @@ Keep campaigns, findings, packages, criteria snapshots, and logs inside that tre
 
 ## Skill canons (prefer when present)
 
-- Local: `C:\Users\Admin\.agents\skills\`, OMO/Hermes skills, `zdi-researcher-guidelines`, `zero-day-target-eligibility`
+- **Unleash skills pack** (shipped): `contrib/skills/` → installed to `~/.agents/skills/` and `~/.claude/skills/` via `unleash install-skills`
+  - Start with `llm-jailbreak-taxonomy` for the full method catalog
+  - Fable/AUP/local neutralization: `llm-fable-safeguards`
+  - Automated search: `llm-jailbreak-optimization`
+- Local: `C:/Users/Admin/.agents/skills/`, OMO/Hermes skills, `zdi-researcher-guidelines`, `zero-day-target-eligibility`
 - Remote packs: SnailSploit/claude-red, reverse-skill, JuliusBrussee/skills, Awesome-LLMs-for-Vulnerability-Detection
 
 ## Coding quality (after authorization is settled)
