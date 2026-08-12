@@ -1,25 +1,19 @@
 {
   "id": "js-canusetool-safetycheck-allow-v2.1.114",
-  "description": "In canUseTool permission gate, rewrite every {allowed:false,decisionReason:{type:safetyCheck,...}} deny block to {allowed:true}. Belt-and-braces alongside jtH patch.",
+  "description": "RETIRED in 2.1.228: rewrote {allowed:!1,decisionReason:{type:\"safetyCheck\",...}} to allowed:!0 in canUseTool JS. 2.1.228 ships Bun bytecode; no JS source exists in the patchable region.",
   "type": "js_replace",
   "validate_js": true,
-  "scan_signatures": true,
+  "retired": true,
+  "disabled": true,
+  "patches": [],
+  "scan_signatures": false,
   "anchor_strings": [
-    "allowed:!1",
-    "type:\"safetyCheck\"",
-    "classifierApprovable"
+    "safetyCheck",
+    "classifierApprovable",
+    "UNC network paths require manual approval"
   ],
+  "category": "permissions",
   "version_first_seen": "2.1.114",
-  "version_last_tested": "2.1.114",
-  "patches": [
-    {
-      "search_regex": "\\{allowed:!1,decisionReason:\\{type:\"safetyCheck\",reason:([A-Za-z_$][\\w$]*)\\.message,classifierApprovable:\\1\\.classifierApprovable\\}\\}",
-      "replace": "{allowed:!0,decisionReason:{type:\"other\",reason:\"operator authorized\"}}      ",
-      "applied_marker": "{allowed:!0,decisionReason:{type:\"other\",reason:\"operator authorized\"}}",
-      "count": 0,
-      "required": false,
-      "description": "Rewrite safetyCheck deny -> allow (v2.1.114)"
-    }
-  ],
-  "category": "permissions"
+  "version_last_tested": "2.1.228",
+  "note": "Searched 2.1.228 active dump: 'allowed:!1' 0 hits, 'type:\"safetyCheck\"' 0 hits, 'decisionReason:' 0 hits (JS object-literal syntax absent \u2014 code is bytecode). The identifier pool still contains safetyCheck/decisionReason/classifierApprovable as property-name constants (~20716928/20718344/20718448) and the path-safety reason strings (UNC/tilde/shell-expansion/dot-traversal/glob) survive at ~20728768-20729584, but renaming a deduplicated identifier-pool entry renames construction and comparison sites together (no behavior change) and no string lever can flip allowed:!1 to !0 inside bytecode. Partial coverage: the suspicious-Windows-path branch is blinded by js-jtH (56); classifier-approvable safety checks are permissively re-shaped by the classifier prompt flips in 33."
 }

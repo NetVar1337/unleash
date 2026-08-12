@@ -1,22 +1,26 @@
 {
   "anchor_strings": [
-    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC",
+    "essential-traffic"
   ],
   "category": "telemetry",
-  "description": "ha6() determines the telemetry-network policy. Currently it only returns 'essential-traffic'/'no-telemetry' if env vars are set. Hard-code the default to 'no-telemetry' so telemetry/analytics traffic is blocked by default without needing env vars.",
+  "description": "Lvc() in 2.1.228 determines the telemetry-network policy ('essential-traffic'/'no-telemetry'/'default') from env vars. Hard-code it to return 'no-telemetry' so telemetry/analytics traffic is blocked by default without needing CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC / DISABLE_TELEMETRY / DO_NOT_TRACK env vars. Ha()/FLe() consumers then behave as if telemetry is disabled.",
   "id": "js-disable-nonessential-traffic-default",
   "patches": [
     {
       "applied_marker": "/*vntrf*/",
       "count": 0,
-      "description": "ha6() -\u003e no-telemetry by default",
-      "replace": "function \\1(){return\"no-telemetry\"/*vntrf*/;if(0)return\"essential-traffic\";if(0)return\"no-telemetry\";if(0)return\"no-telemetry\";return\"default\"}",
+      "description": "traffic-policy function -> no-telemetry by default (name-agnostic, whole function shape)",
+      "replace": "\\1return\"no-telemetry\"/*vntrf*/;if(0)return\"essential-traffic\";if(0)return\"no-telemetry\";if(0)return\"no-telemetry\";return\"default\"}",
       "required": false,
-      "search_regex": "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\\)\u0000\u0000\u0000CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\\(\u0000\u0000\u0000CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\\s*\u0000\u0000\u0000CLAUDE_CODE_DISABLE_MOUSE_CLICKS\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0019\u0000\u0000\u0000CLAUDE_CODE_DISABLE_MOUSE\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000"
+      "search_regex": "(function [A-Za-z_$][\\w$]*\\(\\)\\{)if\\(process\\.env\\.CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC\\)return\"essential-traffic\";if\\(process\\.env\\.DISABLE_TELEMETRY\\)return\"no-telemetry\";if\\([A-Za-z_$][\\w$]*\\(process\\.env\\.DO_NOT_TRACK\\)\\)return\"no-telemetry\";return\"default\"\\}"
     }
   ],
   "scan_signatures": true,
   "type": "js_replace",
   "validate_js": true,
-  "version_last_tested": "2.1.119"
+  "version_last_tested": "2.1.228",
+  "retired": true,
+  "disabled": true,
+  "note": "Env default-reader JS body absent from active region. Renaming CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC would break legitimate user opt-in."
 }

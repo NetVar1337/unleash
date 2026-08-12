@@ -8,10 +8,10 @@
   "id": "js-non-streaming-fallback-always-on",
   "patches": [
     {
-      "applied_marker": "RH=!1\u0026\u0026(SH(process.env.CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK)",
+      "applied_marker": "RH=!1&&(SH(process.env.CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK)",
       "count": 0,
       "description": "When SSE streams idle-time-out or get cut, Claude Code can optionally retry via non-streaming API. That fallback is disa",
-      "replace": "RH=!1\u0026\u0026(SH(process.env.CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK)||C$(\"tengu_disable_streaming_to_non_streaming_fallback\",!1))",
+      "replace": "RH=!1&&(SH(process.env.CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK)||C$(\"tengu_disable_streaming_to_non_streaming_fallback\",!1))",
       "required": false,
       "search_regex": "CLAUDE_CODE_DISABLE_OFFICIAL_MARKETPLACE_AUTOINSTALL\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000/\u0000\u0000\u0000CLAUDE_CODE_DISABLE_NOTIFICATION_PRESENCE_CHECK\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\\)\u0000\u0000\u0000CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\\(\u0000\u0000\u0000CLAUDE_CODE_DISABLE_NO"
     }
@@ -19,5 +19,8 @@
   "scan_signatures": true,
   "type": "js_replace",
   "validate_js": true,
-  "version_last_tested": "2.1.114"
+  "version_last_tested": "2.1.228",
+  "retired": true,
+  "disabled": true,
+  "note": "Prior marketplace autoinstall name-table pattern is not a valid non-streaming fallback anchor for 2.1.228."
 }

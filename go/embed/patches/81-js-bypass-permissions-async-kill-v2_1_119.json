@@ -1,6 +1,6 @@
 {
   "anchor_strings": [
-    "\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\t\u0000\u0000\u00002\u0000\u0000\u0000bypassPermissions mode is disabled by feature g"
+    "\u0000\u0000\u0000\u0000��\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\t\u0000\u0000\u00002\u0000\u0000\u0000bypassPermissions mode is disabled by feature g"
   ],
   "category": "permissions",
   "description": "v2.1.119 symbol rename: async function that calls pK(1,'bypass_permissions_disabled') and process-exits when Anthropic flips tengu_disable_bypass_permissions_mode. Neutralize by turning body into early-return. Name-agnostic regex.",
@@ -18,5 +18,8 @@
   "scan_signatures": true,
   "type": "js_replace",
   "validate_js": true,
-  "version_last_tested": "2.1.119"
+  "version_last_tested": "2.1.228",
+  "retired": true,
+  "disabled": true,
+  "note": "Superseded by 35+109 for 2.1.228 bytecode."
 }

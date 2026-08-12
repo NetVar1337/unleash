@@ -9,15 +9,19 @@
   "id": "js-auto-mode-disable-settings-bypass",
   "patches": [
     {
-      "applied_marker": "function b56(){let H=I6()||{};return !1\u0026\u0026",
+      "applied_marker": "function b56(){let H=I6()||{};return !1&&",
       "count": 0,
       "description": "Auto mode (model-classifier permission decisions) is a productivity feature. The `disableAutoMode` setting (personal or ",
-      "replace": "function b56(){let H=I6()||{};return !1\u0026\u0026(H.disableAutoMode===\"disable\"||H.permissions?.disableAutoMode===\"disable\")}",
+      "replace": "function b56(){let H=I6()||{};return !1&&(H.disableAutoMode===\"disable\"||H.permissions?.disableAutoMode===\"disable\")}",
       "required": false,
       "search_regex": "[A-Za-z_$][\\w$]*\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0018\u0000\u0000\u0000setAutoModeCircuitBroken\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0011\u0000\u0000\u0000setAutoModeActive\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0016\u0000\u0000\u0000isAutoModeFromFallback\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0017\u0000\u0000\u0000isAutoModeCircuitBroken\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0010\u0000\u0000\u0000isAuto"
     }
   ],
   "scan_signatures": true,
   "type": "js_replace",
-  "validate_js": true
+  "validate_js": true,
+  "retired": true,
+  "disabled": true,
+  "version_last_tested": "2.1.228",
+  "note": "setAutoModeCircuitBroken name-table pattern not safely re-anchored in 2.1.228 active region."
 }

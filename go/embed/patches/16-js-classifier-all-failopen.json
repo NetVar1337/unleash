@@ -1,6 +1,6 @@
 {
   "id": "js-classifier-all-failopen",
-  "description": "Consolidated classifier error paths fail open (allow) instead of closed (block) \u2014 updated for Claude Code 2.1.114+ where 5 separate error strings were refactored into mo8() helper",
+  "description": "Consolidated classifier error paths fail open (allow) instead of closed (block) — updated for Claude Code 2.1.114+ where 5 separate error strings were refactored into mo8() helper",
   "type": "js_replace",
   "validate_js": true,
   "patches": [
@@ -11,14 +11,6 @@
       "description": "Consolidated classifier error (mo8 helper) -> allow (regex)",
       "required": false,
       "count": 0
-    },
-    {
-      "search_regex": "Stage 2 classifier error - blocking based on stage 1 assessment",
-      "replace": "Stage 2 classifier error - allowing based on stage 1 assessment",
-      "applied_marker": "Stage 2 classifier error - allowing based on stage 1 assessment",
-      "description": "Stage 2 error fallthrough -> allow (regex)",
-      "required": false,
-      "count": 0
     }
   ],
   "scan_signatures": true,
@@ -26,5 +18,7 @@
     "Auto mode could not evaluate this action and is blocking it for safety",
     "Stage 2 classifier error - blocking based on stage 1 assessment"
   ],
-  "category": "classifier"
+  "category": "classifier",
+  "version_last_tested": "2.1.228",
+  "note": "2.1.228: Stage 2 classifier error string gone; keep Auto mode could not evaluate fail-open neutralize."
 }

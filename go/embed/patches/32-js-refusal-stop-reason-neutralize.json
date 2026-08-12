@@ -1,25 +1,25 @@
 {
   "id": "js-refusal-stop-reason-neutralize",
-  "description": "gM4 refusal stop_reason handler short-circuited \u2014 any stop_reason==\"refusal\" silently ignored, turn continues",
+  "description": "Refusal stop_reason neutralized at the constant level: the pooled \"refusal\" comparison constant in the refusal-handler module is renamed (7->7 chars), so the stop_reason===\"refusal\" check never fires \u2014 refusal telemetry and refusal-message conversion are skipped and the turn continues. 2.1.228 is bytecode-only; the old BeK() JS early-return surface is gone.",
   "type": "js_replace",
   "validate_js": true,
-  "scan_signatures": false,
   "patches": [
     {
-      "search_regex": "function BeK\\(H,q,\\$\\)\\{if\\(H!==\\\"refusal\\\"\\)return;",
-      "replace": "function BeK(H,q,$){return;if(H!==\"refusal\")return;",
-      "applied_marker": "function BeK(H,q,$){return;if(H!==\"refusal\")return;",
-      "count": 0,
+      "search_regex": "refusal\u0000\\\n\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0002\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+      "replace": "refuseZ\u0000\n\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0002\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+      "applied_marker": "refuseZ",
+      "description": "Rename the pooled \"refusal\" stop_reason constant in the refusal-handler module so stop_reason===\"refusal\" never matches and the turn continues silently",
       "required": false,
-      "description": "Early-return neutralizes refusal telemetry + error wrapping"
+      "count": 0
     }
   ],
+  "scan_signatures": false,
   "anchor_strings": [
-    "function BeK",
-    "tengu_refusal_api_response"
+    "Learn more: ",
+    "Request ID:"
   ],
-  "superseded_on": "2.1.114",
-  "note": "Legacy (<=2.1.112) symbol name. Equivalent behavior covered by v2.1.114 name-agnostic patches. Kept for backward compat.",
-  "version_last_tested": "2.1.152",
-  "category": "refusal"
+  "category": "refusal",
+  "version_last_tested": "2.1.228",
+  "offset_v2_1_228": 29360552,
+  "note": "7 copies of the bare length-prefixed constant exist dump-wide; the anchor (pad byte + kind-2 separator record) uniquely selects the refusal-cluster copy at ~29360536. The constant is shared by every refusal-related comparison in that module \u2014 exactly the intended blast radius. Companion patch 52 renames the refusal telemetry event name."
 }

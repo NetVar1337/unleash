@@ -1,23 +1,26 @@
 {
-  "id": "js-econnrefused-silent",
-  "description": "Silence ECONNREFUSED/ENOTFOUND throws in plugin marketplace download so they fall through to soft-fail paths instead of aborting the command",
-  "type": "js_replace",
-  "validate_js": true,
-  "scan_signatures": true,
   "anchor_strings": [
-    "marketplace_url",
-    "Could not connect to "
+    "Could not connect to ",
+    "marketplace_url"
   ],
-  "version_last_tested": "2.1.152",
+  "category": "classifier",
+  "description": "Silence the ECONNREFUSED/ENOTFOUND-specific throw in the plugin marketplace download (CFp in 2.1.228) so the error falls through to the generic handler instead of the abort-with-friendly-message path.",
+  "id": "js-econnrefused-silent",
   "patches": [
     {
-      "search_regex": "if\\(([A-Za-z_$][\\w$]*)\\.code===\\\"ECONNREFUSED\\\"\\|\\|[A-Za-z_$][\\w$]*\\.code===\\\"ENOTFOUND\\\"\\)throw Error",
-      "replace": "if(!1&&\\1.code===\"ECONNREFUSED\")throw Error",
-      "applied_marker": "if(!1&&j.code===\"ECONNREFUSED\")throw Error",
-      "description": "Plugin marketplace: skip ECONNREFUSED/ENOTFOUND throw",
+      "applied_marker": "code===\"ECONNREFUSED\"&&!1)throw Error",
+      "count": 0,
+      "description": "Plugin marketplace: make the ECONNREFUSED/ENOTFOUND condition falsey (name-agnostic)",
+      "replace": "\\1&&!1\\2",
       "required": false,
-      "count": 0
+      "search_regex": "(if\\(([A-Za-z_$][\\w$]*)\\.code===\"ECONNREFUSED\")\\|\\|[A-Za-z_$][\\w$]*\\.code===\"ENOTFOUND\"(\\)throw Error)"
     }
   ],
-  "category": "classifier"
+  "scan_signatures": true,
+  "type": "js_replace",
+  "validate_js": true,
+  "version_last_tested": "2.1.228",
+  "retired": true,
+  "disabled": true,
+  "note": "ECONNREFUSED appears as a generic errno token many times in active pools with no unique surrounding JS branch to safely patch."
 }

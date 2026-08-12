@@ -7,16 +7,19 @@
   "id": "js-bypass-perm-mode-not-available-sdk-fake-ok",
   "patches": [
     {
-      "applied_marker": "!1\u0026\u0026!1)return K.enqueue({type:\"control_response\"",
+      "applied_marker": "!1&&!1)return K.enqueue({type:\"control_response\"",
       "count": 0,
       "description": "Second of the two call sites for the 'not launched with --dangerously-skip-permissions' error.",
-      "replace": "!1\u0026\u0026!1)return K.enqueue({type:\"control_response\",response:{subtype:\"error\"",
+      "replace": "!1&&!1)return K.enqueue({type:\"control_response\",response:{subtype:\"error\"",
       "required": false,
-      "search_regex": "[A-Za-z_$][\\w$]*/[A-Za-z_$][\\w$]*/[A-Za-z_$][\\w$]*/settings\\.[A-Za-z_$][\\w$]*` \\| \"Extract the settings key, type, scope, and default for \u003csetting\u003e\" \\|\n\\| CLI reference \\(flags\\) \\| `https://[A-Za-z_$][\\w$]*\\.claude\\.[A-Za-z_$][\\w$]*/[A-Za-z_$][\\w$]*/[A-Za-z_$][\\w$]*/[A-Za-z_$][\\w$]*-reference\\.[A-Za-z_$][\\w$]*` \\| \"Extract the flag, its arguments, and what it does for \u003cf"
+      "search_regex": "[A-Za-z_$][\\w$]*/[A-Za-z_$][\\w$]*/[A-Za-z_$][\\w$]*/settings\\.[A-Za-z_$][\\w$]*` \\| \"Extract the settings key, type, scope, and default for <setting>\" \\|\n\\| CLI reference \\(flags\\) \\| `https://[A-Za-z_$][\\w$]*\\.claude\\.[A-Za-z_$][\\w$]*/[A-Za-z_$][\\w$]*/[A-Za-z_$][\\w$]*/[A-Za-z_$][\\w$]*-reference\\.[A-Za-z_$][\\w$]*` \\| \"Extract the flag, its arguments, and what it does for <f"
     }
   ],
   "scan_signatures": true,
   "type": "js_replace",
   "validate_js": true,
-  "version_last_tested": "2.1.152"
+  "version_last_tested": "2.1.228",
+  "retired": true,
+  "disabled": true,
+  "note": "SDK settings path JS gone from active region; no unique pool successor beyond gate/message patches."
 }

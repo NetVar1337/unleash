@@ -1,26 +1,26 @@
 {
-  "anchor_strings": [
-    "?.type===\"refusal\"",
-    "le)\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\t\u0000\u0000\u0000\u000b\u0000\u0000\u0000explanation\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\t\u0000\u0000\u0000\t\u0000\u0000\u0000reasoning",
-    "trimEnd"
-  ],
-  "category": "refusal",
-  "description": "Null out refusal explanation field regardless of minified holder name.",
   "id": "js-refusal-explanation-null-v2.1.114",
-  "offset_v2_1_114": 111962100,
+  "description": "Null the refusal explanation: the refusal-cluster pool constants 'explanation' and 'has_explanation' (adjacent entries, one contiguous 47-byte match) are renamed in place, so the module can no longer read the API's refusal explanation field. Bytecode-only successor of the ?.type===\"refusal\"?null:null JS patch.",
+  "type": "js_replace",
+  "validate_js": true,
   "patches": [
     {
-      "applied_marker": "?.type===\"refusal\"?null:null",
-      "count": 0,
-      "description": "Null refusal explanation (v2.1.114+)",
-      "replace": "?.type===\"refusal\"?null:null",
+      "search_regex": "explanation\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\\t\u0000\u0000\u0000\u000f\u0000\u0000\u0000has_explanation",
+      "replace": "explanati0n\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\t\u0000\u0000\u0000\u000f\u0000\u0000\u0000has_explanati0n",
+      "applied_marker": "explanati0n",
+      "description": "Rename the refusal module's 'explanation'/'has_explanation' field constants so the API refusal explanation is never read, stored or displayed",
       "required": false,
-      "search_regex": "[A-Za-z_$][\\w$]*\\s*\\([A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*workflows\\),\\s*MEDIUM\\s*\\(recoverable\\s*changes\\),\\s*[A-Za-z_$][\\w$]*\\s*\\(dangerous/irreversible\\)\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u000b\u0000\u0000\u0000explanation\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\\s*\u0000\u0000\u0000reasoning\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0004\u0000\u0000\u0000[A-Za-z_$][\\w$]*\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\\s*\u0000\u0000\u0000riskLevel\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0019\u0000\u0000\u0000\u0004\u0000"
+      "count": 0
     }
   ],
   "scan_signatures": true,
-  "type": "js_replace",
-  "validate_js": true,
+  "anchor_strings": [
+    "invalid_request",
+    "Request ID:"
+  ],
+  "category": "refusal",
   "version_first_seen": "2.1.114",
-  "version_last_tested": "2.1.114"
+  "version_last_tested": "2.1.228",
+  "offset_v2_1_228": 29363248,
+  "note": "Both renames keep their original lengths (11/15); pool length fields remain valid. The length-prefixed 'explanation' form has 7 copies dump-wide, but this exact 47-byte block (incl. the adjacent has_explanation entry) is unique to the refusal cluster (~29363232)."
 }

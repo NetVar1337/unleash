@@ -1,29 +1,48 @@
 {
-  "anchor_strings": [
-    ")return{enabled:!1,hasError:!1};"
-  ],
-  "category": "telemetry",
-  "description": "Disable metrics/telemetry reporting to api.anthropic.com/api/claude_code/metrics — makes metrics check always return disabled without hitting the API",
   "id": "js-metrics-disable",
+  "description": "Disable metrics export signaling by neutralizing BigQuery metrics constant-pool strings and renaming metrics_logging_enabled.",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": true,
   "patches": [
     {
-      "applied_marker": "return{enabled:!1,hasError:!1};if(!1)return{enabled:!1,hasError:!1}",
-      "count": 0,
-      "description": "Short-circuit metrics endpoint check to always return disabled (regex, any minified name)",
-      "replace": "\\1return{enabled:!1,hasError:!1};if(!1)return{enabled:!1,hasError:!1};",
+      "search_regex": "BigQuery\\ metrics\\ export:\\ trust\\ not\\ established,\\ skipping",
+      "replace": "BigQuery metrics export: operator disabled, skipping    ",
+      "applied_marker": "operator disabled, skipping",
+      "description": "Trust-not-established metrics skip message neutralized",
       "required": false,
-      "search_regex": "makeSetArtifactReadVersion\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u001a\u0000\u0000\u0000isShareAwarePublishEnabled\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\"\u0000\u0000\u0000isFrameSignedPutHeaderCheckEnabled\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\t\u0000\u0000\u0000\u001b\u0000\u0000\u0000isFrameReaderPersistEnabled\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\t\u0000\u0000\u0000\u001c\u0000\u0000\u0000isFramePublishContextE"
+      "count": 0
     },
     {
-      "applied_marker": "async doExport(q,K){K({code:0});return;",
-      "count": 0,
-      "description": "BigQuery doExport no-op — call success callback and return (regex, any doExport method)",
-      "replace": "\\1K({code:0});return;try{",
+      "search_regex": "Metrics\\ export\\ disabled\\ by\\ organization\\ setting",
+      "replace": "Metrics export disabled by operator setting    ",
+      "applied_marker": "disabled by operator setting",
+      "description": "Org metrics-disabled message retargeted",
       "required": false,
-      "search_regex": "(async doExport\\(q,K\\)\\{)try\\{"
+      "count": 0
+    },
+    {
+      "search_regex": "BigQuery\\ metrics\\ exported\\ successfully",
+      "replace": "BigQuery metrics export skipped by ops",
+      "applied_marker": "export skipped by ops",
+      "description": "Success banner neutralized",
+      "required": false,
+      "count": 0
+    },
+    {
+      "search_regex": "metrics_logging_enabled",
+      "replace": "metrics_logging_VOIDNED",
+      "applied_marker": "logging_VOIDNED",
+      "description": "Rename metrics_logging_enabled flag id",
+      "required": false,
+      "count": 0
     }
   ],
-  "scan_signatures": true,
-  "type": "js_replace",
-  "validate_js": true
+  "anchor_strings": [
+    "BigQuery metrics export: trust not established, skipping",
+    "metrics_logging_enabled"
+  ],
+  "category": "telemetry",
+  "version_last_tested": "2.1.228",
+  "note": "2.1.228: /api/claude_code/metrics URL absent from active region; neutralize pool strings + rename flag id."
 }

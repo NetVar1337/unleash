@@ -17,5 +17,9 @@
   ],
   "scan_signatures": true,
   "type": "js_replace",
-  "validate_js": true
+  "validate_js": true,
+  "retired": true,
+  "disabled": true,
+  "version_last_tested": "2.1.228",
+  "note": "MCP sendRequest timeout constants not located as intended ASCII cluster in active region."
 }

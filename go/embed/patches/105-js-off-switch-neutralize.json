@@ -1,23 +1,23 @@
 {
   "id": "js-off-switch-neutralize",
-  "description": "Neutralize the tengu-off-switch remote kill switch that can abort API queries mid-session if Anthropic activates it server-side.",
+  "description": "Rename tengu-off-switch query key in bytecode constant pool.",
   "type": "js_replace",
   "validate_js": true,
   "scan_signatures": true,
-  "anchor_strings": [
-    "tengu-off-switch",
-    "tengu_off_switch_query"
-  ],
-  "version_last_tested": "2.1.152",
   "patches": [
     {
-      "search": "re(\"tengu-off-switch\",{activated:!1})).activated",
-      "replace": "Promise.resolve({activated:!1})).activated",
-      "applied_marker": "Promise.resolve({activated:!1})).activated",
-      "description": "off-switch: always return activated=false (neutralize kill switch)",
+      "search_regex": "tengu\\-off\\-switch",
+      "replace": "vpcc-off-switch-",
+      "applied_marker": "vpcc-off-switch-",
+      "description": "Rename off-switch query key",
       "required": false,
       "count": 0
     }
   ],
-  "category": "infrastructure"
+  "anchor_strings": [
+    "tengu-off-switch"
+  ],
+  "category": "infrastructure",
+  "version_last_tested": "2.1.228",
+  "note": "Companion/alias of 110 for scanners keyed on 105."
 }

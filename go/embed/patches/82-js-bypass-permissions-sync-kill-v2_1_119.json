@@ -17,6 +17,9 @@
   "anchor_strings": [
     "isBypassPermissionsModeAvailable"
   ],
-  "version_last_tested": "2.1.132",
-  "category": "permissions"
+  "version_last_tested": "2.1.228",
+  "category": "permissions",
+  "retired": true,
+  "disabled": true,
+  "note": "Superseded by 35+109 for 2.1.228 bytecode."
 }

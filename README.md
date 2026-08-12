@@ -252,21 +252,17 @@ Patched binaries are smoke-verified (`--version` + startup check) before commit.
 
 ## Unleash skills pack
 
-> **Private pack:** full skills + instruction markdown live in [NetVar1337/unleash-skills](https://github.com/NetVar1337/unleash-skills) (private). This public tree only embeds a stub so builds succeed.
+Mega bundle (**216 skills**) under [`contrib/skills/`](contrib/skills/):
 
-## Unleash skills pack
-
-Mega bundle (**skills (private repo)**) under [`contrib/skills/`](contrib/skills/):
-
-- LLM jailbreaks / Fable safeguards (`llm-jailbreak-taxonomy`, `llm-fable-safeguards`, …)
-- Coding style: Karpathy, Julius, Ponytail
-- Game hacking, aimbot humanization/triggerbot, game internals/exploits
-- Windows internals, stealth injectors, stealth hypervisor, kernel/BYOVD
-- Languages: C++23, C++ game hacking, Go, Rust, Zig, Java, Assembly
-- reverse-skill domain pack + `cua-driver` (trycua/cua)
+- LLM jailbreak taxonomy, Fable safeguards, classifier/tool/agent bypasses
+- Game hacking / anti-cheat / EAC / HWID / hypervisor research
+- Exploit classes, RE, kernel, firmware, ZDI acquisition helpers
+- Engineering style packs (Karpathy, Ponytail, Caveman, …)
 
 ```bash
 unleash install-skills
+# or
+unleash install-rules   # also deploys the skills pack
 ```
 
 See [`contrib/skills/README.md`](contrib/skills/README.md).

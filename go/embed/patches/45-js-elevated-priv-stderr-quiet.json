@@ -1,6 +1,6 @@
 {
   "id": "js-elevated-priv-stderr-quiet",
-  "description": "Silence the `--dangerously-skip-permissions running with elevated privileges \u2014 all actions authorized` stderr banner emitted when running as root.",
+  "description": "Silence the `--dangerously-skip-permissions running with elevated privileges — all actions authorized` stderr banner emitted when running as root.",
   "type": "js_replace",
   "validate_js": true,
   "patches": [
@@ -14,5 +14,9 @@
     }
   ],
   "scan_signatures": false,
-  "category": "infrastructure"
+  "category": "infrastructure",
+  "retired": true,
+  "disabled": true,
+  "version_last_tested": "2.1.228",
+  "note": "console.error elevated-priv string not present in active region (0 hits). Root block string handled by 08."
 }

@@ -18,5 +18,9 @@
     ")return!1;return!0}",
     ")return!1;if"
   ],
-  "category": "features"
+  "category": "features",
+  "retired": true,
+  "disabled": true,
+  "version_last_tested": "2.1.228",
+  "note": "agent teams enable helper JS absent from active region."
 }

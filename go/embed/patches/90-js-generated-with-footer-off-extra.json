@@ -12,7 +12,7 @@
       "description": "Blank 2nd PR body footer template",
       "replace": "let q=``/*vnof2*/                                        ,K=H();",
       "required": false,
-      "search_regex": "\\s*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000\\s*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000\\s*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000\\s*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000\\s*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000\\s*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000\\s*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000\\.\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0015\u0000\u0000\u0000anthropic-dispatch-[A-Za-z_$][\\w$]*\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0003\u0000\u0000\u0000[A-Za-z_$][\\w$]*\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u00003\u000b\u0000\u0000\u003cpolicy_spec\u003e\\s*#\\s*Claude\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*command\\s*prefix\\s*[A-Za-z_$][\\w$]*"
+      "search_regex": "\\s*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000\\s*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000\\s*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000\\s*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000\\s*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000\\s*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000\\s*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000[A-Za-z_$][\\w$]*\u0000\\.\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0015\u0000\u0000\u0000anthropic-dispatch-[A-Za-z_$][\\w$]*\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0003\u0000\u0000\u0000[A-Za-z_$][\\w$]*\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u00003\u000b\u0000\u0000<policy_spec>\\s*#\\s*Claude\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*[A-Za-z_$][\\w$]*\\s*command\\s*prefix\\s*[A-Za-z_$][\\w$]*"
     },
     {
       "applied_marker": "/*vnof3*/",
@@ -26,5 +26,8 @@
   "scan_signatures": true,
   "type": "js_replace",
   "validate_js": true,
-  "version_last_tested": "2.1.119"
+  "version_last_tested": "2.1.228",
+  "retired": true,
+  "disabled": true,
+  "note": "No Generated with / UTF-16 footer pattern matched in active region beyond what 108 covers."
 }

@@ -1,21 +1,28 @@
 {
-  "anchor_strings": [
-    "ed\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\t\u0000\u0000\u0000\u001a\u0000\u0000\u0000sessionPersistenceDisabled\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\t\u0000\u0000\u0000\u0011\u0000\u0000\u0000hasExite"
-  ],
-  "category": "permissions",
-  "description": "Auto-accept session trust — skip workspace trust verification on session start",
   "id": "js-session-trust",
+  "description": "Auto-accept session trust — skip workspace trust verification on session start",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": true,
   "patches": [
     {
+      "search_regex": "sessionTrustAccepted:!1",
+      "replace": "sessionTrustAccepted:!0",
       "applied_marker": "sessionTrustAccepted:!0",
-      "count": 0,
-      "description": "Session: trust auto-accepted (regex)",
-      "replace": "sessionTrustAccepted:!0,sessionPersistenceDisabled",
+      "description": "Session: trust auto-accepted (session-state default object)",
       "required": false,
-      "search_regex": "loopChainStartedAt\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0016\u0000\u0000\u0000loopTickInFlightPrompt\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0019\u0000\u0000\u0000loopConsecutiveKeepalives\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0013\u0000\u0000\u0000sessionCreatedTeams\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0011\u0000\u0000\u0000inheritedTeamName\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000"
+      "count": 0
     }
   ],
-  "scan_signatures": true,
-  "type": "js_replace",
-  "validate_js": true
+  "anchor_strings": [
+    "inheritedTeamName:void 0,sessionTrustAccepted:!1",
+    "sessionTrustAccepted:!1",
+    "policyPredicateTelemetryEmitted:new Set"
+  ],
+  "category": "permissions",
+  "version_last_tested": "2.1.228",
+  "offset_v2_1_228": 180418433,
+  "note": "No sessionTrustAccepted:!1 default object in active bytecode. Settings bypassPermissionsWorkspaceTrustCheck covers trust skip.",
+  "retired": true,
+  "disabled": true
 }

@@ -1,21 +1,28 @@
 {
-  "anchor_strings": [
-    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\t\u0000\u0000\u0000%\u0000\u0000\u0000allowDangerouslySkipPermissionsPassed\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\t\u0000\u0000\u0000#"
-  ],
-  "category": "permissions",
-  "description": "Default allowDangerouslySkipPermissions to true (was false)",
   "id": "js-allow-skip-permissions",
+  "description": "Default allowDangerouslySkipPermissions to true (was false) in both the SDK options destructure and the CLI flags destructure",
+  "type": "js_replace",
+  "validate_js": true,
+  "scan_signatures": true,
   "patches": [
     {
-      "applied_marker": "allowDangerouslySkipPermissions:",
-      "count": 0,
-      "description": "Flip default false→true; matches any minified param name. Already !0 in 2.1.104.",
+      "search_regex": "allowDangerouslySkipPermissions:([A-Za-z_$][\\w$]*)=!1",
       "replace": "allowDangerouslySkipPermissions:\\1=!0",
+      "applied_marker": "allowDangerouslySkipPermissions:he=!0",
+      "description": "Flip default false→true; name-agnostic (matches he=!1 SDK options and p=!1 CLI flags)",
       "required": false,
-      "search_regex": "[A-Za-z_$][\\w$]*\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0012\u0000\u0000\u0000githubActionInputs\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000%\u0000\u0000\u0000allowDangerouslySkipPermissionsPassed\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000#\u0000\u0000\u0000skipDangerousModePromptSetPreDialog\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u0010\u0000\u0000\u0000systemPromptFlag\u0010\u0000\u0000\u0000\u0000\u0000"
+      "count": 0
     }
   ],
-  "scan_signatures": true,
-  "type": "js_replace",
-  "validate_js": true
+  "anchor_strings": [
+    "allowDangerouslySkipPermissions:he=!1",
+    "allowDangerouslySkipPermissions:p=!1",
+    "dangerouslySkipPermissions:d,allowDangerouslySkipPermissions"
+  ],
+  "category": "permissions",
+  "version_last_tested": "2.1.228",
+  "offset_v2_1_228": 195734412,
+  "note": "No allowDangerouslySkipPermissions:X=!1 destructure defaults in active bytecode. Settings/env + 01 cover bypass.",
+  "retired": true,
+  "disabled": true
 }

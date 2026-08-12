@@ -1,22 +1,13 @@
 {
   "id": "js-dangerous-shell-prefix-neutralize",
-  "description": "Same classifier branch flags 'git' or any entry in bZ_ dangerous-shell-prefix set with commandPrefix:null, forcing manual approval. Treat as success and let the operator's pre-authorized blanket permission handle it.",
+  "description": "RETIRED in 2.1.228: flipped success:!1,error:\"dangerous_shell_prefix\" to success:!0. The verdict token and the dangerous-prefix set surface no longer exist in the binary.",
   "type": "js_replace",
-  "validate_js": true,
-  "scan_signatures": true,
-  "patches": [
-    {
-      "search": "success:!1,error:\"dangerous_shell_prefix\"",
-      "replace": "success:!0,error:\"dangerous_shell_prefix\"",
-      "applied_marker": "success:!0,error:\"dangerous_shell_prefix\"",
-      "description": "dangerous shell prefix: flip success:!1 to !0",
-      "required": false,
-      "count": 0
-    }
-  ],
-  "anchor_strings": [
-    "dangerous_shell_prefix"
-  ],
-  "version_last_tested": "2.1.119",
-  "category": "classifier"
+  "retired": true,
+  "disabled": true,
+  "patches": [],
+  "scan_signatures": false,
+  "anchor_strings": [],
+  "version_last_tested": "2.1.228",
+  "category": "classifier",
+  "note": "Searched 2.1.228 active dump: 'dangerous_shell_prefix' 0 hits, 'dangerous_shell' 0, 'shell_prefix' 0, 'dangerousPrefix' 0, 'dangerous prefix' 0; 'dangerous flags' matches only the separate jq-flags surface (patch 99). Like patch 79, the local prefix-classifier verdict object disappeared with the JS source; the prompt-level classifier neutralization in patch 33 covers the successor gating path."
 }

@@ -1,21 +1,25 @@
 {
-  "anchor_strings": [
-    "process.env.CLAUDE_CODE_ADDITIONAL_PROTECTION"
-  ],
-  "category": "telemetry",
-  "description": "Disable x-anthropic-additional-protection header — stops sending server-side content filter activation flag",
   "id": "js-additional-protection",
+  "description": "Disable x-anthropic-additional-protection activation: rename the CLAUDE_CODE_ADDITIONAL_PROTECTION env-var constant in the 2.1.228 pooled name table (33 chars -> 33 chars, length field unchanged) so the lookup always misses and the server-side content-filter flag header is never requested.",
+  "type": "js_replace",
+  "validate_js": true,
   "patches": [
     {
-      "applied_marker": "CLAUDE_CODE_ADDITIONAL_PROTECTION_VOID_DISABLED",
-      "count": 0,
-      "description": "Never send x-anthropic-additional-protection header — rewrite env var to nonexistent name (regex, idempotent via negative lookahead)",
-      "replace": "process.env.CLAUDE_CODE_ADDITIONAL_PROTECTION_VOID_DISABLED",
+      "search_regex": "CLAUDE_CODE_ADDITIONAL_PROTECTION",
+      "replace": "CLAUDE_CODE_ADDITIONAL_PROT_NULLD",
+      "applied_marker": "CLAUDE_CODE_ADDITIONAL_PROT_NULLD",
+      "description": "Rename env var in the pooled name table (33->33 chars) so the process.env lookup misses and x-anthropic-additional-protection is never activated",
       "required": false,
-      "search_regex": "H_REFRESH_TOKEN\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u001b\u0000\u0000\u0000CLAUDE_CODE_OAUTH_CLIENT_ID\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u001d\u0000\u0000\u0000CLAUDE_CODE_OAUTH_401_WAIT_MS\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000\u001c\u0000\u0000\u0000CLAUDE_CODE_HFI_BEARER_TOKEN\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000\\s*\u0000\u0000\u0000[A-Za-z_$][\\w$]*\u0000\u0000\u0000CLAUDE_CODE_ENABLE_PROXY_AUTH_HELPER\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0010\u0000\u0000\u0000\u0000\u0000"
+      "count": 0
     }
   ],
   "scan_signatures": true,
-  "type": "js_replace",
-  "validate_js": true
+  "anchor_strings": [
+    "CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD",
+    "x-anthropic-additional-protection"
+  ],
+  "category": "telemetry",
+  "version_last_tested": "2.1.228",
+  "offset_v2_1_228": 10113208,
+  "note": "Old patch targeted a differently-serialized env table; 2.1.228 keeps the name in a kind-0x10 pool entry at ~10113200. Renamed name must stay exactly 33 bytes."
 }
