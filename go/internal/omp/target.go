@@ -22,9 +22,10 @@ type lookPathFunc func(string) (string, error)
 
 func FindTarget() (Target, bool) {
 	env := map[string]string{
-		"APPDATA":     os.Getenv("APPDATA"),
-		"HOME":        os.Getenv("HOME"),
-		"USERPROFILE": os.Getenv("USERPROFILE"),
+		"APPDATA":      os.Getenv("APPDATA"),
+		"LOCALAPPDATA": os.Getenv("LOCALAPPDATA"),
+		"HOME":         os.Getenv("HOME"),
+		"USERPROFILE":  os.Getenv("USERPROFILE"),
 	}
 	return FindTargetWithEnv(env, exec.LookPath)
 }
@@ -35,17 +36,56 @@ func FindTargetWithEnv(env map[string]string, lookPath lookPathFunc) (Target, bo
 			return Target{Path: filepath.Clean(c.path), Kind: c.kind}, true
 		}
 	}
+	for _, p := range ompWingetPaths(env) {
+		if validOMPTarget(p) {
+			return Target{Path: filepath.Clean(p), Kind: "winget"}, true
+		}
+	}
 	if lookPath != nil {
 		for _, name := range []string{"omp", "omp.exe"} {
 			p, err := lookPath(name)
-			if err == nil {
-				if target, ok := targetFromShim(p); ok {
-					return Target{Path: target, Kind: "path"}, true
-				}
+			if err != nil {
+				continue
+			}
+			// Standalone installs (WindowsApps, winget links, native bin)
+			// resolve straight to the real binary.
+			if validOMPTarget(p) {
+				return Target{Path: filepath.Clean(p), Kind: "path"}, true
+			}
+			if target, ok := targetFromShim(p); ok {
+				return Target{Path: target, Kind: "path"}, true
 			}
 		}
 	}
 	return Target{}, false
+}
+
+// ompWingetPaths enumerates omp binaries under WinGet package dirs.
+func ompWingetPaths(env map[string]string) []string {
+	la := env["LOCALAPPDATA"]
+	if la == "" {
+		return nil
+	}
+	pkgBase := filepath.Join(la, "Microsoft", "WinGet", "Packages")
+	entries, err := os.ReadDir(pkgBase)
+	if err != nil {
+		return nil
+	}
+	var out []string
+	for _, e := range entries {
+		lname := strings.ToLower(e.Name())
+		if !e.IsDir() || !(strings.Contains(lname, "omp") || strings.Contains(lname, "oh-my-pi")) {
+			continue
+		}
+		base := filepath.Join(pkgBase, e.Name())
+		_ = filepath.WalkDir(base, func(path string, d os.DirEntry, err error) error {
+			if err == nil && !d.IsDir() && (d.Name() == "omp.exe" || d.Name() == "omp") {
+				out = append(out, path)
+			}
+			return nil
+		})
+	}
+	return out
 }
 
 func LooksLikeOMPVersion(output string) (string, bool) {
@@ -101,19 +141,34 @@ type candidate struct{ path, kind string }
 func ompCandidates(env map[string]string) []candidate {
 	home := firstNonEmpty(env["HOME"], env["USERPROFILE"])
 	appdata := env["APPDATA"]
+	localAppData := env["LOCALAPPDATA"]
 	var out []candidate
 	if home != "" {
 		out = append(out,
 			candidate{filepath.Join(home, ".bun", "install", "global", "node_modules", "@oh-my-pi", "pi-coding-agent", "dist", "cli.js"), "bun"},
 			candidate{filepath.Join(home, ".local", "share", "mise", "installs", "npm-oh-my-pi-pi-coding-agent", "dist", "cli.js"), "mise"},
+			// Native / standalone installs ship a Bun-SEA executable.
+			candidate{filepath.Join(home, ".local", "bin", "omp.exe"), "standalone"},
+			candidate{filepath.Join(home, ".local", "bin", "omp"), "standalone"},
+			candidate{filepath.Join(home, ".omp", "bin", "omp.exe"), "standalone"},
+			candidate{filepath.Join(home, ".omp", "bin", "omp"), "standalone"},
 		)
 	}
 	if appdata != "" {
 		out = append(out, candidate{filepath.Join(appdata, "npm", "node_modules", "@oh-my-pi", "pi-coding-agent", "dist", "cli.js"), "npm"})
 	}
+	if localAppData != "" {
+		out = append(out,
+			candidate{filepath.Join(localAppData, "Microsoft", "WindowsApps", "omp.exe"), "standalone"},
+			candidate{filepath.Join(localAppData, "Programs", "omp", "omp.exe"), "standalone"},
+		)
+	}
 	out = append(out,
 		candidate{filepath.Join("/usr", "local", "lib", "node_modules", "@oh-my-pi", "pi-coding-agent", "dist", "cli.js"), "npm"},
 		candidate{filepath.Join("/opt", "homebrew", "lib", "node_modules", "@oh-my-pi", "pi-coding-agent", "dist", "cli.js"), "homebrew"},
+		candidate{filepath.Join("/usr", "local", "bin", "omp"), "standalone"},
+		candidate{filepath.Join("/usr", "bin", "omp"), "standalone"},
+		candidate{filepath.Join("/opt", "homebrew", "bin", "omp"), "standalone"},
 	)
 	return out
 }

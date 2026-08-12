@@ -18,7 +18,7 @@ import (
 // ── constants ───────────────────────────────────────────────────────────────
 
 const (
-	Repo    = "VoidChecksum/unleash"
+	Repo    = "NetVar1337/unleash"
 	Branch  = "main"
 	APIBase = "https://api.github.com/repos/" + Repo
 	UA      = "unleash-updater/1.0"

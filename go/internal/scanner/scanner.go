@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/VoidChecksum/unleash/internal/bytepatch"
 	"github.com/VoidChecksum/unleash/internal/patches"
 )
 
@@ -909,9 +910,14 @@ func (s *SigScanner) ScanPatches(patchList []patches.Patch) []patches.ScanRow {
 		// 2. exact anchor_strings (co-located within max_dist)
 		regexHit := false
 		if status != "applied" && sigRegex != "" {
-			re, err := regexp.Compile("(?s)" + sigRegex)
-			if err == nil {
-				regexHit = re.MatchString(s.Text)
+			if bytepatch.HasBackrefs(sigRegex) {
+				loc, _ := bytepatch.FindSubmatchBackrefs(sigRegex, []byte(s.Text))
+				regexHit = loc != nil
+			} else {
+				re, err := regexp.Compile("(?s)" + sigRegex)
+				if err == nil {
+					regexHit = re.MatchString(s.Text)
+				}
 			}
 			if regexHit {
 				status = "ok"

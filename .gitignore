@@ -4,6 +4,9 @@ go/unleash.exe
 go/unleash-*
 go/vpcc*
 
+# RE/patch research scratch (binary dumps, probes)
+research/
+
 # Node/npm
 node_modules/
 dist/

@@ -13,7 +13,7 @@ import (
 )
 
 // CacheVersion should match the unleash version to bust stale caches on upgrade.
-const CacheVersion = "1.0.0"
+const CacheVersion = "1.1.0"
 
 // cacheDir returns the path to ~/.unleash/cache/, creating it if needed.
 func cacheDir() (string, error) {

@@ -9,9 +9,10 @@ import (
 	"github.com/VoidChecksum/unleash/cmd"
 )
 
-var version = "1.0.0"
+var version = "1.1.0"
 
 func main() {
+	cmd.SetVersion(version)
 	rootCmd := &cobra.Command{
 		Use:   "unleash",
 		Short: "Unleash — binary patcher for Claude Code",

@@ -37,7 +37,7 @@ func runDoctor() int {
 	nRetired := countRetired(pd)
 
 	fmt.Printf("%sunleash doctor%s\n", console.B, console.X)
-	fmt.Printf("  version    : 1.0.0\n")
+	fmt.Printf("  version    : %s\n", ToolVersion)
 	fmt.Printf("  patches    : %d\n", len(patchList))
 
 	if tgt == "" {

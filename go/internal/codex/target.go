@@ -38,6 +38,12 @@ func FindTargetWithEnv(env map[string]string, lookPath lookPathFunc) (Target, bo
 		}
 	}
 
+	for _, p := range codexWingetPaths(env) {
+		if validCodexTarget(p) {
+			return Target{Path: resolvePath(p), Kind: "winget"}, true
+		}
+	}
+
 	if lookPath != nil {
 		for _, name := range []string{"codex", "codex.exe"} {
 			p, err := lookPath(name)
@@ -48,6 +54,34 @@ func FindTargetWithEnv(env map[string]string, lookPath lookPathFunc) (Target, bo
 	}
 
 	return Target{}, false
+}
+
+// codexWingetPaths enumerates codex binaries under WinGet package dirs
+// (portable installs register there with source-suffixed directory names).
+func codexWingetPaths(env map[string]string) []string {
+	la := env["LOCALAPPDATA"]
+	if la == "" {
+		return nil
+	}
+	pkgBase := filepath.Join(la, "Microsoft", "WinGet", "Packages")
+	entries, err := os.ReadDir(pkgBase)
+	if err != nil {
+		return nil
+	}
+	var out []string
+	for _, e := range entries {
+		if !e.IsDir() || !strings.Contains(strings.ToLower(e.Name()), "codex") {
+			continue
+		}
+		base := filepath.Join(pkgBase, e.Name())
+		_ = filepath.WalkDir(base, func(path string, d os.DirEntry, err error) error {
+			if err == nil && !d.IsDir() && (d.Name() == "codex.exe" || d.Name() == "codex") {
+				out = append(out, path)
+			}
+			return nil
+		})
+	}
+	return out
 }
 
 func LooksLikeCodexVersion(output string) (string, bool) {
@@ -130,6 +164,9 @@ func codexCandidates(env map[string]string) []candidate {
 		for _, pkg := range platformPackages() {
 			for _, exe := range exes {
 				out = append(out, candidate{filepath.Join(root, "@openai", pkg.name, "vendor", pkg.triple, "bin", exe), "npm"})
+				// npm nests the platform package under the wrapper package's
+				// own node_modules on some installs.
+				out = append(out, candidate{filepath.Join(root, "@openai", "codex", "node_modules", "@openai", pkg.name, "vendor", pkg.triple, "bin", exe), "npm"})
 			}
 		}
 		for _, exe := range exes {

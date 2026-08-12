@@ -28,10 +28,25 @@ func NewVerifyCmd() *cobra.Command {
 	}
 }
 
-// RunVerify checks applied markers. Returns exit code.
+// RunVerify checks applied markers across every discovered installation.
+// Returns exit code.
 func RunVerify() int {
-	tgt, kind := target.FindTarget()
-	return runVerifyPatches(tgt, kind, loadAllPatches())
+	all := target.FindAllTargets()
+	if len(all) == 0 {
+		fmt.Printf("%sclaude-code not found%s\n", console.R, console.X)
+		return 2
+	}
+	patchList := loadAllPatches()
+	rc := 0
+	for i, f := range all {
+		if len(all) > 1 {
+			fmt.Printf("\n%s── target %d/%d:%s %s\n", console.B, i+1, len(all), console.X, f.Path)
+		}
+		if code := runVerifyPatches(f.Path, f.Kind, patchList); code != 0 {
+			rc = code
+		}
+	}
+	return rc
 }
 
 func runVerifyPatches(tgt, kind string, patchList []patches.Patch) int {

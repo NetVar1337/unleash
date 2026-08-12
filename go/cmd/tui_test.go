@@ -37,7 +37,7 @@ func TestRunPatchAsyncAppliesSettingsWithoutBinaryTarget(t *testing.T) {
 	}
 
 	data, err := json.MarshalIndent(map[string]any{
-		"permissions.defaultMode": "bypassPermissions",
+		"permissions": map[string]any{"defaultMode": "bypassPermissions"},
 	}, "", "  ")
 	if err != nil {
 		t.Fatalf("marshal expected settings: %v", err)
@@ -56,7 +56,9 @@ func TestPatchStatusReportsAppliedForSettingsPatch(t *testing.T) {
 	want := map[string]any{
 		"permissions.defaultMode": "bypassPermissions",
 	}
-	data, err := json.MarshalIndent(want, "", "  ")
+	data, err := json.MarshalIndent(map[string]any{
+		"permissions": map[string]any{"defaultMode": "bypassPermissions"},
+	}, "", "  ")
 	if err != nil {
 		t.Fatalf("marshal settings: %v", err)
 	}
@@ -172,15 +174,18 @@ func TestPatchManagerSelectionCommandAppliesSettingsPatch(t *testing.T) {
 	if err := json.Unmarshal(gotBytes, &got); err != nil {
 		t.Fatalf("unmarshal settings: %v", err)
 	}
-	if got["permissions.defaultMode"] != "bypassPermissions" {
-		t.Fatalf("settings value = %v, want bypassPermissions", got["permissions.defaultMode"])
+	perms, _ := got["permissions"].(map[string]any)
+	if perms == nil || perms["defaultMode"] != "bypassPermissions" {
+		t.Fatalf("settings value = %v, want permissions.defaultMode=bypassPermissions", got)
 	}
 }
 
 func TestPatchManagerDoesNotToggleAppliedPatch(t *testing.T) {
 	settingsPath := filepath.Join(t.TempDir(), "settings.json")
 	want := map[string]any{"permissions.defaultMode": "bypassPermissions"}
-	data, err := json.MarshalIndent(want, "", "  ")
+	data, err := json.MarshalIndent(map[string]any{
+		"permissions": map[string]any{"defaultMode": "bypassPermissions"},
+	}, "", "  ")
 	if err != nil {
 		t.Fatalf("marshal settings: %v", err)
 	}

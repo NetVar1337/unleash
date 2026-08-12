@@ -24,35 +24,41 @@ func NewStatusCmd() *cobra.Command {
 }
 
 func runStatus() error {
-	tgt, kind := target.FindTarget()
+	all := target.FindAllTargets()
 	patchList := loadAllPatches()
 
 	fmt.Printf("%sunleash status%s\n", console.B, console.X)
 	fmt.Printf("  patches : %d\n", len(patchList))
 
-	if tgt != "" {
-		var label string
-		if kind == "bun_sea" {
-			switch runtime.GOOS {
-			case "darwin":
-				label = "Bun SEA (Mach-O)"
-			case "windows":
-				label = "Bun SEA (PE)"
-			default:
-				label = "Bun SEA (ELF)"
+	if len(all) > 0 {
+		fmt.Printf("  targets : %d installation(s) found\n", len(all))
+		for i, f := range all {
+			var label string
+			if f.Kind == "bun_sea" {
+				switch runtime.GOOS {
+				case "darwin":
+					label = "Bun SEA (Mach-O)"
+				case "windows":
+					label = "Bun SEA (PE)"
+				default:
+					label = "Bun SEA (ELF)"
+				}
+			} else {
+				label = "cli.js (JS)"
 			}
-		} else {
-			label = "cli.js (JS)"
+			info, _ := os.Stat(f.Path)
+			sizeMB := int64(0)
+			if info != nil {
+				sizeMB = info.Size() / 1024 / 1024
+			}
+			marker := " "
+			if i == 0 {
+				marker = "*"
+			}
+			fmt.Printf("  %s target : %s\n", marker, f.Path)
+			fmt.Printf("    format : %s | sha256 %s | %d MB\n", label, target.SHA256Short(f.Path), sizeMB)
 		}
-		info, _ := os.Stat(tgt)
-		sizeMB := int64(0)
-		if info != nil {
-			sizeMB = info.Size() / 1024 / 1024
-		}
-		fmt.Printf("  target  : %s\n", tgt)
-		fmt.Printf("  format  : %s\n", label)
-		fmt.Printf("  sha256  : %s\n", target.SHA256Short(tgt))
-		fmt.Printf("  size    : %d MB\n", sizeMB)
+		fmt.Printf("  (* = primary)\n")
 	} else {
 		fmt.Printf("  target  : %sNOT FOUND%s\n", console.R, console.X)
 	}

@@ -40,6 +40,32 @@ func TestMergeOMPConfigPreservesNestedApprovalMode(t *testing.T) {
 	}
 }
 
+func TestMergeOMPConfigEnforcesUpdateDefaults(t *testing.T) {
+	got := MergeOMPConfig("")
+	for _, want := range []string{"startup:", "checkUpdate: false", "marketplace:", `autoUpdate: "off"`} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("missing %q in:\n%s", want, got)
+		}
+	}
+
+	got2 := MergeOMPConfig("startup:\n  checkUpdate: true\nmarketplace:\n  autoUpdate: auto\n")
+	if strings.Contains(got2, "checkUpdate: true") || !strings.Contains(got2, "checkUpdate: false") {
+		t.Fatalf("checkUpdate not forced:\n%s", got2)
+	}
+	if strings.Contains(got2, "autoUpdate: auto") || !strings.Contains(got2, `autoUpdate: "off"`) {
+		t.Fatalf("autoUpdate not forced:\n%s", got2)
+	}
+}
+
+func TestMergeOMPConfigKeepsOtherSectionKeys(t *testing.T) {
+	got := MergeOMPConfig("startup:\n  showOnboarding: false\n")
+	for _, want := range []string{"showOnboarding: false", "checkUpdate: false"} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("missing %q in:\n%s", want, got)
+		}
+	}
+}
+
 func TestInstallRulesWritesAgentsAndConfig(t *testing.T) {
 	home := t.TempDir()
 	if err := InstallRules(home, "operator authorization"); err != nil {

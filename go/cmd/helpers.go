@@ -16,6 +16,16 @@ import (
 	"github.com/VoidChecksum/unleash/internal/updater"
 )
 
+// ToolVersion is the unleash tool version, injected from main via SetVersion.
+var ToolVersion = "1.1.0"
+
+// SetVersion overrides ToolVersion (called from main with the build version).
+func SetVersion(v string) {
+	if v != "" && v != "dev" {
+		ToolVersion = v
+	}
+}
+
 // ── string helpers ──────────────────────────────────────────────────────────
 
 func padRight(s string, width int) string {
@@ -175,6 +185,64 @@ func jsonEqual(a, b interface{}) bool {
 	aj, _ := json.Marshal(a)
 	bj, _ := json.Marshal(b)
 	return string(aj) == string(bj)
+}
+
+// setNested writes val into m at a dotted path (e.g. "env.FOO"), creating
+// intermediate maps. Returns true when the value actually changed.
+func setNested(m map[string]interface{}, dotted string, val interface{}) bool {
+	parts := strings.Split(dotted, ".")
+	cur := m
+	for _, p := range parts[:len(parts)-1] {
+		next, ok := cur[p].(map[string]interface{})
+		if !ok {
+			next = make(map[string]interface{})
+			cur[p] = next
+		}
+		cur = next
+	}
+	leaf := parts[len(parts)-1]
+	if existing, ok := cur[leaf]; ok && jsonEqual(existing, val) {
+		return false
+	}
+	cur[leaf] = val
+	return true
+}
+
+// unsetNested removes the value at a dotted path. Returns true when something
+// was removed.
+func unsetNested(m map[string]interface{}, dotted string) bool {
+	parts := strings.Split(dotted, ".")
+	cur := m
+	for _, p := range parts[:len(parts)-1] {
+		next, ok := cur[p].(map[string]interface{})
+		if !ok {
+			return false
+		}
+		cur = next
+	}
+	leaf := parts[len(parts)-1]
+	if _, ok := cur[leaf]; !ok {
+		return false
+	}
+	delete(cur, leaf)
+	return true
+}
+
+// nestedEqual reports whether the value stored at dotted path equals val.
+func nestedEqual(m map[string]interface{}, dotted string, val interface{}) bool {
+	parts := strings.Split(dotted, ".")
+	var cur interface{} = m
+	for _, p := range parts {
+		mm, ok := cur.(map[string]interface{})
+		if !ok {
+			return false
+		}
+		cur, ok = mm[p]
+		if !ok {
+			return false
+		}
+	}
+	return jsonEqual(cur, val)
 }
 
 // stateString extracts a string value from a state map.

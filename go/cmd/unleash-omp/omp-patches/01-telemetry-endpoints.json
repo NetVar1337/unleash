@@ -6,5 +6,6 @@
       "replace": "http://127.0.0.1:9/xxxxxxxxxxxx",
       "applied_marker": "http://127.0.0.1:9/xxxxxxxxxxxx"
     }
-  ]
+  ],
+  "version_last_tested": "17.2.13"
 }

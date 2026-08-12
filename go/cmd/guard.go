@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
 
@@ -27,30 +26,46 @@ func NewGuardCmd() *cobra.Command {
 }
 
 func runGuard() int {
-	tgt, kind := target.FindTarget()
-	if tgt == "" {
+	all := target.FindAllTargets()
+	if len(all) == 0 {
 		return 0 // no CC found, nothing to guard
 	}
 
-	stampPath := filepath.Join(unleashDir(), "last_patched_sha")
-	curSHA := target.SHA256Short(tgt)
+	recorded := readSHAManifest()
+	legacySHA := recorded[""]
 
-	data, err := os.ReadFile(stampPath)
-	if err == nil {
-		if string(data) == curSHA {
-			return 0 // binary unchanged
+	changed := false
+	for _, f := range all {
+		curSHA := target.SHA256Short(f.Path)
+		if prev, ok := recorded[f.Path]; ok {
+			if prev != curSHA {
+				changed = true
+				fmt.Printf("%sunleash guard — target changed:%s %s (%s -> %s)\n",
+					console.B, console.X, f.Path, prev, curSHA)
+			}
+			continue
 		}
+		// Target not in manifest: new install, or legacy single-sha stamp.
+		if legacySHA != "" && legacySHA == curSHA {
+			continue
+		}
+		changed = true
+		fmt.Printf("%sunleash guard — untracked/new target:%s %s (%s)\n",
+			console.B, console.X, f.Path, curSHA)
 	}
 
-	// Binary changed — run full autopilot
-	fmt.Printf("%sunleash guard — CC binary changed (%s), running autopilot...%s\n",
-		console.B, curSHA, console.X)
-	target.Backup(tgt, kind)
+	if !changed {
+		return 0 // all binaries unchanged
+	}
+
+	fmt.Printf("%sunleash guard — running autopilot...%s\n", console.B, console.X)
+	for _, f := range all {
+		target.Backup(f.Path, f.Kind)
+	}
 	rc := runAutopilot()
 
-	// Stamp new SHA regardless of outcome
-	os.MkdirAll(filepath.Dir(stampPath), 0o755)
-	os.WriteFile(stampPath, []byte(target.SHA256Short(tgt)), 0o644)
+	// Stamp new SHA manifest regardless of outcome
+	writeSHAManifest(target.FindAllTargets())
 
 	return rc
 }

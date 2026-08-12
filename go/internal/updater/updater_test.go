@@ -7,8 +7,8 @@ import (
 )
 
 func TestUpdaterUsesUnleashRepository(t *testing.T) {
-	if Repo != "VoidChecksum/unleash" {
-		t.Fatalf("Repo = %q, want VoidChecksum/unleash", Repo)
+	if Repo != "NetVar1337/unleash" {
+		t.Fatalf("Repo = %q, want NetVar1337/unleash", Repo)
 	}
 }
 

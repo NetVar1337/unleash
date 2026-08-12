@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/VoidChecksum/unleash/internal/binary"
+	"github.com/VoidChecksum/unleash/internal/bytepatch"
 	"github.com/VoidChecksum/unleash/internal/console"
 	"github.com/VoidChecksum/unleash/internal/patches"
 	"github.com/VoidChecksum/unleash/internal/target"
@@ -34,7 +35,7 @@ func NewPatchCmd() *cobra.Command {
 
 func runPatch(dryRun bool) error {
 	patchList := loadAllPatches()
-	tgt, kind := target.FindTarget()
+	all := target.FindAllTargets()
 
 	var jsPatches, metaPatches []patches.Patch
 	for _, p := range patchList {
@@ -46,120 +47,47 @@ func runPatch(dryRun bool) error {
 	}
 
 	fmt.Printf("%sunleash patch — %d patches%s\n", console.B, len(patchList), console.X)
-	if tgt != "" {
-		label := "cli.js"
-		if kind != "js" {
-			label = fmt.Sprintf("Bun SEA %s", filepath.Base(tgt))
-		}
-		fmt.Printf("  target : %s\n", tgt)
-		fmt.Printf("  format : %s\n", label)
-		fmt.Printf("  sha    : %s\n", target.SHA256Short(tgt))
-		if !dryRun {
-			bkp, err := target.Backup(tgt, kind)
-			if err == nil {
-				fmt.Printf("  backup : %s\n", bkp)
-			}
-		}
-	} else {
+
+	var kind, tgt string
+	if len(all) > 0 {
+		tgt, kind = all[0].Path, all[0].Kind
+	}
+
+	if len(all) == 0 {
 		fmt.Printf("  %starget not found — settings-only patches will apply%s\n", console.Y, console.X)
 	}
 
 	ok, fail, skip, try := 0, 0, 0, 0
 
-	// ── JS patches ────────────────────────────────────────────────────────
-	if tgt == "" {
+	// ── JS patches — every discovered installation ───────────────────────
+	if len(all) == 0 {
 		for _, p := range jsPatches {
 			fmt.Printf("  %sskip%s %s  target not found\n", console.Y, console.X, padRight(p.ID, 40))
 			skip++
 		}
-	} else if kind == "bun_sea" {
-		if dryRun {
-			data, err := os.ReadFile(tgt)
-			if err != nil {
-				fmt.Printf("  %sfail%s  [bun-inplace]  %v\n", console.R, console.X, err)
-				fail += len(jsPatches)
-			} else {
-				bunOff, bunSize, err := binary.FindBunSection(data)
-				if err != nil {
-					fmt.Printf("  %sfail%s  [bun-inplace]  %v\n", console.R, console.X, err)
-					fail += len(jsPatches)
-				} else {
-					effLo, effHi := binary.FindActiveBundleBounds(data, bunOff, bunOff+bunSize)
-					eff := data[effLo:effHi]
-					for _, p := range jsPatches {
-						appliedN := 0
-						for _, sub := range p.Patches {
-							if sub.AppliedMarker != "" {
-								if bytesContains(eff, []byte(sub.AppliedMarker)) {
-									continue
-								}
-							}
-							sr := sub.SearchRegex
-							if sr == "" {
-								sr = sub.Search
-							}
-							if sr == "" {
-								continue
-							}
-							if sub.SearchRegex != "" {
-								appliedN += regexCountMatchesN(sr, eff, sub.EffectiveCount(0))
-							} else {
-								appliedN += bytesCountN(eff, []byte(sr), sub.EffectiveCount(0))
-							}
-						}
-						msg := "no-op (already applied)"
-						mark := fmt.Sprintf("%sok%s", console.G, console.X)
-						if appliedN > 0 {
-							msg = fmt.Sprintf("would try %d in-place replacement(s); verification only runs without --dry-run", appliedN)
-							mark = fmt.Sprintf("%stry%s", console.Y, console.X)
-						}
-						fmt.Printf("  %s    %s  %s\n", mark, padRight(p.ID, 40), msg)
-						if appliedN > 0 {
-							try++
-						} else {
-							ok++
-						}
-					}
-					fmt.Printf("  %sdry-run: binary not modified%s\n", console.Y, console.X)
-				}
-			}
-		} else {
-			for _, p := range jsPatches {
-				result := binary.PatchBunSEAInplace(tgt, []patches.Patch{p})
-				if !result.OK {
-					fmt.Printf("  %sfail%s  %s  %s\n", console.R, console.X, padRight(p.ID, 40), result.Err)
-					fail++
-					continue
-				}
-				for _, pr := range result.PerPatch {
-					msg := "no-op (already applied)"
-					mark := fmt.Sprintf("%sok%s", console.G, console.X)
-					if pr.Applied > 0 {
-						msg = fmt.Sprintf("%d in-place replacement(s)", pr.Applied)
-						ok++
-					} else if pr.Skipped > 0 {
-						msg = "search not found"
-						mark = fmt.Sprintf("%sskip%s", console.Y, console.X)
-						skip++
-					} else {
-						ok++
-					}
-					fmt.Printf("  %s    %s  %s\n", mark, padRight(pr.ID, 40), msg)
-				}
-				for _, pid := range result.SkippedHeavy {
-					fmt.Printf("  %sskip%s  %s  skipped — failed binary verification; retry succeeded without\n",
-						console.Y, console.X, padRight(pid, 40))
-					skip++
-				}
+	}
+	for i, f := range all {
+		label := "cli.js"
+		if f.Kind != "js" {
+			label = fmt.Sprintf("Bun SEA %s", filepath.Base(f.Path))
+		}
+		if len(all) > 1 {
+			fmt.Printf("\n  %s── target %d/%d ──%s\n", console.B, i+1, len(all), console.X)
+		}
+		fmt.Printf("  target : %s\n", f.Path)
+		fmt.Printf("  format : %s\n", label)
+		fmt.Printf("  sha    : %s\n", target.SHA256Short(f.Path))
+		if !dryRun {
+			bkp, err := target.Backup(f.Path, f.Kind)
+			if err == nil {
+				fmt.Printf("  backup : %s\n", bkp)
 			}
 		}
-	} else {
-		// cli.js path — not ported (legacy, very rare); print skip
-		for _, p := range jsPatches {
-			fmt.Printf("  %sskip%s %s  cli.js patching not supported in Go build\n",
-				console.Y, console.X, padRight(p.ID, 40))
-			skip++
-		}
+		o, fl, sk, tr := patchJSTarget(f.Path, f.Kind, jsPatches, dryRun)
+		ok += o
+		fail += fl
+		skip += sk
+		try += tr
 	}
 
 	// ── Non-JS patches ────────────────────────────────────────────────────
@@ -201,22 +129,168 @@ func runPatch(dryRun bool) error {
 	}
 
 	// Record state for autoheal drift detection
-	if tgt != "" && !dryRun && fail == 0 {
+	if len(all) > 0 && !dryRun && fail == 0 {
 		updater.SaveState(map[string]interface{}{
 			"last_cc_sha":  target.SHA256Short(tgt),
 			"last_cc_kind": kind,
 		})
 
-		// Stamp SHA for guard fast-path
-		stampPath := filepath.Join(unleashDir(), "last_patched_sha")
-		os.MkdirAll(filepath.Dir(stampPath), 0o755)
-		os.WriteFile(stampPath, []byte(target.SHA256Short(tgt)), 0o644)
+		// Stamp SHA manifest for the guard fast-path (one line per target)
+		writeSHAManifest(all)
 	}
 
 	if fail > 0 {
 		return fmt.Errorf("patch failed")
 	}
 	return nil
+}
+
+// shaManifestPath is the guard's per-target SHA record.
+func shaManifestPath() string {
+	return filepath.Join(unleashDir(), "last_patched_sha")
+}
+
+// writeSHAManifest records "sha  path" lines for every patched target.
+func writeSHAManifest(all []target.Found) {
+	var sb strings.Builder
+	for _, f := range all {
+		sb.WriteString(target.SHA256Short(f.Path))
+		sb.WriteString("  ")
+		sb.WriteString(f.Path)
+		sb.WriteString("\n")
+	}
+	os.MkdirAll(unleashDir(), 0o755)
+	os.WriteFile(shaManifestPath(), []byte(sb.String()), 0o644)
+}
+
+// readSHAManifest parses the guard manifest into path → sha.
+func readSHAManifest() map[string]string {
+	out := map[string]string{}
+	data, err := os.ReadFile(shaManifestPath())
+	if err != nil {
+		return out
+	}
+	for _, line := range strings.Split(string(data), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		parts := strings.SplitN(line, "  ", 2)
+		if len(parts) == 2 {
+			out[parts[1]] = parts[0]
+			continue
+		}
+		// legacy single-sha format — no path association
+		out[""] = line
+	}
+	return out
+}
+
+// patchJSTarget applies all js_replace patches to one target binary and
+// returns (ok, fail, skip, try) counters.
+func patchJSTarget(tgt, kind string, jsPatches []patches.Patch, dryRun bool) (ok, fail, skip, try int) {
+	if kind != "bun_sea" {
+		// cli.js path — not ported (legacy, very rare); print skip
+		for _, p := range jsPatches {
+			fmt.Printf("  %sskip%s %s  cli.js patching not supported in Go build\n",
+				console.Y, console.X, padRight(p.ID, 40))
+			skip++
+		}
+		return
+	}
+
+	if dryRun {
+		data, err := os.ReadFile(tgt)
+		if err != nil {
+			fmt.Printf("  %sfail%s  [bun-inplace]  %v\n", console.R, console.X, err)
+			fail += len(jsPatches)
+			return
+		}
+		bunOff, bunSize, err := binary.FindBunSection(data)
+		if err != nil {
+			fmt.Printf("  %sfail%s  [bun-inplace]  %v\n", console.R, console.X, err)
+			fail += len(jsPatches)
+			return
+		}
+		effLo, effHi := binary.FindActiveBundleBounds(data, bunOff, bunOff+bunSize)
+		eff := data[effLo:effHi]
+		for _, p := range jsPatches {
+			appliedN := 0
+			markerSeen := false
+			hasCandidate := false
+			for _, sub := range p.Patches {
+				if sub.AppliedMarker != "" && bytesContains(eff, []byte(sub.AppliedMarker)) {
+					markerSeen = true
+					continue
+				}
+				sr := sub.SearchRegex
+				if sr == "" {
+					sr = sub.Search
+				}
+				if sr == "" {
+					continue
+				}
+				hasCandidate = true
+				if sub.SearchRegex != "" {
+					appliedN += regexCountMatchesN(sr, eff, sub.EffectiveCount(0))
+				} else {
+					appliedN += bytesCountN(eff, []byte(sr), sub.EffectiveCount(0))
+				}
+			}
+			var msg, mark string
+			switch {
+			case appliedN > 0:
+				msg = fmt.Sprintf("would try %d in-place replacement(s); verification only runs without --dry-run", appliedN)
+				mark = fmt.Sprintf("%stry%s", console.Y, console.X)
+				try++
+			case markerSeen:
+				msg = "no-op (already applied)"
+				mark = fmt.Sprintf("%sok%s", console.G, console.X)
+				ok++
+			case !hasCandidate:
+				msg = "no-op (no subpatches)"
+				mark = fmt.Sprintf("%sok%s", console.G, console.X)
+				ok++
+			default:
+				msg = "drift (search not found in this version)"
+				mark = fmt.Sprintf("%sdrift%s", console.R, console.X)
+				skip++
+			}
+			fmt.Printf("  %s    %s  %s\n", mark, padRight(p.ID, 40), msg)
+		}
+		fmt.Printf("  %sdry-run: binary not modified%s\n", console.Y, console.X)
+		return
+	}
+
+	for _, p := range jsPatches {
+		result := binary.PatchBunSEAInplace(tgt, []patches.Patch{p})
+		if !result.OK {
+			fmt.Printf("  %sfail%s  %s  %s\n", console.R, console.X, padRight(p.ID, 40), result.Err)
+			fail++
+			continue
+		}
+		for _, pr := range result.PerPatch {
+			msg := "no-op (already applied)"
+			mark := fmt.Sprintf("%sok%s", console.G, console.X)
+			if pr.Applied > 0 {
+				msg = fmt.Sprintf("%d in-place replacement(s)", pr.Applied)
+				ok++
+			} else if pr.Skipped > 0 {
+				msg = "search not found"
+				mark = fmt.Sprintf("%sskip%s", console.Y, console.X)
+				skip++
+			} else {
+				ok++
+			}
+			fmt.Printf("  %s    %s  %s\n", mark, padRight(pr.ID, 40), msg)
+		}
+		for _, pid := range result.SkippedHeavy {
+			fmt.Printf("  %sskip%s  %s  skipped — failed binary verification; retry succeeded without\n",
+				console.Y, console.X, padRight(pid, 40))
+			skip++
+		}
+	}
+	return
 }
 
 // RunPatchQuiet is called by other commands internally (autopilot, upgrade, etc.)
@@ -275,9 +349,20 @@ func applySettings(p patches.Patch, dryRun bool) (bool, string) {
 	}
 	changed := 0
 	for k, v := range wanted {
+		if strings.Contains(k, ".") {
+			if setNested(out, k, v) {
+				changed++
+			}
+			continue
+		}
 		existing, exists := out[k]
 		if !exists || !jsonEqual(existing, v) {
 			out[k] = v
+			changed++
+		}
+	}
+	for _, k := range p.Unset {
+		if unsetNested(out, k) {
 			changed++
 		}
 	}
@@ -367,6 +452,11 @@ func injectGuard(content, guardCode string) string {
 // ── wrapper patch ───────────────────────────────────────────────────────────
 
 func applyWrapper(p patches.Patch, kind string, tgt string, dryRun bool) (bool, string) {
+	if isWindows() {
+		// Bash wrapper concept does not apply on Windows; binary patches and
+		// settings cover these installs directly.
+		return true, "no-op (wrapper not applicable on Windows)"
+	}
 	wrapperPath := p.SettingsPath // wrapper_path reuses SettingsPath field or use WrapperPath
 	if wrapperPath == "" {
 		wrapperPath = "~/.local/bin/claude"
@@ -488,7 +578,27 @@ func bytesCountN(data, sub []byte, count int) int {
 }
 
 func regexCountMatchesN(pattern string, data []byte, count int) int {
-	re, err := regexp.Compile(pattern)
+	if bytepatch.HasBackrefs(pattern) {
+		n := 0
+		pos := 0
+		for count <= 0 || n < count {
+			loc, _ := bytepatch.FindSubmatchBackrefs(pattern, data[pos:])
+			if loc == nil {
+				break
+			}
+			n++
+			advance := loc[1]
+			if advance <= loc[0] {
+				advance = loc[0] + 1
+			}
+			pos += advance
+			if pos >= len(data) {
+				break
+			}
+		}
+		return n
+	}
+	re, err := regexp.Compile("(?s)" + pattern)
 	if err != nil {
 		return 0
 	}

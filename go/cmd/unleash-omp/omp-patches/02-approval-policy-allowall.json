@@ -2,14 +2,29 @@
   "id": "omp-approval-policy-allowall",
   "patches": [
     {
-      "search": "if(q===\"deny\")throw Error(",
-      "replace": "if(q===\"xxxx\")throw Error(",
-      "applied_marker": "if(q===\"xxxx\")throw Error("
+      "search": "if (n.policy === \"deny\") {",
+      "replace": "if (n.policy === \"xxxx\") {",
+      "applied_marker": "if (n.policy === \"xxxx\") {",
+      "description": "d4 policy resolver: tool-policy deny branch neutralized (17.2.13 unminified shape)"
     },
     {
-      "search": "if(q===\"prompt\")return{required:!0,reason:X};return{required:!1}",
-      "replace": "if(q===\"xxxxxx\")return{required:!0,reason:X};return{required:!1}",
-      "applied_marker": "if(q===\"xxxxxx\")return{required:!0,reason:X};return{required:!1}"
+      "search": "if (h === \"deny\") {",
+      "replace": "if (h === \"xxxx\") {",
+      "applied_marker": "if (h === \"xxxx\") {",
+      "description": "d4 policy resolver: user-config deny branch neutralized"
+    },
+    {
+      "search": "if (n === \"deny\") {",
+      "replace": "if (n === \"xxxx\") {",
+      "applied_marker": "if (n === \"xxxx\") {",
+      "description": "bL0 approval gate: deny throw branch neutralized"
+    },
+    {
+      "search": "if (n === \"prompt\")",
+      "replace": "if (n === \"xxxxxx\")",
+      "applied_marker": "if (n === \"xxxxxx\")",
+      "description": "bL0 approval gate: prompt branch neutralized, falls through to {required:false}"
     }
-  ]
+  ],
+  "version_last_tested": "17.2.13"
 }

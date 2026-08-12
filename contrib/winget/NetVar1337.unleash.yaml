@@ -1,0 +1,30 @@
+# winget manifest template for unleash (Claude Code patcher).
+#
+# Submitting to winget-pkgs (microsoft/winget-pkgs):
+#   1. Cut a cc-vX.Y.Z release; grab the asset URL + SHA256 from checksums.txt.
+#   2. Fill the <PLACEHOLDER> fields below.
+#   3. wingetcreate submit --paths <this file>  (or open a PR to
+#      microsoft/winget-pkgs under manifests/n/NetVar1337/unleash/<version>/).
+#
+# Note: winget requires a stable, versioned download URL per release — the
+# GitHub release asset URLs below satisfy that.
+
+PackageIdentifier: NetVar1337.unleash
+PackageVersion: <X.Y.Z>
+PackageLocale: en-US
+Publisher: NetVar1337
+PackageName: unleash
+License: GPL-3.0-or-later
+ShortDescription: Binary patcher and operator setup suite for Claude Code (permissions, telemetry, limits).
+Tags:
+  - claude-code
+  - developer-tools
+InstallerType: portable
+Commands:
+  - unleash
+Installers:
+  - Architecture: x64
+    InstallerUrl: https://github.com/NetVar1337/unleash/releases/download/cc-v<X.Y.Z>/unleash-windows-amd64.exe
+    InstallerSha256: <SHA256 from checksums.txt>
+ManifestType: singleton
+ManifestVersion: 1.6.0

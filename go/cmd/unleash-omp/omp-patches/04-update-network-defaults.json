@@ -2,19 +2,23 @@
   "id": "omp-update-network-defaults-off",
   "patches": [
     {
-      "search": "\"startup.checkUpdate\":{type:\"boolean\",default:!0",
-      "replace": "\"startup.checkUpdate\":{type:\"boolean\",default:!1",
-      "applied_marker": "\"startup.checkUpdate\":{type:\"boolean\",default:!1"
+      "search": "\"startup.checkUpdate\": {\n      type: \"boolean\",\n      default: true,",
+      "replace": "\"startup.checkUpdate\": {\n      type: \"boolean\",\n      default: !1,",
+      "applied_marker": "\"startup.checkUpdate\": {\n      type: \"boolean\",\n      default: !1,",
+      "description": "Startup update check default flipped to false (unminified 17.2.13 schema block; engine pads the 2-byte shortfall after the trailing comma)"
     },
     {
-      "search": "\"marketplace.autoUpdate\":{type:\"enum\",values:[\"off\",\"notify\",\"auto\"],default:\"notify\"",
-      "replace": "\"marketplace.autoUpdate\":{type:\"enum\",values:[\"off\",\"notify\",\"auto\"],default:\"off\"",
-      "applied_marker": "\"marketplace.autoUpdate\":{type:\"enum\",values:[\"off\",\"notify\",\"auto\"],default:\"off\""
+      "search": "\"marketplace.autoUpdate\": {\n      type: \"enum\",\n      values: [\"off\", \"notify\", \"auto\"],\n      default: \"notify\",",
+      "replace": "\"marketplace.autoUpdate\": {\n      type: \"enum\",\n      values: [\"off\", \"notify\", \"auto\"],\n      default: \"off\",",
+      "applied_marker": "\"marketplace.autoUpdate\": {\n      type: \"enum\",\n      values: [\"off\", \"notify\", \"auto\"],\n      default: \"off\",",
+      "description": "Marketplace auto-update default flipped to off"
     },
     {
       "search": "https://registry.npmjs.org/@oh-my-pi/pi-coding-agent/latest",
-      "replace": "http://127.0.0.1:9/@oh-my-pi/pi-coding-agent/latest",
-      "applied_marker": "http://127.0.0.1:9/@oh-my-pi/pi-coding-agent/latest"
+      "replace": "http://127.0.0.1:9/@oh-my-pi/pi-coding-agent/latestxxxxxxxx",
+      "applied_marker": "http://127.0.0.1:9/@oh-my-pi/pi-coding-agent/latestxxxxxxxx",
+      "description": "OMP self-update check endpoint loopback redirect"
     }
-  ]
+  ],
+  "version_last_tested": "17.2.13"
 }

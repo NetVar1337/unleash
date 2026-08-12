@@ -183,10 +183,10 @@ func ensureDependencies() {
 					fmt.Printf("    %s claude installed: %s\n", console.CHECK, cc.version)
 				}
 			} else {
-				fmt.Printf("    %s install manually: npm install -g @anthropic-ai/claude-code%s\n", console.Y, console.X)
+				printClaudeInstallHints("    ")
 			}
 		} else {
-			fmt.Printf("    install npm first, then: npm install -g @anthropic-ai/claude-code\n")
+			printClaudeInstallHints("    ")
 		}
 	}
 
@@ -197,6 +197,20 @@ func ensureDependencies() {
 	} else {
 		fmt.Printf("  %s git: %snot found (optional — needed for autopilot)%s\n", console.WARN, console.Y, console.X)
 	}
+}
+
+// printClaudeInstallHints prints supported Claude Code install methods
+// (native installer first — it is the upstream-recommended path).
+func printClaudeInstallHints(indent string) {
+	fmt.Printf("%s%s install Claude Code manually:%s\n", indent, console.Y, console.X)
+	if runtime.GOOS == "windows" {
+		fmt.Printf("%s  native: irm https://claude.ai/install.ps1 | iex\n", indent)
+	} else {
+		fmt.Printf("%s  native: curl -fsSL https://claude.ai/install.sh | bash\n", indent)
+	}
+	fmt.Printf("%s  winget: winget install Anthropic.ClaudeCode   (Windows)\n", indent)
+	fmt.Printf("%s  npm:    npm install -g @anthropic-ai/claude-code\n", indent)
+	fmt.Printf("%s  bun:    bun add -g @anthropic-ai/claude-code\n", indent)
 }
 
 // installNode attempts to install Node.js via platform package managers.

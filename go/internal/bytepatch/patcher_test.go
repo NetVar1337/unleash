@@ -3,6 +3,7 @@ package bytepatch
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -50,6 +51,9 @@ func TestApplyFilePreservesBackupMode(t *testing.T) {
 	info, err := os.Stat(res.BackupPath)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if runtime.GOOS == "windows" {
+		t.Skip("NTFS does not preserve Unix permission bits")
 	}
 	if info.Mode().Perm() != 0o755 {
 		t.Fatalf("backup mode = %v, want 0755", info.Mode().Perm())

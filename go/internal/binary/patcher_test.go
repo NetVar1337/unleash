@@ -13,8 +13,14 @@ import (
 )
 
 func TestRunWithTimeoutKillsSlowCommand(t *testing.T) {
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("ping", "-n", "6", "127.0.0.1")
+	} else {
+		cmd = exec.Command("sleep", "2")
+	}
 	start := time.Now()
-	err := runWithTimeout(exec.Command("sleep", "2"), 1)
+	err := runWithTimeout(cmd, 1)
 	if err == nil || !strings.Contains(err.Error(), "timed out") {
 		t.Fatalf("runWithTimeout error = %v, want timeout", err)
 	}
@@ -24,11 +30,17 @@ func TestRunWithTimeoutKillsSlowCommand(t *testing.T) {
 }
 
 func TestRunCaptureWithTimeoutReturnsOutput(t *testing.T) {
-	out, err := runCaptureWithTimeout(exec.Command("printf", "ok"), 1)
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("cmd", "/d", "/s", "/c", "echo ok")
+	} else {
+		cmd = exec.Command("printf", "ok")
+	}
+	out, err := runCaptureWithTimeout(cmd, 5)
 	if err != nil {
 		t.Fatalf("runCaptureWithTimeout error = %v", err)
 	}
-	if out != "ok" {
+	if strings.TrimSpace(out) != "ok" {
 		t.Fatalf("output = %q, want ok", out)
 	}
 }

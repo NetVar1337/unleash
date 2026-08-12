@@ -310,6 +310,12 @@ func settingsPatchApplied(p patches.Patch) bool {
 		return false
 	}
 	for k, v := range p.Settings {
+		if strings.Contains(k, ".") {
+			if !nestedEqual(cur, k, v) {
+				return false
+			}
+			continue
+		}
 		existing, exists := cur[k]
 		if !exists || !jsonEqual(existing, v) {
 			return false
@@ -473,7 +479,7 @@ func runDoctorAsync(targetPath, kind string) tea.Cmd {
 		nRetired := countRetired(pd)
 
 		sb.WriteString("unleash doctor\n")
-		sb.WriteString("  version    : 1.0.0\n")
+		sb.WriteString(fmt.Sprintf("  version    : %s\n", ToolVersion))
 		sb.WriteString(fmt.Sprintf("  patches    : %d\n", len(patchList)))
 
 		if targetPath == "" {

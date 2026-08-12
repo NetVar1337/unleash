@@ -2,9 +2,19 @@
   "id": "omp-acp-permission-gate-disable",
   "patches": [
     {
-      "search": "GE4=new Set([\"bash\",\"edit\",\"delete\",\"move\"])",
-      "replace": "GE4=new Set([])",
-      "applied_marker": "GE4=new Set([])"
+      "search": "if (k.policy === \"allow\")",
+      "replace": "if (k.policy !== \"xxxxx\")",
+      "applied_marker": "if (k.policy !== \"xxxxx\")",
+      "description": "qp5 channel gate: always returns null (no approval required) — replaces the legacy GE4 Set gate removed after 17.x"
+    },
+    {
+      "search": "k.policy === \"deny\"",
+      "replace": "k.policy === \"xxxx\"",
+      "applied_marker": "k.policy === \"xxxx\"",
+      "description": "qp5 channel gate: deny ternary arm made unreachable"
     }
-  ]
+  ],
+  "version_first_seen": "17.2.13",
+  "version_last_tested": "17.2.13",
+  "note": "The old GE4=new Set([\"bash\",\"edit\",\"delete\",\"move\"]) gate no longer exists in 17.2.13; qp5/d4 policy resolution supersedes it."
 }

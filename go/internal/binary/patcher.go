@@ -133,6 +133,44 @@ func PatchBunSEAInplace(binaryPath string, patchList []patches.Patch) PatchResul
 			}
 		}
 
+		if HardlinkCount(binaryPath) > 1 {
+			// Hardlinked layout (npm ships bin/claude.exe hardlinked to the
+			// platform subpackage copy). An os.Rename would sever the link
+			// and leave sibling copies stale/unpatched, so commit the
+			// verified bytes in place — every hardlink then serves the
+			// patched data.
+			f, oerr := os.OpenFile(binaryPath, os.O_WRONLY|os.O_TRUNC, originalMode)
+			if oerr != nil {
+				return PatchResult{
+					Err:     fmt.Sprintf("in-place open failed: %v", oerr),
+					Applied: appliedTotal,
+					Skipped: skippedTotal,
+				}
+			}
+			_, werr := f.Write(data)
+			cerr := f.Close()
+			if werr != nil {
+				return PatchResult{
+					Err:     fmt.Sprintf("in-place write failed: %v", werr),
+					Applied: appliedTotal,
+					Skipped: skippedTotal,
+				}
+			}
+			if cerr != nil {
+				return PatchResult{
+					Err:     fmt.Sprintf("in-place close failed: %v", cerr),
+					Applied: appliedTotal,
+					Skipped: skippedTotal,
+				}
+			}
+			return PatchResult{
+				OK:       true,
+				Applied:  appliedTotal,
+				Skipped:  skippedTotal,
+				PerPatch: perPatch,
+			}
+		}
+
 		// Atomic replace
 		if err := os.Rename(tmpPath, binaryPath); err != nil {
 			return PatchResult{
@@ -257,9 +295,15 @@ func applyJSPatchesToRegion(data []byte, effLo, effHi int, patchList []patches.P
 }
 
 func applyRegexSubPatch(region []byte, sub patches.SubPatch) (applied int, skipped int, maxPadding int) {
-	re, err := regexp.Compile("(?s)" + sub.SearchRegex)
-	if err != nil {
-		return 0, 1, 0
+	replace := bytepatch.TranslateReplace(sub.Replace)
+	hasBR := bytepatch.HasBackrefs(sub.SearchRegex)
+	var re *regexp.Regexp
+	if !hasBR {
+		var err error
+		re, err = regexp.Compile("(?s)" + sub.SearchRegex)
+		if err != nil {
+			return 0, 1, 0
+		}
 	}
 	count := sub.EffectiveCount(0)
 	pos := 0
@@ -267,7 +311,14 @@ func applyRegexSubPatch(region []byte, sub patches.SubPatch) (applied int, skipp
 		count = -1
 	}
 	for count != 0 {
-		loc := re.FindSubmatchIndex(region[pos:])
+		var loc []int
+		var matchRE *regexp.Regexp
+		if hasBR {
+			loc, matchRE = bytepatch.FindSubmatchBackrefs(sub.SearchRegex, region[pos:])
+		} else {
+			loc = re.FindSubmatchIndex(region[pos:])
+			matchRE = re
+		}
 		if loc == nil {
 			break
 		}
@@ -280,7 +331,7 @@ func applyRegexSubPatch(region []byte, sub patches.SubPatch) (applied int, skipp
 				expandedLoc[i] += pos
 			}
 		}
-		replacement := re.Expand(nil, []byte(sub.Replace), region, expandedLoc)
+		replacement := matchRE.Expand(nil, []byte(replace), region, expandedLoc)
 		if len(replacement) > len(match) {
 			skipped++
 			pos = end

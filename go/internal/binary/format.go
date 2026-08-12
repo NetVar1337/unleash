@@ -58,6 +58,15 @@ func BunSectionHasValidTrailer(data []byte, bunLo, bunHi int) bool {
 	return bytes.HasSuffix(trimmed, BunTrailer)
 }
 
+// trailerValidAt bounds-checks a candidate section size before validating
+// its trailer.
+func trailerValidAt(data []byte, rawOff, size int) bool {
+	if size <= 0 || rawOff < 0 || rawOff+size > len(data) {
+		return false
+	}
+	return BunSectionHasValidTrailer(data, rawOff, rawOff+size)
+}
+
 // BunSectionIsBytecode returns true when .bun section uses compiled Bun
 // bytecode — indicating in-place patching is required.
 func BunSectionIsBytecode(data []byte) bool {
@@ -340,8 +349,16 @@ func findBunSectionPE(data []byte) (int, int, error) {
 			rawOff := int(binary.LittleEndian.Uint32(data[s+20 : s+24]))
 
 			// PE SizeOfRawData includes file-alignment padding. VirtualSize is
-			// the live .bun payload length; using raw size can land trailer
-			// validation inside trailing NUL padding on Windows builds.
+			// usually the live .bun payload length. Recent Bun SEA builds
+			// (CC 2.1.228+) place the trailer at the end of the raw data with
+			// rsize > vsize, so probe both bounds and prefer whichever carries
+			// a valid trailer.
+			if trailerValidAt(data, rawOff, rsize) {
+				return rawOff, rsize, nil
+			}
+			if trailerValidAt(data, rawOff, vsize) {
+				return rawOff, vsize, nil
+			}
 			sz := vsize
 			if sz == 0 {
 				sz = rsize

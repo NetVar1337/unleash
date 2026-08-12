@@ -170,7 +170,7 @@ func runInstallGuard() int {
 
 	switch runtime.GOOS {
 	case "windows":
-		taskName := "unleash-autoheal"
+		taskName := "unleash-guard"
 		exec.Command("schtasks", "/Delete", "/TN", taskName, "/F").Run()
 		createCmd := exec.Command("schtasks", "/Create", "/TN", taskName,
 			"/TR", fmt.Sprintf(`"%s" guard`, unleashBin),
@@ -188,14 +188,14 @@ func runInstallGuard() int {
 	case "darwin":
 		plistDir := filepath.Join(homeDir(), "Library", "LaunchAgents")
 		os.MkdirAll(plistDir, 0o755)
-		plistPath := filepath.Join(plistDir, "cc.voidchecksum.unleash-guard.plist")
+		plistPath := filepath.Join(plistDir, "dev.unleash.guard.plist")
 		home := homeDir()
 		plistContent := fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>cc.voidchecksum.unleash-guard</string>
+    <string>dev.unleash.guard</string>
     <key>ProgramArguments</key>
     <array>
         <string>%s</string>
@@ -231,7 +231,7 @@ func runInstallGuard() int {
 		svc := filepath.Join(unitDir, "unleash-guard.service")
 		os.WriteFile(svc, []byte(fmt.Sprintf(`[Unit]
 Description=unleash guard — auto-patch Claude Code on update
-Documentation=https://github.com/VoidChecksum/unleash
+Documentation=https://github.com/NetVar1337/unleash
 Wants=network-online.target
 After=network-online.target
 
@@ -247,7 +247,7 @@ WantedBy=default.target
 		tmr := filepath.Join(unitDir, "unleash-guard.timer")
 		os.WriteFile(tmr, []byte(`[Unit]
 Description=Run unleash guard periodically
-Documentation=https://github.com/VoidChecksum/unleash
+Documentation=https://github.com/NetVar1337/unleash
 
 [Timer]
 OnBootSec=2min
@@ -273,7 +273,7 @@ WantedBy=timers.target
 func runUninstallGuard() error {
 	switch runtime.GOOS {
 	case "windows":
-		cmd := exec.Command("schtasks", "/Delete", "/TN", "unleash-autoheal", "/F")
+		cmd := exec.Command("schtasks", "/Delete", "/TN", "unleash-guard", "/F")
 		if err := cmd.Run(); err == nil {
 			fmt.Printf("%s%s removed Windows scheduled task%s\n", console.G, console.CHECK, console.X)
 		} else {
@@ -281,7 +281,7 @@ func runUninstallGuard() error {
 		}
 
 	case "darwin":
-		plist := filepath.Join(homeDir(), "Library", "LaunchAgents", "cc.voidchecksum.unleash-guard.plist")
+		plist := filepath.Join(homeDir(), "Library", "LaunchAgents", "dev.unleash.guard.plist")
 		if _, err := os.Stat(plist); err == nil {
 			exec.Command("launchctl", "unload", plist).Run()
 			os.Remove(plist)
@@ -509,14 +509,14 @@ func humanAge(seconds float64) string {
 func detectGuardScheduler() string {
 	switch runtime.GOOS {
 	case "windows":
-		cmd := exec.Command("schtasks", "/Query", "/TN", "unleash-autoheal", "/FO", "LIST")
+		cmd := exec.Command("schtasks", "/Query", "/TN", "unleash-guard", "/FO", "LIST")
 		if err := cmd.Run(); err == nil {
 			return fmt.Sprintf("%sWindows Task Scheduler active%s", console.G, console.X)
 		}
 		return fmt.Sprintf("%snot installed — run 'unleash install-guard'%s", console.Y, console.X)
 
 	case "darwin":
-		plist := filepath.Join(homeDir(), "Library", "LaunchAgents", "cc.voidchecksum.unleash-guard.plist")
+		plist := filepath.Join(homeDir(), "Library", "LaunchAgents", "dev.unleash.guard.plist")
 		if _, err := os.Stat(plist); err == nil {
 			return fmt.Sprintf("%smacOS launchd active%s", console.G, console.X)
 		}

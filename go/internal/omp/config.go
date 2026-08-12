@@ -95,7 +95,55 @@ func MergeOMPConfig(existing string) string {
 		}
 		out = append(out, "tools:", "  approvalMode: yolo")
 	}
-	return strings.TrimRight(strings.Join(out, "\n"), "\n") + "\n"
+	merged := strings.TrimRight(strings.Join(out, "\n"), "\n") + "\n"
+	// Defense in depth alongside the binary patches: kill startup update
+	// checks and marketplace auto-update at the config layer too.
+	merged = ensureNestedYAML(merged, "startup", "checkUpdate", "false")
+	merged = ensureNestedYAML(merged, "marketplace", "autoUpdate", `"off"`)
+	return merged
+}
+
+// ensureNestedYAML forces `section.key = value` in a YAML document. An
+// existing direct-child key gets its value replaced; a present section
+// without the key gets the key inserted; a missing section is appended.
+func ensureNestedYAML(doc, section, key, value string) string {
+	lines := strings.Split(strings.TrimRight(doc, "\n"), "\n")
+	sectionIdx := -1
+	for i, l := range lines {
+		if strings.TrimSpace(l) == section+":" && !strings.HasPrefix(l, " ") && !strings.HasPrefix(l, "\t") {
+			sectionIdx = i
+			break
+		}
+	}
+	if sectionIdx < 0 {
+		lines = append(lines, section+":", "  "+key+": "+value)
+		return strings.Join(lines, "\n") + "\n"
+	}
+	childIndent := -1
+	for j := sectionIdx + 1; j < len(lines); j++ {
+		l := lines[j]
+		trimmed := strings.TrimSpace(l)
+		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+			continue
+		}
+		if !strings.HasPrefix(l, " ") && !strings.HasPrefix(l, "\t") {
+			break // next top-level key
+		}
+		indent := len(l) - len(strings.TrimLeft(l, " \t"))
+		if childIndent < 0 {
+			childIndent = indent
+		}
+		if indent != childIndent {
+			continue
+		}
+		if strings.HasPrefix(trimmed, key+":") {
+			lines[j] = strings.Repeat(" ", childIndent) + key + ": " + value
+			return strings.Join(lines, "\n") + "\n"
+		}
+	}
+	insert := "  " + key + ": " + value
+	lines = append(lines[:sectionIdx+1], append([]string{insert}, lines[sectionIdx+1:]...)...)
+	return strings.Join(lines, "\n") + "\n"
 }
 
 func DefaultAuthorizationBlock() string {

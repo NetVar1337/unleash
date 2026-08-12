@@ -237,7 +237,7 @@ func runUpgrade() int {
 
 func runUpdate() int {
 	fmt.Printf("%sunleash update%s\n", console.B, console.X)
-	fmt.Printf("  current : v1.0.0\n")
+	fmt.Printf("  current : v%s\n", ToolVersion)
 	fmt.Printf("  install : go (embedded)\n")
 
 	// Step 1: check remote version (best effort)

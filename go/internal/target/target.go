@@ -25,10 +25,32 @@ type check struct {
 	kind   string
 }
 
-// FindTarget returns (path, kind) where kind is "js" or "bun_sea".
-// It enumerates every known CC packaging: legacy cli.js, Linux/macOS/Windows SEA.
-// Returns ("", "") if nothing found.
+// Found is one discovered Claude Code installation target.
+type Found struct {
+	Path string
+	Kind string
+}
+
+// FindTarget returns (path, kind) of the primary target where kind is "js"
+// or "bun_sea". It returns the first hit of FindAllTargets, preserving the
+// historical priority order. Returns ("", "") if nothing found.
 func FindTarget() (string, string) {
+	all := FindAllTargets()
+	if len(all) == 0 {
+		return "", ""
+	}
+	return all[0].Path, all[0].Kind
+}
+
+// FindAllTargets enumerates every Claude Code installation on the machine
+// across all packaging methods: npm/bun/pnpm/volta/nvm/fnm/mise layouts,
+// the native installer (claude.ai/install.ps1 → ~/.local/bin + versions),
+// WinGet (portable), Scoop, Chocolatey, Homebrew, and system packages.
+//
+// Results are deduplicated by resolved path AND by file identity, so
+// hardlinked copies (npm bin/ ↔ platform subpackage, WinGet Links) appear
+// only once.
+func FindAllTargets() []Found {
 	jsChecks := []check{
 		{pkg + "/cli.js", "js"},
 	}
@@ -46,13 +68,13 @@ func FindTarget() (string, string) {
 		{pkg + "/bin/claude.exe", "bun_sea"},
 		{pkg + "/bin/claude", "bun_sea"},
 	}
-	checks := append(jsChecks, append(subChecks, binChecks...)...)
+	checks := append(append([]check{}, jsChecks...), append(subChecks, binChecks...)...)
+
+	c := &collector{}
 
 	// 1. npm global roots
 	for _, root := range npmGlobalRoots() {
-		if p, k := probeChecks(root, checks); p != "" {
-			return p, k
-		}
+		collectChecks(c, root, checks)
 	}
 
 	home, _ := os.UserHomeDir()
@@ -81,40 +103,30 @@ func FindTarget() (string, string) {
 	}
 
 	for _, base := range extraBases {
-		for _, c := range checks {
-			candidates := versionGlob(base, c.suffix)
-			for _, p := range candidates {
-				if validTarget(p, c.kind) {
-					return resolvePath(p), c.kind
-				}
+		for _, ck := range checks {
+			for _, p := range versionGlob(base, ck.suffix) {
+				c.add(p, ck.kind)
 			}
 		}
 	}
 
 	// 3. Bun global
 	bunGlobal := filepath.Join(home, ".bun", "install", "global", "node_modules")
-	if p, k := probeChecks(bunGlobal, checks); p != "" {
-		return p, k
-	}
+	collectChecks(c, bunGlobal, checks)
 
 	// 4. pnpm global
-	pnpmRoot := pnpmGlobalRoot()
-	if pnpmRoot != "" {
-		if p, k := probeChecks(pnpmRoot, checks); p != "" {
-			return p, k
-		}
+	if pnpmRoot := pnpmGlobalRoot(); pnpmRoot != "" {
+		collectChecks(c, pnpmRoot, checks)
 	}
 
 	// 5. Volta
 	voltaBase := filepath.Join(home, ".volta", "tools", "image", "packages")
 	if isDir(voltaBase) {
-		for _, c := range checks {
-			pattern := filepath.Join(voltaBase, pkg, "*", "node_modules", c.suffix)
+		for _, ck := range checks {
+			pattern := filepath.Join(voltaBase, pkg, "*", "node_modules", ck.suffix)
 			matches, _ := filepath.Glob(pattern)
 			for _, p := range matches {
-				if validTarget(p, c.kind) {
-					return resolvePath(p), c.kind
-				}
+				c.add(p, ck.kind)
 			}
 		}
 	}
@@ -124,11 +136,8 @@ func FindTarget() (string, string) {
 		"/opt/homebrew/lib/node_modules",
 		"/usr/local/lib/node_modules",
 	} {
-		if p, k := probeChecks(hb, checks); p != "" {
-			return p, k
-		}
+		collectChecks(c, hb, checks)
 	}
-	// Homebrew cask: /opt/homebrew/Caskroom/claude-code/<ver>/claude or /usr/local/Caskroom/...
 	for _, caskBase := range []string{
 		"/opt/homebrew/Caskroom/claude-code",
 		"/usr/local/Caskroom/claude-code",
@@ -136,34 +145,35 @@ func FindTarget() (string, string) {
 		"/usr/local/Caskroom/claude-code@latest",
 	} {
 		if isDir(caskBase) {
-			entries := sortedDirEntriesDesc(caskBase)
-			for _, e := range entries {
+			for _, e := range sortedDirEntriesDesc(caskBase) {
 				if !e.IsDir() {
 					continue
 				}
 				for _, bin := range []string{"claude", "bin/claude"} {
-					p := filepath.Join(caskBase, e.Name(), bin)
-					if fileExists(p) && fileSize(p) > minBinSize {
-						return resolvePath(p), "bun_sea"
-					}
+					c.add(filepath.Join(caskBase, e.Name(), bin), "bun_sea")
 				}
 			}
 		}
 	}
 
-	// 7. Native CLI installer (~/.local/share/claude/versions/<ver>)
+	// 7. Native CLI installer (~/.local/share/claude/versions/<ver>) — the
+	// layout produced by `claude install` / claude.ai/install.ps1. Entries
+	// are version-named files; some layouts nest the binary in a subdir.
 	versionsDir := filepath.Join(home, ".local", "share", "claude", "versions")
 	if isDir(versionsDir) {
-		entries := sortedDirEntriesDesc(versionsDir)
-		for _, e := range entries {
+		for _, e := range sortedDirEntriesDesc(versionsDir) {
 			p := filepath.Join(versionsDir, e.Name())
-			if !e.IsDir() && fileSize(p) > minBinSize {
-				return resolvePath(p), "bun_sea"
+			if !e.IsDir() {
+				c.add(p, "bun_sea")
+				continue
+			}
+			for _, bin := range []string{"claude", "claude.exe"} {
+				c.add(filepath.Join(p, bin), "bun_sea")
 			}
 		}
 	}
 
-	// 8. Native installer + system package (apt/dnf/apk) candidate paths
+	// 8. Native launcher locations + system package (apt/dnf/apk) paths
 	nativeCandidates := []string{
 		filepath.Join(home, ".local", "bin", "claude"),
 		filepath.Join(home, ".local", "bin", "claude.exe"),
@@ -175,69 +185,57 @@ func FindTarget() (string, string) {
 		filepath.Join(home, ".local", "share", "claude-code", "claude.exe"),
 		filepath.Join(home, ".local", "bin", "claude-code"),
 		filepath.Join(home, ".local", "bin", "claude-code.exe"),
-		// System package manager installs (apt, dnf, apk)
 		"/usr/bin/claude",
 		"/usr/local/bin/claude",
 		"/usr/local/share/claude-code/claude",
 		"/opt/claude-code/bin/claude",
-		// Homebrew bin symlinks
 		"/opt/homebrew/bin/claude",
 	}
 	for _, p := range nativeCandidates {
 		if isDir(p) {
-			// Directory — look for claude-* binaries inside.
-			entries := sortedDirEntriesDesc(p)
-			for _, e := range entries {
+			for _, e := range sortedDirEntriesDesc(p) {
 				if strings.HasPrefix(e.Name(), "claude-") && !e.IsDir() {
-					cp := filepath.Join(p, e.Name())
-					if fileSize(cp) > minBinSize {
-						return resolvePath(cp), "bun_sea"
-					}
+					c.add(filepath.Join(p, e.Name()), "bun_sea")
 				}
 			}
 			continue
 		}
-		if fileExists(p) && fileSize(p) > minBinSize {
-			return resolvePath(p), "bun_sea"
-		}
+		c.add(p, "bun_sea")
 	}
 
-	// 9. Windows %LOCALAPPDATA% paths
+	// 9. Windows %LOCALAPPDATA% layouts + WinGet
 	la := os.Getenv("LOCALAPPDATA")
 	if la != "" {
 		for _, suffix := range []string{
 			"Programs/claude-code/claude.exe",
 			"Programs/claude/versions",
+			"Programs/claude/claude.exe",
 			"claude-code/claude.exe",
 			"anthropic/claude-code/claude.exe",
 		} {
 			p := filepath.Join(la, filepath.FromSlash(suffix))
 			if isDir(p) {
-				// e.g. Programs/claude/versions/* — pick newest binary
-				entries := sortedDirEntriesDesc(p)
-				for _, e := range entries {
-					cp := filepath.Join(p, e.Name())
-					if !e.IsDir() && fileSize(cp) > minBinSize {
-						return resolvePath(cp), "bun_sea"
+				for _, e := range sortedDirEntriesDesc(p) {
+					if !e.IsDir() {
+						c.add(filepath.Join(p, e.Name()), "bun_sea")
 					}
 				}
-			} else if fileExists(p) && fileSize(p) > minBinSize {
-				return resolvePath(p), "bun_sea"
+			} else {
+				c.add(p, "bun_sea")
 			}
 		}
 
-		// winget
+		// winget portable packages (covers WinGet Links hardlinks via
+		// file-identity dedupe once the package copy is listed)
 		wingetDir := filepath.Join(la, "Microsoft", "WinGet", "Packages")
 		if isDir(wingetDir) {
 			entries, _ := os.ReadDir(wingetDir)
 			for _, e := range entries {
-				if !e.IsDir() || !strings.Contains(strings.ToLower(e.Name()), "claude") {
+				lname := strings.ToLower(e.Name())
+				if !e.IsDir() || !strings.Contains(lname, "claudecode") {
 					continue
 				}
-				pkgDir := filepath.Join(wingetDir, e.Name())
-				if found := rglob(pkgDir, "claude.exe"); found != "" {
-					return resolvePath(found), "bun_sea"
-				}
+				collectNamed(c, filepath.Join(wingetDir, e.Name()), map[string]bool{"claude.exe": true, "claude": true})
 			}
 		}
 	}
@@ -246,32 +244,78 @@ func FindTarget() (string, string) {
 	scoopDir := filepath.Join(home, "scoop", "apps", "claude-code", "current")
 	if isDir(scoopDir) {
 		for _, name := range []string{"claude.exe", "claude"} {
-			p := filepath.Join(scoopDir, name)
-			if fileExists(p) && fileSize(p) > minBinSize {
-				return resolvePath(p), "bun_sea"
-			}
+			c.add(filepath.Join(scoopDir, name), "bun_sea")
 		}
 	}
 
 	// 11. Chocolatey (Windows)
 	chocoDir := "C:/ProgramData/chocolatey/lib/claude-code"
 	if isDir(chocoDir) {
-		if found := rglob(chocoDir, "claude.exe"); found != "" {
-			return resolvePath(found), "bun_sea"
-		}
+		collectNamed(c, chocoDir, map[string]bool{"claude.exe": true})
 	}
 
 	// 12. Last resort: os/exec LookPath (cross-platform which)
 	for _, name := range []string{"claude", "claude.exe"} {
 		if found, err := exec.LookPath(name); err == nil {
-			p := resolvePath(found)
-			if fileExists(p) && fileSize(p) > minBinSize {
-				return p, "bun_sea"
-			}
+			c.add(found, "bun_sea")
 		}
 	}
 
-	return "", ""
+	return c.results
+}
+
+// collector accumulates unique targets in discovery order.
+type collector struct {
+	results []Found
+	paths   map[string]bool
+	infos   []os.FileInfo
+}
+
+func (c *collector) add(path, kind string) {
+	if path == "" || !fileExists(path) {
+		return
+	}
+	if kind == "bun_sea" && fileSize(path) <= minBinSize {
+		return
+	}
+	resolved := resolvePath(path)
+	if c.paths == nil {
+		c.paths = make(map[string]bool)
+	}
+	if c.paths[resolved] {
+		return
+	}
+	info, err := os.Stat(resolved)
+	if err != nil {
+		return
+	}
+	for _, kept := range c.infos {
+		if os.SameFile(info, kept) {
+			return // hardlink or symlink to an already-listed target
+		}
+	}
+	c.paths[resolved] = true
+	c.infos = append(c.infos, info)
+	c.results = append(c.results, Found{Path: resolved, Kind: kind})
+}
+
+func collectChecks(c *collector, root string, checks []check) {
+	for _, ck := range checks {
+		c.add(filepath.Join(root, filepath.FromSlash(ck.suffix)), ck.kind)
+	}
+}
+
+// collectNamed walks dir and adds files whose base name is in names.
+func collectNamed(c *collector, dir string, names map[string]bool) {
+	_ = filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return nil
+		}
+		if !d.IsDir() && names[d.Name()] {
+			c.add(path, "bun_sea")
+		}
+		return nil
+	})
 }
 
 // SHA256Short returns the first 12 hex chars of the SHA-256 of the file at path.
@@ -391,26 +435,6 @@ func pnpmGlobalRoot() string {
 	return ""
 }
 
-func probeChecks(root string, checks []check) (string, string) {
-	for _, c := range checks {
-		p := filepath.Join(root, filepath.FromSlash(c.suffix))
-		if validTarget(p, c.kind) {
-			return resolvePath(p), c.kind
-		}
-	}
-	return "", ""
-}
-
-func validTarget(path, kind string) bool {
-	if !fileExists(path) {
-		return false
-	}
-	if kind == "js" {
-		return true
-	}
-	return fileSize(path) > minBinSize
-}
-
 func fileExists(path string) bool {
 	fi, err := os.Stat(path)
 	return err == nil && !fi.IsDir()
@@ -432,7 +456,11 @@ func fileSize(path string) int64 {
 func resolvePath(path string) string {
 	resolved, err := filepath.EvalSymlinks(path)
 	if err != nil {
-		return path
+		abs, err := filepath.Abs(path)
+		if err != nil {
+			return path
+		}
+		return abs
 	}
 	abs, err := filepath.Abs(resolved)
 	if err != nil {
@@ -451,23 +479,6 @@ func sortedDirEntriesDesc(dir string) []os.DirEntry {
 		return entries[i].Name() > entries[j].Name()
 	})
 	return entries
-}
-
-// rglob recursively finds a file by name under a directory.
-// Returns the first match with size > minBinSize, or "".
-func rglob(dir, name string) string {
-	var result string
-	_ = filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
-		if err != nil {
-			return nil // skip errors
-		}
-		if !d.IsDir() && d.Name() == name && fileSize(path) > minBinSize {
-			result = path
-			return filepath.SkipAll
-		}
-		return nil
-	})
-	return result
 }
 
 // pruneBackups keeps only the newest n backups matching claude.*.bak.
