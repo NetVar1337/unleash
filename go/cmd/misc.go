@@ -12,6 +12,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/VoidChecksum/unleash/internal/binary"
 	"github.com/VoidChecksum/unleash/internal/console"
 	"github.com/VoidChecksum/unleash/internal/patches"
 	"github.com/VoidChecksum/unleash/internal/scanner"
@@ -21,16 +22,135 @@ import (
 
 // NewListCmd creates the "list" cobra command.
 func NewListCmd() *cobra.Command {
-	return &cobra.Command{
+	var all, selectedOnly, deselectedOnly, status bool
+	var category string
+	c := &cobra.Command{
 		Use:   "list",
 		Short: "List patches in catalog",
+		Long: `List patch catalog entries.
+
+  unleash list                 active patches + selection marks
+  unleash list --all           include retired/disabled catalog entries
+  unleash list --selected      only enabled-for-apply
+  unleash list --deselected    only skipped-by-selection
+  unleash list --status        show applied markers vs primary target
+  unleash list --category refusal
+`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			for _, p := range loadAllPatches() {
-				fmt.Printf("  %s  %s\n", padRight(p.ID, 40), p.Description)
-			}
-			return nil
+			return runList(all, selectedOnly, deselectedOnly, status, category)
 		},
 	}
+	c.Flags().BoolVar(&all, "all", false, "Include retired/disabled catalog entries")
+	c.Flags().BoolVar(&selectedOnly, "selected", false, "Only patches that will apply")
+	c.Flags().BoolVar(&deselectedOnly, "deselected", false, "Only patches skipped by selection")
+	c.Flags().BoolVar(&status, "status", false, "Show applied/missing markers on primary target")
+	c.Flags().StringVar(&category, "category", "", "Filter by category")
+	return c
+}
+
+func runList(all, selectedOnly, deselectedOnly, showStatus bool, category string) error {
+	var list []patches.Patch
+	if all {
+		list = loadCatalogAll()
+	} else {
+		list = loadAllPatches()
+	}
+	sel := loadSelection()
+
+	var text string
+	if showStatus {
+		tgt, kind := target.FindTarget()
+		if tgt != "" && kind == "bun_sea" {
+			if data, err := os.ReadFile(tgt); err == nil {
+				if bunOff, bunSize, err := binary.FindBunSection(data); err == nil {
+					effLo, effHi := binary.FindActiveBundleBounds(data, bunOff, bunOff+bunSize)
+					text = string(data[effLo:effHi])
+				}
+			}
+		}
+	}
+
+	listed := 0
+	// global selection counts over active (non-retired) catalog
+	active := loadAllPatches()
+	globalOn, globalOff := 0, 0
+	for _, p := range active {
+		if isPatchSelected(sel, p.ID) {
+			globalOn++
+		} else {
+			globalOff++
+		}
+	}
+
+	for _, p := range list {
+		if category != "" && !strings.EqualFold(p.Category, category) {
+			continue
+		}
+		selOn := isPatchSelected(sel, p.ID)
+		// retired catalog entries are never "selected" for apply
+		if p.Retired || p.Disabled {
+			selOn = false
+		}
+		if selectedOnly && !selOn {
+			continue
+		}
+		if deselectedOnly && selOn {
+			continue
+		}
+		listed++
+
+		mark := "[on] "
+		if !selOn {
+			mark = "[off]"
+		}
+		state := ""
+		if p.Retired {
+			state = " retired"
+		} else if p.Disabled {
+			state = " disabled"
+		}
+		applied := ""
+		if showStatus && text != "" && p.Type == "js_replace" {
+			switch patchAppliedState(text, p) {
+			case "applied":
+				applied = "  applied"
+			case "missing":
+				applied = "  missing"
+			case "n/a":
+				applied = "  n/a"
+			}
+		}
+		cat := p.Category
+		if cat == "" {
+			cat = "-"
+		}
+		desc := p.Description
+		if len(desc) > 70 {
+			desc = desc[:67] + "..."
+		}
+		fmt.Printf("  %s %s  %-14s%s%s\n      %s\n", mark, padRight(p.ID, 42), cat, state, applied, desc)
+	}
+	fmt.Printf("\n  %d listed  ·  selection mode=%s  selected=%d deselected=%d\n",
+		listed, sel.Mode, globalOn, globalOff)
+	fmt.Printf("  tip: unleash enable|disable <id>   unleash patch --only <id>   unleash unpatch\n")
+	return nil
+}
+
+func patchAppliedState(text string, p patches.Patch) string {
+	hasMarker := false
+	for _, s := range p.Patches {
+		if s.AppliedMarker == "" {
+			continue
+		}
+		hasMarker = true
+		if strings.Contains(text, s.AppliedMarker) {
+			return "applied"
+		}
+	}
+	if !hasMarker {
+		return "n/a"
+	}
+	return "missing"
 }
 
 // NewBenchCmd creates the "bench" cobra command.

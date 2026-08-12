@@ -15,12 +15,20 @@ import (
 // LoadPatches loads all *.json patch files from a directory, skipping retired
 // and disabled patches. Returns patches sorted by filename.
 func LoadPatches(patchDir string) ([]Patch, error) {
+	return loadPatchesDir(patchDir, false)
+}
+
+// LoadAllPatches loads every patch JSON including retired/disabled entries.
+func LoadAllPatches(patchDir string) ([]Patch, error) {
+	return loadPatchesDir(patchDir, true)
+}
+
+func loadPatchesDir(patchDir string, includeRetired bool) ([]Patch, error) {
 	entries, err := os.ReadDir(patchDir)
 	if err != nil {
 		return nil, fmt.Errorf("reading patch dir %s: %w", patchDir, err)
 	}
 
-	// Sort entries by name for deterministic ordering.
 	sort.Slice(entries, func(i, j int) bool {
 		return entries[i].Name() < entries[j].Name()
 	})
@@ -41,7 +49,7 @@ func LoadPatches(patchDir string) ([]Patch, error) {
 			return nil, fmt.Errorf("parsing patch %s: %w", fpath, err)
 		}
 
-		if p.Disabled || p.Retired {
+		if !includeRetired && (p.Disabled || p.Retired) {
 			continue
 		}
 
@@ -99,7 +107,12 @@ func LoadPatchesForScan(patchDir string, respectScanFlag bool) ([]Patch, error) 
 // LoadPatchesFromEmbed loads all patches from the embedded filesystem.
 // Falls back gracefully if no embedded patches are available.
 func LoadPatchesFromEmbed() ([]Patch, error) {
-	return loadPatchesFromFS(embed.EmbeddedPatches, "patches")
+	return loadPatchesFromFS(embed.EmbeddedPatches, "patches", false)
+}
+
+// LoadAllPatchesFromEmbed loads every embedded patch including retired/disabled.
+func LoadAllPatchesFromEmbed() ([]Patch, error) {
+	return loadPatchesFromFS(embed.EmbeddedPatches, "patches", true)
 }
 
 // LoadPatchesForScanFromEmbed loads scan-suitable patches from the embedded filesystem.
@@ -124,7 +137,7 @@ func IsRetired(path string) bool {
 }
 
 // loadPatchesFromFS loads patches from an fs.FS (embed or disk override).
-func loadPatchesFromFS(fsys fs.FS, root string) ([]Patch, error) {
+func loadPatchesFromFS(fsys fs.FS, root string, includeRetired bool) ([]Patch, error) {
 	entries, err := fs.ReadDir(fsys, root)
 	if err != nil {
 		return nil, fmt.Errorf("reading embedded patch dir: %w", err)
@@ -150,7 +163,7 @@ func loadPatchesFromFS(fsys fs.FS, root string) ([]Patch, error) {
 			return nil, fmt.Errorf("parsing embedded patch %s: %w", fpath, err)
 		}
 
-		if p.Disabled || p.Retired {
+		if !includeRetired && (p.Disabled || p.Retired) {
 			continue
 		}
 

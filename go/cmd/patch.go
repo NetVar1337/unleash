@@ -21,20 +21,95 @@ import (
 
 // NewPatchCmd creates the "patch" cobra command.
 func NewPatchCmd() *cobra.Command {
-	var dryRun bool
+	var dryRun, force bool
+	var only, except string
 	c := &cobra.Command{
-		Use:   "patch",
-		Short: "Apply all patches",
+		Use:   "patch [id ...]",
+		Short: "Apply selected patches (default: all enabled)",
+		Long: `Apply patches to every discovered Claude Code install.
+
+Selection (persistent):
+  unleash disable <id>     skip on future runs
+  unleash enable <id>      re-include
+  unleash enable --all     everything on
+  unleash select-only a b  exclusive set
+
+One-shot filters:
+  unleash patch --only js-aup-refusal,js-metrics-disable
+  unleash patch --except js-webfetch-lyrics-copyright-clause
+  unleash patch js-aup-refusal          # same as --only
+  unleash patch --force                 # ignore enable/disable selection
+  unleash patch -n                      # dry-run
+`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runPatch(dryRun)
+			return runPatch(dryRun, force, only, except, args)
 		},
 	}
 	c.Flags().BoolVarP(&dryRun, "dry-run", "n", false, "Simulate without writing")
+	c.Flags().BoolVar(&force, "force", false, "Ignore enable/disable selection (apply full catalog)")
+	c.Flags().StringVar(&only, "only", "", "Comma-separated patch ids to apply (one-shot)")
+	c.Flags().StringVar(&except, "except", "", "Comma-separated patch ids to skip (one-shot)")
 	return c
 }
 
-func runPatch(dryRun bool) error {
+func runPatch(dryRun, force bool, only, except string, args []string) error {
 	patchList := loadAllPatches()
+	sel := loadSelection()
+
+	// Persistent selection unless --force or explicit --only/--except/args
+	hasOnly := strings.TrimSpace(only) != "" || len(args) > 0
+	hasExcept := strings.TrimSpace(except) != ""
+	if !force && !hasOnly && !hasExcept {
+		before := len(patchList)
+		patchList = filterPatchesBySelection(patchList, sel)
+		if len(patchList) < before {
+			fmt.Printf("  %sselection: %d/%d patches (mode=%s)%s\n",
+				console.Y, len(patchList), before, sel.Mode, console.X)
+		}
+	}
+
+	// One-shot only/except + positional ids
+	onlyIDs := parseIDList(only)
+	onlyIDs = append(onlyIDs, parseIDList(args...)...)
+	exceptIDs := parseIDList(except)
+	if len(onlyIDs) > 0 || len(exceptIDs) > 0 {
+		// resolve against full active catalog for prefix match
+		catalog := loadAllPatches()
+		var err error
+		if len(onlyIDs) > 0 {
+			onlyIDs, err = resolvePatchIDs(catalog, onlyIDs)
+			if err != nil {
+				return err
+			}
+		}
+		if len(exceptIDs) > 0 {
+			exceptIDs, err = resolvePatchIDs(catalog, exceptIDs)
+			if err != nil {
+				return err
+			}
+		}
+		base := catalog
+		if force {
+			base = catalog
+		} else if !hasOnly && !hasExcept {
+			base = patchList
+		}
+		// when --only given, start from full catalog; when --except, from selection-filtered
+		if len(onlyIDs) > 0 {
+			base = catalog
+		}
+		patchList, err = filterPatchesByOnlyExcept(base, onlyIDs, exceptIDs)
+		if err != nil {
+			return err
+		}
+	}
+
+	if len(patchList) == 0 {
+		fmt.Printf("%sno patches selected — nothing to do%s\n", console.Y, console.X)
+		fmt.Printf("  tip: unleash enable --all   or   unleash patch --force\n")
+		return nil
+	}
+
 	all := target.FindAllTargets()
 
 	var jsPatches, metaPatches []patches.Patch
@@ -295,13 +370,14 @@ func patchJSTarget(tgt, kind string, jsPatches []patches.Patch, dryRun bool) (ok
 
 // RunPatchQuiet is called by other commands internally (autopilot, upgrade, etc.)
 // Returns error on failure, nil on success (exit code 0).
+// Respects the operator selection file unless empty (then applies all).
 func RunPatchQuiet() error {
-	return runPatch(false)
+	return runPatch(false, false, "", "", nil)
 }
 
 // RunPatchRC returns 0 on success, 1 on failure — for Autoheal callback.
 func RunPatchRC() int {
-	if runPatch(false) != nil {
+	if runPatch(false, false, "", "", nil) != nil {
 		return 1
 	}
 	return 0

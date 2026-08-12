@@ -298,30 +298,66 @@ marketplace:
 
 ## CLI reference
 
+### Patch · select · restore
+
+```bash
+unleash list                     # catalog + [on]/[off] selection marks
+unleash list --status            # + applied/missing on primary target
+unleash list --selected          # only patches that will apply
+unleash list --deselected        # only skipped patches
+unleash list --all               # include retired catalog entries
+
+unleash disable <id>             # deselect (skipped on next patch)
+unleash enable <id>              # re-select
+unleash enable --all             # everything on (default mode)
+unleash enable --only a b        # exclusive set
+unleash select-only a b          # same exclusive mode
+unleash disable --all            # nothing applies until enable
+
+unleash patch                    # apply selected patches to every install
+unleash patch -n                 # dry-run
+unleash patch --only a,b         # one-shot subset (ignores disable list)
+unleash patch --except a         # one-shot skip
+unleash patch a b                # same as --only
+unleash patch --force            # ignore selection; full active catalog
+
+unleash verify                   # check applied markers
+unleash unpatch                  # restore every target from its latest backup
+unleash unpatch --list           # show backups + index
+unleash restore                  # alias for unpatch
+unleash rollback                 # same multi-target restore
+```
+
+Selection is stored in `~/.unleash/selection.json`. Backups land in `~/.unleash/backups/` with an `index.jsonl` mapping each target path → backup file.
+
+### Full command table
+
 | Command | Purpose |
 |---|---|
 | `setup` | One-shot: deps + patch + rules + plugins + guard |
 | `status` | Install state: targets, SHA, format, backup count |
 | `doctor` | Full health: drift, retired count, verify, upstream |
-| `list` | Catalog of loadable patches |
-| `patch` | Apply all active patches to every detected target |
+| `list` | Catalog + selection marks (`--status`, `--selected`, `--all`) |
+| `enable` / `disable` / `select-only` | Persistent patch selection |
+| `patch` | Apply selected patches (`--only`, `--except`, `--force`, `-n`) |
+| `unpatch` / `restore` | Multi-target restore from backups |
 | `verify` | Check applied markers |
 | `scan` | Signature scan (`-v`, `--auto-heal`, `--export-patch`) |
-| `guard` | Fast SHA guard; re-patch if binary changed |
+| `guard` | Fast SHA guard; re-patch on change |
 | `watch` | Daemon: poll target, autoheal on change |
 | `autoheal` | Detect drift; self-update + re-patch if broken |
-| `install-guard` / `uninstall-guard` | Platform scheduler (Task Scheduler / launchd / systemd) |
-| `install-preload` / `uninstall-preload` | Runtime monkey-patch survival layer |
+| `install-guard` / `uninstall-guard` | Platform scheduler |
+| `install-preload` / `uninstall-preload` | Runtime survival layer |
 | `install-rules` / `uninstall-rules` | Operator-authorization bundle |
-| `install-skills` | Deploy skills pack → `~/.agents/skills` + `~/.claude/skills` |
+| `install-skills` | Deploy skills pack |
 | `self-update` / `update` / `upgrade` | Sync patches / upgrade binary / full pipeline |
-| `rollback` | Restore newest backup |
+| `rollback` | Alias of `unpatch` (multi-target restore) |
 | `tui` / `dashboard` | Interactive control panel / live status |
 | `autopilot` | scan → heal → patch → git commit/push → issue |
-| `bench` | Microbenchmarks (sha256, load, scan cold/cached) |
+| `bench` | Microbenchmarks |
 | `check-updates` | Compare local vs remote patch tree |
 
-Default invocation with no subcommand launches the **TUI**.
+Default invocation with no subcommand launches the **TUI** (Space toggles patches, `a`/`n` select all/none, Enter applies).
 
 ---
 

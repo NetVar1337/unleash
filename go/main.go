@@ -28,6 +28,10 @@ func main() {
 
 	rootCmd.AddCommand(
 		cmd.NewPatchCmd(),
+		cmd.NewUnpatchCmd(),
+		cmd.NewEnableCmd(),
+		cmd.NewDisableCmd(),
+		cmd.NewSelectOnlyCmd(),
 		cmd.NewVerifyCmd(),
 		cmd.NewRollbackCmd(),
 		cmd.NewStatusCmd(),

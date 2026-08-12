@@ -3,6 +3,7 @@ package target
 
 import (
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -338,9 +339,23 @@ func BackupDir() string {
 	return filepath.Join(home, ".unleash", "backups")
 }
 
+// BackupRecord is one line in ~/.unleash/backups/index.jsonl.
+type BackupRecord struct {
+	Path   string `json:"path"`
+	Backup string `json:"backup"`
+	SHA    string `json:"sha"`
+	Kind   string `json:"kind"`
+	Time   string `json:"time"`
+}
+
+// BackupIndexPath is the JSONL index mapping targets → backup files.
+func BackupIndexPath() string {
+	return filepath.Join(BackupDir(), "index.jsonl")
+}
+
 // Backup copies the target binary to ~/.unleash/backups/ with a timestamp and
 // SHA256 short hash. Keeps only the last 10 backups. Returns the backup path.
-func Backup(target string, kind string) (string, error) {
+func Backup(targetPath string, kind string) (string, error) {
 	dir := BackupDir()
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return "", fmt.Errorf("creating backup dir: %w", err)
@@ -351,11 +366,11 @@ func Backup(target string, kind string) (string, error) {
 	if kind == "bun_sea" {
 		ext = "exe.bak"
 	}
-	sha := SHA256Short(target)
+	sha := SHA256Short(targetPath)
 	dst := filepath.Join(dir, fmt.Sprintf("claude.%s.%s.%s", stamp, sha, ext))
 
 	// Copy file
-	src, err := os.Open(target)
+	src, err := os.Open(targetPath)
 	if err != nil {
 		return "", err
 	}
@@ -376,10 +391,76 @@ func Backup(target string, kind string) (string, error) {
 		return "", err
 	}
 
+	// Index for multi-target restore / unpatch
+	_ = appendBackupIndex(BackupRecord{
+		Path:   resolvePath(targetPath),
+		Backup: dst,
+		SHA:    sha,
+		Kind:   kind,
+		Time:   stamp,
+	})
+
 	// Prune old backups — keep last 10
 	pruneBackups(dir, 10)
 
 	return dst, nil
+}
+
+func appendBackupIndex(rec BackupRecord) error {
+	f, err := os.OpenFile(BackupIndexPath(), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	b, err := json.Marshal(rec)
+	if err != nil {
+		return err
+	}
+	_, err = f.Write(append(b, '\n'))
+	return err
+}
+
+// ListBackupRecords returns index entries newest-last (file order).
+func ListBackupRecords() ([]BackupRecord, error) {
+	data, err := os.ReadFile(BackupIndexPath())
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	var out []BackupRecord
+	for _, line := range strings.Split(string(data), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		var r BackupRecord
+		if err := json.Unmarshal([]byte(line), &r); err != nil {
+			continue
+		}
+		out = append(out, r)
+	}
+	return out, nil
+}
+
+// LatestBackupForPath returns the newest existing backup for a target path.
+func LatestBackupForPath(targetPath string) (BackupRecord, bool) {
+	recs, err := ListBackupRecords()
+	if err != nil || len(recs) == 0 {
+		return BackupRecord{}, false
+	}
+	want := resolvePath(targetPath)
+	for i := len(recs) - 1; i >= 0; i-- {
+		r := recs[i]
+		if resolvePath(r.Path) != want {
+			continue
+		}
+		if _, err := os.Stat(r.Backup); err == nil {
+			return r, true
+		}
+	}
+	return BackupRecord{}, false
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
